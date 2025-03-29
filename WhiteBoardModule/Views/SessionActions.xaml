@@ -1,0 +1,44 @@
+﻿<UserControl
+    x:Class="WhiteBoardModule.Views.SessionActions"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:SketchRoom.Toolkit.Wpf.Controls;assembly=SketchRoom.Toolkit.Wpf"
+    xmlns:prism="http://prismlibrary.com/"
+    xmlns:vm="clr-namespace:WhiteBoardModule.ViewModels"
+    Height="80"
+    prism:ViewModelLocator.AutoWireViewModel="True">
+    <Border
+        Margin="10"
+        Padding="10"
+        Background="#eeeeee"
+        BorderBrush="#ccc"
+        BorderThickness="1"
+        CornerRadius="10">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!--  Color Palette  -->
+            <controls:ColorsPalette
+                Grid.Row="0"
+                VerticalAlignment="Center"
+                AvailableColors="{Binding AvailableColors}"
+                SelectColorCommand="{Binding SelectColorCommand}"
+                SelectedColor="{Binding SelectedColor}" />
+
+            <!--  Action Button  -->
+            <controls:ActionButton
+                Grid.Column="1"
+                Width="150"
+                Height="30"
+                Margin="10,0,0,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                ButtonCommand="{Binding ActionCommand}"
+                ButtonText="{Binding ActionLabel}"
+                IsButtonEnabled="{Binding IsSessionActive}" />
+        </Grid>
+    </Border>
+</UserControl>

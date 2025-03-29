@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Prism.DryIoc" Version="9.0.537" />
+    <PackageReference Include="Prism.Wpf" Version="9.0.537" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LobbyHostingModule\LobbyHostingModule.csproj" />
+    <ProjectReference Include="..\ParticipationModule\ParticipationModule.csproj" />
+    <ProjectReference Include="..\SketchRoom.Database\SketchRoom.Database.csproj" />
+    <ProjectReference Include="..\TopBarModule\TopBarModule.csproj" />
+    <ProjectReference Include="..\UsersInteractionsModule\UsersInteractionsModule.csproj" />
+    <ProjectReference Include="..\WhiteBoardModule\WhiteBoardModule.csproj" />
+  </ItemGroup>
+
+</Project>

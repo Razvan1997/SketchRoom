@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Resources\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
+    <PackageReference Include="Prism.Core" Version="9.0.537" />
+    <PackageReference Include="Prism.Wpf" Version="9.0.537" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SketchRoom.Models\SketchRoom.Models.csproj" />
+    <ProjectReference Include="..\SketchRoom.Services\SketchRoom.Services.csproj" />
+    <ProjectReference Include="..\SketchRoom.Toolkit.Wpf\SketchRoom.Toolkit.Wpf.csproj" />
+  </ItemGroup>
+
+</Project>

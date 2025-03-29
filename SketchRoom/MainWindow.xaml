@@ -1,0 +1,55 @@
+﻿<Window
+    x:Class="SketchRoom.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:SketchRoom"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:prism="http://prismlibrary.com/"
+    Title="MainWindow"
+    Width="800"
+    Height="450"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+    WindowStartupLocation="CenterScreen"
+    WindowState="Maximized"
+    mc:Ignorable="d">
+    <!--  Layered Grid where spinner is on top of content  -->
+    <Grid>
+        <!--  Content of the window goes here  -->
+        <Grid x:Name="MainContent" Background="Transparent">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <!--  Top area  -->
+            <Border Height="40" Margin="0,0,0,0">
+                <Border.Effect>
+                    <DropShadowEffect
+                        BlurRadius="4"
+                        ShadowDepth="1"
+                        Color="Black" />
+                </Border.Effect>
+                <ContentControl prism:RegionManager.RegionName="TopBarRegion" />
+            </Border>
+
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!--  Users interactions region  -->
+                <Border Grid.Row="0" Width="200">
+                    <ContentControl prism:RegionManager.RegionName="UsersInteractionsRegion" />
+                </Border>
+
+                <!--<Border Grid.Column="1">
+                    <ContentControl prism:RegionManager.RegionName="WhiteBoardRegion" />
+                </Border>-->
+                <Border Grid.Column="1">
+                    <ContentControl prism:RegionManager.RegionName="ContentRegion" />
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>
