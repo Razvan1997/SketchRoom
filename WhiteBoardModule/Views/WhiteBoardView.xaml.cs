@@ -21,105 +21,23 @@ namespace WhiteBoardModule.Views
     /// </summary>
     public partial class WhiteBoardView : UserControl
     {
-        private Point _lastMousePosition;
-        private bool _isPanning;
-        private const double MinZoom = 0.3;
-        private const double MaxZoom = 3.0;
-
-        // Dimensiuni A1 (96 DPI)
-        private const double A1Width = 2244;
-        private const double A1Height = 3185;
-
         public WhiteBoardView()
         {
             InitializeComponent();
+
+            this.Loaded += WhiteBoardView_Loaded;
         }
 
-        private void Canvas_MouseWheel(object sender, MouseWheelEventArgs e)
+        private void WhiteBoardView_Loaded(object sender, RoutedEventArgs e)
         {
-            if (Keyboard.Modifiers != ModifierKeys.Control) return;
-
-            var zoomFactor = e.Delta > 0 ? 1.1 : 0.9;
-            var position = e.GetPosition(DrawingSurface);
-            var newScale = ZoomScale.ScaleX * zoomFactor;
-
-            if (newScale < MinZoom || newScale > MaxZoom)
+            if (DataContext is not WhiteBoardViewModel vm)
                 return;
 
-            ZoomScale.ScaleX = newScale;
-            ZoomScale.ScaleY = newScale;
+            vm.SetControlAdapter(Whiteboard);
 
-            ZoomTranslate.X = (1 - zoomFactor) * position.X + ZoomTranslate.X * zoomFactor;
-            ZoomTranslate.Y = (1 - zoomFactor) * position.Y + ZoomTranslate.Y * zoomFactor;
-
-            e.Handled = true;
-        }
-
-        private void Canvas_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (Keyboard.Modifiers == ModifierKeys.Control)
-            {
-                _isPanning = true;
-                _lastMousePosition = e.GetPosition(this);
-                DrawingSurface.CaptureMouse();
-                Cursor = Cursors.SizeAll;
-            }
-        }
-
-        private void Canvas_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            if (_isPanning)
-            {
-                _isPanning = false;
-                DrawingSurface.ReleaseMouseCapture();
-                Cursor = Cursors.Arrow;
-            }
-        }
-
-        private void Canvas_PreviewMouseMove(object sender, MouseEventArgs e)
-        {
-            if (_isPanning)
-            {
-                var currentPosition = e.GetPosition(this);
-                var delta = currentPosition - _lastMousePosition;
-
-                ZoomTranslate.X += delta.X;
-                ZoomTranslate.Y += delta.Y;
-
-                _lastMousePosition = currentPosition;
-
-                // Opțional: limitează pan-ul aici dacă vrei să nu scoți zona din viewport
-            }
-        }
-
-        // Desenare delegată spre ViewModel + transform
-        private Point GetLogicalPosition(MouseEventArgs e)
-        {
-            var visual = DrawingSurface;
-            var transform = visual.RenderTransform as TransformGroup;
-
-            if (transform != null && transform.Inverse != null)
-                return transform.Inverse.Transform(e.GetPosition(visual));
-
-            return e.GetPosition(visual);
-        }
-
-        private void Canvas_MouseDown(object sender, MouseButtonEventArgs e)
-        {
-            if (DataContext is WhiteBoardViewModel vm)
-                vm.CanvasMouseDown(GetLogicalPosition(e));
-        }
-
-        private void Canvas_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (DataContext is WhiteBoardViewModel vm)
-                vm.CanvasMouseMove(GetLogicalPosition(e));
-        }
-
-        private void Canvas_MouseUp(object sender, MouseButtonEventArgs e)
-        {
-            if (DataContext is WhiteBoardViewModel vm)
-                vm.CanvasMouseUp(GetLogicalPosition(e));
+            Whiteboard.LineDrawn += vm.OnLineDrawn;
+            Whiteboard.MouseMoved += vm.OnMouseMoved;
+            Whiteboard.LivePointDrawn += vm.OnDrawPointLive;
         }
     }
 }

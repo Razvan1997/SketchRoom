@@ -47,9 +47,10 @@ namespace WhiteBoardModule.ViewModels
             get => _selectedColor;
             set => SetProperty(ref _selectedColor, value);
         }
-
-        public SessionActionsViewModel(IEventAggregator eventAggregator)
+        private DrawingStateService.DrawingStateService _stateService;
+        public SessionActionsViewModel(IEventAggregator eventAggregator, DrawingStateService.DrawingStateService stateService)
         {
+            _stateService = stateService;
             IsSessionActive = true;
             SelectedColor = Brushes.Black;
 
@@ -59,6 +60,7 @@ namespace WhiteBoardModule.ViewModels
             SelectColorCommand = new DelegateCommand<Brush>(color =>
             {
                 SelectedColor = color;
+                _stateService.SelectedColor = color;
             });
 
             eventAggregator.GetEvent<SessionContextEvent>().Subscribe(ctx =>

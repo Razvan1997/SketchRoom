@@ -24,6 +24,7 @@ namespace SketchRoom
             ViewModelLocationProvider.Register<RegistrationDialog, RegistrationDialogViewModel>();
 
             containerRegistry.RegisterSingleton<WhiteboardHubClient>();
+            containerRegistry.RegisterSingleton<DrawingStateService.DrawingStateService>();
         }
 
         protected override void OnInitialized()

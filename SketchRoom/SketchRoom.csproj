@@ -14,8 +14,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DrawingStateService\DrawingStateService.csproj" />
     <ProjectReference Include="..\LobbyHostingModule\LobbyHostingModule.csproj" />
     <ProjectReference Include="..\ParticipationModule\ParticipationModule.csproj" />
+    <ProjectReference Include="..\SketchRoom.AI.Predictions\SketchRoom.AI.Predictions.csproj" />
     <ProjectReference Include="..\SketchRoom.Database\SketchRoom.Database.csproj" />
     <ProjectReference Include="..\TopBarModule\TopBarModule.csproj" />
     <ProjectReference Include="..\UsersInteractionsModule\UsersInteractionsModule.csproj" />

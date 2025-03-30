@@ -1,39 +1,27 @@
-﻿using SketchRoom.Models;
-using SketchRoom.Models.DTO;
+﻿using SketchRoom.Models.DTO;
 using SketchRoom.Services;
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+using SketchRoom.Toolkit.Wpf.Controls;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using WhiteBoardModule.Events;
 
 namespace WhiteBoardModule.ViewModels
 {
     public class WhiteBoardViewModel : BindableBase, INavigationAware
     {
-        private static readonly Rect A1Bounds = new Rect(0, 0, 2244, 3185);
+        private const int CursorSendIntervalMs = 16;
         private DateTime _lastCursorSendTime = DateTime.MinValue;
-        private const int CursorSendIntervalMs = 16; // ~60 FPS
+
         private readonly IEventAggregator _eventAggregator;
         private readonly WhiteboardHubClient _hubClient;
-        private bool _isDrawing = false;
-        private Polyline _currentLine;
-        private Polyline _remoteLine;
+        private WhiteBoardControl? _whiteboardAdapter;
 
         public bool IsHost { get; private set; }
         public bool IsParticipant { get; private set; }
-        public string SessionCode { get; private set; }
-
-        public ObservableCollection<UIElement> DrawingElements { get; } = new();
+        public string SessionCode { get; private set; } = string.Empty;
 
         public WhiteBoardViewModel(WhiteboardHubClient hubClient, IEventAggregator eventAggregator)
         {
@@ -41,158 +29,125 @@ namespace WhiteBoardModule.ViewModels
             _eventAggregator = eventAggregator;
         }
 
-        public void CanvasMouseDown(Point logicalPos)
+        public void SetControlAdapter(WhiteBoardControl adapter)
         {
-            if (Keyboard.Modifiers == ModifierKeys.Control) return;
-
-            _isDrawing = true;
-            _currentLine = new Polyline { Stroke = Brushes.Black, StrokeThickness = 2 };
-            _currentLine.Points.Add(logicalPos);
-            DrawingElements.Add(_currentLine);
+            _whiteboardAdapter = adapter;
         }
 
-        public void CanvasMouseMove(Point logicalPos)
+        public async void OnLineDrawn(List<Point> points)
         {
-            if (Keyboard.Modifiers == ModifierKeys.Control) return;
+            if (!IsHost || string.IsNullOrEmpty(SessionCode)) return;
 
-            if (_isDrawing && _currentLine != null)
+            var drawingService = ContainerLocator.Container.Resolve<DrawingStateService.DrawingStateService>();
+            string colorString = (drawingService.SelectedColor as SolidColorBrush)?.Color.ToString() ?? "#000000";
+
+            var dto = new DrawLineDto
             {
-                _currentLine.Points.Add(logicalPos);
-                if (IsHost)
-                {
-                    _ = _hubClient.SendLiveDrawPointAsync(new LiveDrawPointDto
-                    {
-                        SessionCode = SessionCode,
-                        X = logicalPos.X,
-                        Y = logicalPos.Y
-                    });
-                }
+                SessionCode = SessionCode,
+                Color = colorString,
+                Thickness = 2,
+                Points = points.Select(p => new PointDto { X = p.X, Y = p.Y }).ToList()
+            };
+
+            try
+            {
+                await _hubClient.SendDrawLineAsync(dto);
             }
-
-            if (IsHost)
+            catch (Exception ex)
             {
-                var now = DateTime.UtcNow;
-                if ((now - _lastCursorSendTime).TotalMilliseconds >= CursorSendIntervalMs)
-                {
-                    _lastCursorSendTime = now;
-                    _ = _hubClient.SendCursorPositionAsync(new CursorPositionDto
-                    {
-                        SessionCode = SessionCode,
-                        X = logicalPos.X,
-                        Y = logicalPos.Y
-                    });
-                }
+                Console.WriteLine("Error sending line: " + ex.Message);
             }
         }
 
-        public async void CanvasMouseUp(Point logicalPos)
+        public void OnDrawPointLive(Point point)
         {
-            if (Keyboard.Modifiers == ModifierKeys.Control) return;
-            _isDrawing = false;
+            if (!IsHost || string.IsNullOrEmpty(SessionCode)) return;
 
-            if (_currentLine != null)
+            _ = _hubClient.SendLiveDrawPointAsync(new LiveDrawPointDto
             {
-                _currentLine.Points.Add(logicalPos);
-                if (IsHost)
+                SessionCode = SessionCode,
+                X = point.X,
+                Y = point.Y
+            });
+        }
+
+        public void OnMouseMoved(Point pos)
+        {
+            if (!IsHost || string.IsNullOrEmpty(SessionCode)) return;
+
+            var now = DateTime.UtcNow;
+            if ((now - _lastCursorSendTime).TotalMilliseconds >= CursorSendIntervalMs)
+            {
+                _lastCursorSendTime = now;
+
+                _ = _hubClient.SendCursorPositionAsync(new CursorPositionDto
                 {
-                    await _hubClient.SendDrawLineAsync(new DrawLineDto
-                    {
-                        SessionCode = SessionCode,
-                        Color = "Black",
-                        Thickness = 2,
-                        Points = _currentLine.Points.Select(p => new PointDto { X = p.X, Y = p.Y }).ToList()
-                    });
-                }
-                _currentLine = null;
+                    SessionCode = SessionCode,
+                    X = pos.X,
+                    Y = pos.Y
+                });
             }
         }
 
-        public async void OnNavigatedTo(NavigationContext navigationContext)
+        public void OnNavigatedTo(NavigationContext navigationContext)
         {
-            if (navigationContext.Parameters.ContainsKey("IsHost"))
-                IsHost = navigationContext.Parameters.GetValue<bool>("IsHost");
-
-            if (navigationContext.Parameters.ContainsKey("IsParticipant"))
-                IsParticipant = navigationContext.Parameters.GetValue<bool>("IsParticipant");
-
-            if (navigationContext.Parameters.ContainsKey("SessionCode"))
-                SessionCode = navigationContext.Parameters.GetValue<string>("SessionCode");
+            IsHost = navigationContext.Parameters.GetValue<bool>("IsHost");
+            IsParticipant = navigationContext.Parameters.GetValue<bool>("IsParticipant");
+            SessionCode = navigationContext.Parameters.GetValue<string>("SessionCode");
 
             if (IsParticipant)
             {
                 _hubClient.OnDrawLineReceived(line =>
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.BeginInvoke(() =>
                     {
-                        var polyline = new Polyline
-                        {
-                            Stroke = new SolidColorBrush((Color)ColorConverter.ConvertFromString(line.Color)),
-                            StrokeThickness = line.Thickness
-                        };
+                        _whiteboardAdapter?.StartNewRemoteLine(); 
 
-                        foreach (var pointDto in line.Points)
+                        SolidColorBrush color = Brushes.Black;
+                        try
                         {
-                            polyline.Points.Add(new Point(pointDto.X, pointDto.Y));
+                            var brush = (Brush)new BrushConverter().ConvertFromString(line.Color);
+                            if (brush is SolidColorBrush solid)
+                                color = solid;
                         }
+                        catch { }
 
-                        DrawingElements.Add(polyline);
-                        _remoteLine = null; // finalizează linia live
+                        var points = line.Points.Select(p => new Point(p.X, p.Y));
+                        _whiteboardAdapter?.AddLine(points, color, line.Thickness);
                     });
                 });
 
                 _hubClient.OnLiveDrawPointReceived(point =>
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.BeginInvoke(() =>
                     {
-                        if (_remoteLine == null)
-                        {
-                            _remoteLine = new Polyline
-                            {
-                                Stroke = Brushes.DarkBlue,
-                                StrokeThickness = 2
-                            };
-
-                            DrawingElements.Add(_remoteLine);
-                        }
-
-                        _remoteLine.Points.Add(new Point(point.X, point.Y));
+                        _whiteboardAdapter?.AddLivePoint(new Point(point.X, point.Y), Brushes.DarkBlue);
                     });
                 });
 
                 _hubClient.OnCursorPositionReceived(cursor =>
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
+                    Application.Current.Dispatcher.BeginInvoke(() =>
                     {
-                        var existingImage = DrawingElements
-                            .OfType<Image>()
-                            .FirstOrDefault(el => el.Tag?.ToString() == "HostCursor");
-
-                        if (existingImage == null)
-                        {
-                            existingImage = new Image
-                            {
-                                Width = 20,
-                                Height = 20,
-                                Tag = "HostCursor"
-                            };
-
-                            DrawingElements.Add(existingImage);
-                        }
-
+                        BitmapImage? image = null;
                         if (!string.IsNullOrEmpty(cursor.HostImageBase64))
                         {
-                            var bitmap = new BitmapImage();
-                            using var ms = new MemoryStream(Convert.FromBase64String(cursor.HostImageBase64));
-                            bitmap.BeginInit();
-                            bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                            bitmap.StreamSource = ms;
-                            bitmap.EndInit();
-
-                            existingImage.Source = bitmap;
+                            try
+                            {
+                                using var ms = new MemoryStream(Convert.FromBase64String(cursor.HostImageBase64));
+                                image = new BitmapImage();
+                                image.BeginInit();
+                                image.CacheOption = BitmapCacheOption.OnLoad;
+                                image.StreamSource = ms;
+                                image.EndInit();
+                            }
+                            catch
+                            {
+                                Console.WriteLine("Failed to parse host cursor image.");
+                            }
                         }
 
-                        Canvas.SetLeft(existingImage, cursor.X - 20);
-                        Canvas.SetTop(existingImage, cursor.Y - 20);
+                        _whiteboardAdapter?.MoveCursorImage(new Point(cursor.X, cursor.Y), image);
                     });
                 });
             }
@@ -206,8 +161,6 @@ namespace WhiteBoardModule.ViewModels
 
         public bool IsNavigationTarget(NavigationContext navigationContext) => true;
         public void OnNavigatedFrom(NavigationContext navigationContext) { }
-
-        public void CanvasMouseEnter(object sender, MouseEventArgs e) { }
     }
 
 }

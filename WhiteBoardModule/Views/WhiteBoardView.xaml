@@ -2,6 +2,7 @@
     x:Class="WhiteBoardModule.Views.WhiteBoardView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:SketchRoom.Toolkit.Wpf.Controls;assembly=SketchRoom.Toolkit.Wpf"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:ei="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
@@ -16,42 +17,11 @@
 
 
     <Grid Background="Gray">
-        <ScrollViewer
-            ClipToBounds="True"
-            HorizontalScrollBarVisibility="Disabled"
-            VerticalScrollBarVisibility="Disabled">
-            <Canvas
-                Width="2244"
-                Height="3185"
-                Background="White">
-                <ItemsControl
-                    x:Name="DrawingSurface"
-                    ItemsSource="{Binding DrawingElements}"
-                    MouseDown="Canvas_MouseDown"
-                    MouseMove="Canvas_MouseMove"
-                    MouseUp="Canvas_MouseUp"
-                    MouseWheel="Canvas_MouseWheel"
-                    PreviewMouseLeftButtonDown="Canvas_PreviewMouseLeftButtonDown"
-                    PreviewMouseLeftButtonUp="Canvas_PreviewMouseLeftButtonUp"
-                    PreviewMouseMove="Canvas_PreviewMouseMove">
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <Canvas
-                                Width="2244"
-                                Height="3185"
-                                Background="Transparent" />
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
 
-                    <ItemsControl.RenderTransform>
-                        <TransformGroup>
-                            <ScaleTransform x:Name="ZoomScale" ScaleX="1" ScaleY="1" />
-                            <TranslateTransform x:Name="ZoomTranslate" X="0" Y="0" />
-                        </TransformGroup>
-                    </ItemsControl.RenderTransform>
-                </ItemsControl>
-            </Canvas>
-        </ScrollViewer>
+        <controls:WhiteBoardControl
+            x:Name="Whiteboard"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch" />
 
         <!--  Butonul de sus  -->
         <local:SessionActions
