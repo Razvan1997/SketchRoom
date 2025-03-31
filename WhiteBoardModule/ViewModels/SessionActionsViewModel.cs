@@ -21,6 +21,8 @@ namespace WhiteBoardModule.ViewModels
         public ICommand ActionCommand { get; }
         public ICommand SelectColorCommand { get; }
 
+        public ICommand TransformToTextCommand { get; }
+
         public bool IsSessionActive
         {
             get => _isSessionActive;
@@ -57,6 +59,8 @@ namespace WhiteBoardModule.ViewModels
             ActionCommand = new DelegateCommand(OnAction, CanExecuteActionCommand)
                                 .ObservesProperty(() => IsSessionActive);
 
+            TransformToTextCommand = new DelegateCommand(OnTransformToText, CanTransformToText);
+
             SelectColorCommand = new DelegateCommand<Brush>(color =>
             {
                 SelectedColor = color;
@@ -69,6 +73,25 @@ namespace WhiteBoardModule.ViewModels
                 _sessionCode = ctx.SessionCode;
                 RaisePropertyChanged(nameof(ActionLabel));
             });
+        }
+
+        private bool CanTransformToText()
+        {
+            return true;
+        }
+
+        private void OnTransformToText()
+        {
+            var drawingService = ContainerLocator.Container.Resolve<DrawingStateService.DrawingStateService>();
+
+            if (!drawingService.IsSelectionModeEnabled)
+            {
+                drawingService.IsSelectionModeEnabled = true;
+            }
+            else
+            {
+                drawingService.IsSelectionModeEnabled = false;
+            }
         }
 
         private bool CanExecuteActionCommand()

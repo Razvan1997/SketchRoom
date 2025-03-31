@@ -7,4 +7,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\SketchRoom.AI.Predictions\SketchRoom.AI.Predictions.csproj" />
+  </ItemGroup>
+
 </Project>

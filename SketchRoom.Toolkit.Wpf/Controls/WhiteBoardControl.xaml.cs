@@ -1,10 +1,13 @@
-﻿using SketchRoom.AI.Predictions;
+﻿using DrawingStateService;
+using SketchRoom.AI.Predictions;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace SketchRoom.Toolkit.Wpf.Controls
 {
@@ -29,7 +32,61 @@ namespace SketchRoom.Toolkit.Wpf.Controls
         public event Action<Point> LivePointDrawn;
         public event Action<Point> MouseMoved;
 
-        public WhiteBoardControl() => InitializeComponent();
+        private bool _isSelecting;
+        private Point _selectionStart;
+        private Rectangle _selectionRectangle;
+        private List<Polyline> _recentLines = new();
+        public WhiteBoardControl()
+        {
+            InitializeComponent();
+            DrawingCanvas.PreviewMouseRightButtonDown += Canvas_PreviewMouseRightButtonDown;
+        }
+
+        private void Canvas_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            SaveRecentLinesAsImage();
+        }
+
+        private void SaveRecentLinesAsImage()
+        {
+            if (_recentLines == null || _recentLines.Count == 0) return;
+
+            var geometryGroup = new GeometryGroup();
+            foreach (var line in _recentLines)
+                geometryGroup.Children.Add(line.RenderedGeometry.Clone());
+
+            var bounds = geometryGroup.Bounds;
+
+            var drawingVisual = new DrawingVisual();
+            using (var dc = drawingVisual.RenderOpen())
+            {
+                dc.DrawRectangle(Brushes.Black, null, new Rect(0, 0, 28, 28));
+
+                var scaleX = 28 / bounds.Width;
+                var scaleY = 28 / bounds.Height;
+                var translateX = -bounds.X;
+                var translateY = -bounds.Y;
+
+                var transform = new TransformGroup();
+                transform.Children.Add(new TranslateTransform(translateX, translateY));
+                transform.Children.Add(new ScaleTransform(scaleX, scaleY));
+
+                geometryGroup.Transform = transform;
+
+                var pen = new Pen(Brushes.White, 2); // sau ce grosime vrei
+                dc.DrawGeometry(null, pen, geometryGroup);
+            }
+
+            var bmp = new RenderTargetBitmap(28, 28, 96, 96, PixelFormats.Pbgra32);
+            bmp.Render(drawingVisual);
+
+            SaveTrainingImage(bmp, "3"); // schimbă labelul
+
+            // Șterge liniile
+            foreach (var line in _recentLines)
+                DrawingCanvas.Children.Remove(line);
+            _recentLines.Clear();
+        }
 
         private Point GetLogicalPosition(MouseEventArgs e)
         {
@@ -60,6 +117,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
         private void Canvas_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            var drawingService = ContainerLocator.Container.Resolve<DrawingStateService.DrawingStateService>();
             if (Keyboard.Modifiers == ModifierKeys.Control)
             {
                 _isPanning = true;
@@ -69,7 +127,27 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                 return;
             }
 
-            var drawingService = ContainerLocator.Container.Resolve<DrawingStateService.DrawingStateService>();
+            var pos = GetLogicalPosition(e);
+
+            if (drawingService.IsSelectionModeEnabled)
+            {
+                _isSelecting = true;
+                _selectionStart = pos;
+
+                _selectionRectangle = new Rectangle
+                {
+                    Stroke = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#800080")), // mov închis
+                    StrokeThickness = 2,
+                    Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#40FF00FF")), // mov transparent
+                    IsHitTestVisible = false
+                };
+
+                DrawingCanvas.Children.Add(_selectionRectangle);
+                Canvas.SetLeft(_selectionRectangle, pos.X);
+                Canvas.SetTop(_selectionRectangle, pos.Y);
+
+                return;
+            }
 
             _isDrawing = true;
             _currentLine = new Polyline
@@ -78,7 +156,6 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                 StrokeThickness = 2
             };
 
-            var pos = GetLogicalPosition(e);
             _currentLine.Points.Add(pos);
             DrawingCanvas.Children.Add(_currentLine);
 
@@ -99,11 +176,26 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                 return;
             }
 
+            var pos = GetLogicalPosition(e);
+
+            if (_isSelecting && _selectionRectangle != null)
+            {
+                double x = Math.Min(pos.X, _selectionStart.X);
+                double y = Math.Min(pos.Y, _selectionStart.Y);
+                double width = Math.Abs(pos.X - _selectionStart.X);
+                double height = Math.Abs(pos.Y - _selectionStart.Y);
+
+                Canvas.SetLeft(_selectionRectangle, x);
+                Canvas.SetTop(_selectionRectangle, y);
+                _selectionRectangle.Width = width;
+                _selectionRectangle.Height = height;
+
+                return;
+            }
+
             if (_isDrawing && _currentLine != null)
             {
-                var pos = GetLogicalPosition(e);
                 _currentLine.Points.Add(pos);
-
                 LivePointDrawn?.Invoke(pos);
                 MouseMoved?.Invoke(pos);
             }
@@ -111,6 +203,8 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
         private void Canvas_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
+            var drawingService = ContainerLocator.Container.Resolve<DrawingStateService.DrawingStateService>();
+
             if (_isPanning)
             {
                 _isPanning = false;
@@ -119,12 +213,37 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                 return;
             }
 
+            if (_isSelecting)
+            {
+                _isSelecting = false;
+
+                if (_selectionRectangle != null)
+                {
+                    var x = Canvas.GetLeft(_selectionRectangle);
+                    var y = Canvas.GetTop(_selectionRectangle);
+                    var width = _selectionRectangle.Width;
+                    var height = _selectionRectangle.Height;
+
+                    DrawingCanvas.Children.Remove(_selectionRectangle);
+                    _selectionRectangle = null;
+
+                    var overlayBounds = new Rect(x, y, width, height);
+
+                    drawingService.HandleSelection(overlayBounds, DrawingCanvas, _currentLine);
+
+                    drawingService.IsSelectionModeEnabled = false;
+                }
+
+                return;
+            }
+
             if (_isDrawing && _currentLine != null)
             {
                 LineDrawn?.Invoke(_currentLine.Points.ToList());
                 _isDrawing = false;
-
-                PredictCharacterFromCurrentLine();
+                _recentLines.Add(_currentLine);
+                
+                //PredictCharacterFromCurrentLine();
             }
         }
 
@@ -196,53 +315,88 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             ResetLiveLine();
         }
 
-        private void PredictCharacterFromCurrentLine()
+        //private void PredictCharacterFromCurrentLine()
+        //{
+        //    if (_currentLine == null || _currentLine.Points.Count < 5)
+        //        return;
+
+        //    var drawingVisual = new DrawingVisual();
+
+        //    using (var dc = drawingVisual.RenderOpen())
+        //    {
+        //        dc.DrawRectangle(Brushes.Black, null, new Rect(0, 0, 28, 28));
+
+        //        var bounds = VisualTreeHelper.GetDescendantBounds(_currentLine);
+        //        var scaleX = 28 / bounds.Width;
+        //        var scaleY = 28 / bounds.Height;
+        //        var translateX = -bounds.X;
+        //        var translateY = -bounds.Y;
+
+        //        var transform = new TransformGroup();
+        //        transform.Children.Add(new TranslateTransform(translateX, translateY));
+        //        transform.Children.Add(new ScaleTransform(scaleX, scaleY));
+
+        //        var geometry = _currentLine.RenderedGeometry.Clone();
+        //        geometry.Transform = transform;
+
+        //        var pen = new Pen(Brushes.White, 2); // white
+        //        dc.DrawGeometry(null, pen, geometry);
+        //    }
+
+        //    var bmp = new RenderTargetBitmap(28, 28, 96, 96, PixelFormats.Pbgra32);
+        //    bmp.Render(drawingVisual);
+
+        //    var pixels = new float[28 * 28];
+        //    var bytes = new byte[28 * 28 * 4];
+        //    bmp.CopyPixels(bytes, 28 * 4, 0);
+
+        //    for (int i = 0; i < 28 * 28; i++)
+        //    {
+        //        var r = bytes[i * 4 + 2];
+        //        var g = bytes[i * 4 + 1];
+        //        var b = bytes[i * 4];
+        //        var intensity = (r + g + b) / 3f / 255f;
+
+        //        pixels[i] = intensity;
+        //    }
+
+        //    try
+        //    {
+        //        var predictor = new LetterPredictor("model.onnx");
+        //        var prediction = predictor.Predict(pixels);
+
+        //        const float confidenceThreshold = 0.7f;
+
+        //        if (prediction.Confidence >= confidenceThreshold)
+        //        {
+        //            DrawingCanvas.Children.Remove(_currentLine);
+        //            AddPredictedCharacterToCanvas(prediction.Label);
+        //            _currentLine = null;
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show("Eroare la predicție: " + ex.Message);
+        //    }
+        //}
+
+        private static int _imageIndex = 0;
+
+        private void SaveTrainingImage(RenderTargetBitmap bmp, string label)
         {
-            if (_currentLine == null || _currentLine.Points.Count < 5)
-                return;
+            var folderPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "dataset", label);
+            Directory.CreateDirectory(folderPath);
 
-            var bounds = VisualTreeHelper.GetDescendantBounds(_currentLine);
-            var drawingVisual = new DrawingVisual();
+            var filePath = System.IO.Path.Combine(folderPath, $"{_imageIndex}.png");
 
-            using (var dc = drawingVisual.RenderOpen())
-            {
-                var vb = new VisualBrush(_currentLine)
-                {
-                    Stretch = Stretch.Uniform,
-                    AlignmentX = AlignmentX.Center,
-                    AlignmentY = AlignmentY.Center
-                };
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(bmp));
+            using var fs = new FileStream(filePath, FileMode.Create);
+            encoder.Save(fs);
 
-                dc.DrawRectangle(vb, null, new Rect(0, 0, 28, 28));
-            }
-
-            var bmp = new RenderTargetBitmap(28, 28, 96, 96, PixelFormats.Pbgra32);
-            bmp.Render(drawingVisual);
-
-            var pixels = new float[28 * 28];
-            var bytes = new byte[28 * 28 * 4];
-            bmp.CopyPixels(bytes, 28 * 4, 0);
-
-            for (int i = 0; i < 28 * 28; i++)
-            {
-                var r = bytes[i * 4 + 2];
-                var g = bytes[i * 4 + 1];
-                var b = bytes[i * 4];
-                var intensity = (r + g + b) / 3f / 255f;
-                pixels[i] = 1f - intensity; // fundal negru, desen alb
-            }
-
-            try
-            {
-                var predictor = new LetterPredictor("mnist-12.onnx");
-                var prediction = predictor.Predict(pixels);
-
-                MessageBox.Show($"Litera detectată: {prediction}", "Predicție AI", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("Eroare la predicție: " + ex.Message);
-            }
+            _imageIndex++;
         }
     }
+
+
 }
