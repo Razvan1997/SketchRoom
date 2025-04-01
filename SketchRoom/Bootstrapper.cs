@@ -1,4 +1,5 @@
-﻿using Prism.Ioc;
+﻿using DrawingStateService.States;
+using Prism.Ioc;
 using SketchRoom.Dialogs;
 using SketchRoom.Services;
 using SketchRoom.ViewModels;
@@ -25,6 +26,12 @@ namespace SketchRoom
 
             containerRegistry.RegisterSingleton<WhiteboardHubClient>();
             containerRegistry.RegisterSingleton<DrawingStateService.DrawingStateService>();
+            containerRegistry.RegisterSingleton<DrawingService>();
+            containerRegistry.RegisterSingleton<PanAndZoomService>();
+            containerRegistry.RegisterSingleton<SelectionService>();
+            containerRegistry.RegisterSingleton<LiveRemoteDrawingService>();
+            containerRegistry.RegisterSingleton<ImageSaveService>();
+            containerRegistry.RegisterSingleton<PredictionService>();
         }
 
         protected override void OnInitialized()
