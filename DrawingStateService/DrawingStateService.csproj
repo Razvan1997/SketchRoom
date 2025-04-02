@@ -8,6 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Prism.Core" Version="9.0.537" />
+    <PackageReference Include="Prism.Wpf" Version="9.0.537" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\SketchRoom.AI.Predictions\SketchRoom.AI.Predictions.csproj" />
   </ItemGroup>
 

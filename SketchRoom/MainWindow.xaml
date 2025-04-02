@@ -6,6 +6,7 @@
     xmlns:local="clr-namespace:SketchRoom"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:prism="http://prismlibrary.com/"
+    xmlns:walk="clr-namespace:WalkthroughDemo;assembly=WalkthroughDemo"
     Title="MainWindow"
     Width="800"
     Height="450"
@@ -29,7 +30,13 @@
                         ShadowDepth="1"
                         Color="Black" />
                 </Border.Effect>
-                <ContentControl prism:RegionManager.RegionName="TopBarRegion" />
+                <ContentControl
+                    prism:RegionManager.RegionName="TopBarRegion"
+                    walk:Walkthrough.Description="dsaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                    walk:Walkthrough.HighlightPulse="True"
+                    walk:Walkthrough.PopupPlacement="Bottom"
+                    walk:Walkthrough.PopupType="Arrowed"
+                    walk:Walkthrough.StepIndex="1" />
             </Border>
 
             <Grid Grid.Row="1">
@@ -40,7 +47,14 @@
 
                 <!--  Users interactions region  -->
                 <Border Grid.Row="0" Width="200">
-                    <ContentControl prism:RegionManager.RegionName="UsersInteractionsRegion" />
+                    <ContentControl
+                        prism:RegionManager.RegionName="UsersInteractionsRegion"
+                        walk:Walkthrough.Description="dsadasd asd asda sda"
+                        walk:Walkthrough.HighlightPulse="True"
+                        walk:Walkthrough.HighlightRGBBorder="False"
+                        walk:Walkthrough.PopupPlacement="Right"
+                        walk:Walkthrough.PopupType="Arrowed"
+                        walk:Walkthrough.StepIndex="0" />
                 </Border>
 
                 <!--<Border Grid.Column="1">

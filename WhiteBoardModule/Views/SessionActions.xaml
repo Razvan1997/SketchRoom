@@ -5,11 +5,17 @@
     xmlns:controls="clr-namespace:SketchRoom.Toolkit.Wpf.Controls;assembly=SketchRoom.Toolkit.Wpf"
     xmlns:prism="http://prismlibrary.com/"
     xmlns:vm="clr-namespace:WhiteBoardModule.ViewModels"
+    xmlns:walk="clr-namespace:WalkthroughDemo;assembly=WalkthroughDemo"
     Height="80"
     prism:ViewModelLocator.AutoWireViewModel="True">
     <Border
         Margin="10"
         Padding="10"
+        walk:Walkthrough.Description="dasdasda"
+        walk:Walkthrough.HighlightPulse="False"
+        walk:Walkthrough.HighlightRGBBorder="True"
+        walk:Walkthrough.PopupPlacement="Bottom"
+        walk:Walkthrough.StepIndex="1"
         Background="#eeeeee"
         BorderBrush="#ccc"
         BorderThickness="1"
@@ -29,6 +35,10 @@
                 Margin="0,0,10,0"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
+                walk:Walkthrough.Description="dasdasda"
+                walk:Walkthrough.HighlightPulse="True"
+                walk:Walkthrough.PopupPlacement="Bottom"
+                walk:Walkthrough.StepIndex="2"
                 ButtonCommand="{Binding TransformToTextCommand}"
                 ButtonText="{Binding A}"
                 IsButtonEnabled="True" />

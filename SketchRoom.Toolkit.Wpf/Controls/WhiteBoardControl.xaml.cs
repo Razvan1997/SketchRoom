@@ -22,10 +22,11 @@ namespace SketchRoom.Toolkit.Wpf.Controls
         private bool _isDrawing;
         private bool _isPanning;
         private Point _lastMousePosition;
-
+        private Polyline _remoteLine;
         private bool _isSelecting;
         private Point _selectionStart;
         private Rectangle _selectionRectangle;
+        private DateTime _lastRemoteDrawTime = DateTime.MinValue;
 
         public event Action<List<Point>> LineDrawn;
         public event Action<Point> LivePointDrawn;
@@ -96,6 +97,8 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
         private void Canvas_PreviewMouseMove(object sender, MouseEventArgs e)
         {
+            if (_stateService.IsDraggingText) return;
+
             if (_isPanning)
             {
                 _lastMousePosition = _panZoomService.CalculatePan(e.GetPosition(this), _lastMousePosition, ZoomTranslate);
@@ -159,12 +162,35 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
         public void AddLivePoint(Point point, Brush color, double thickness = 2)
         {
-            _remoteDrawingService.AddLivePoint(DrawingCanvas, point, color, thickness);
+            var now = DateTime.Now;
+            if ((now - _lastRemoteDrawTime).TotalMilliseconds < 16)
+                return;
+
+            _lastRemoteDrawTime = now;
+
+            if (_remoteLine == null)
+            {
+                _remoteLine = new Polyline
+                {
+                    Stroke = color,
+                    StrokeThickness = thickness
+                };
+                DrawingCanvas.Children.Add(_remoteLine);
+            }
+
+            _remoteLine.Points.Add(point);
         }
 
         public void ResetLiveLine() => _remoteDrawingService.ResetLiveLine(DrawingCanvas);
 
-        public void StartNewRemoteLine() => ResetLiveLine();
+        public void StartNewRemoteLine()
+        {
+            if (_remoteLine != null)
+            {
+                DrawingCanvas.Children.Remove(_remoteLine);
+                _remoteLine = null;
+            }
+        }
 
         public void MoveCursorImage(Point point, BitmapImage image = null)
         {

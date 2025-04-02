@@ -19,8 +19,10 @@
     <ProjectReference Include="..\ParticipationModule\ParticipationModule.csproj" />
     <ProjectReference Include="..\SketchRoom.AI.Predictions\SketchRoom.AI.Predictions.csproj" />
     <ProjectReference Include="..\SketchRoom.Database\SketchRoom.Database.csproj" />
+    <ProjectReference Include="..\SketchRoom.Toolkit.Wpf\SketchRoom.Toolkit.Wpf.csproj" />
     <ProjectReference Include="..\TopBarModule\TopBarModule.csproj" />
     <ProjectReference Include="..\UsersInteractionsModule\UsersInteractionsModule.csproj" />
+    <ProjectReference Include="..\WalkthroughDemo\WalkthroughDemo.csproj" />
     <ProjectReference Include="..\WhiteBoardModule\WhiteBoardModule.csproj" />
   </ItemGroup>
 

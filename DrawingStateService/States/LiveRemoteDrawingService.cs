@@ -66,5 +66,18 @@ namespace DrawingStateService.States
             Canvas.SetLeft(_cursorImage, point.X - 20);
             Canvas.SetTop(_cursorImage, point.Y - 20);
         }
+
+        public void StartNewRemoteLine(Canvas canvas, Brush color, double thickness = 2)
+        {
+            ResetLiveLine(canvas); // elimină linia anterioară
+
+            _remoteLine = new Polyline
+            {
+                Stroke = color,
+                StrokeThickness = thickness
+            };
+
+            canvas.Children.Add(_remoteLine);
+        }
     }
 }

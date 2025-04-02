@@ -22,6 +22,7 @@
     <ProjectReference Include="..\SketchRoom.Models\SketchRoom.Models.csproj" />
     <ProjectReference Include="..\SketchRoom.Services\SketchRoom.Services.csproj" />
     <ProjectReference Include="..\SketchRoom.Toolkit.Wpf\SketchRoom.Toolkit.Wpf.csproj" />
+    <ProjectReference Include="..\WalkthroughDemo\WalkthroughDemo.csproj" />
   </ItemGroup>
 
 </Project>

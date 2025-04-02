@@ -12,11 +12,11 @@ namespace DrawingStateService.States
 {
     public class SelectionService
     {
-        private readonly DrawingStateService _stateService;
+        private DrawingStateService _stateService;
 
-        public SelectionService(DrawingStateService stateService)
+        public SelectionService()
         {
-            _stateService = stateService;
+            _stateService = ContainerLocator.Container.Resolve<DrawingStateService>();
         }
 
 
@@ -111,7 +111,7 @@ namespace DrawingStateService.States
                 _stateService.IsDraggingText = true;
                 e.Handled = true;
             };
-
+            
             textBlock.PreviewMouseMove += (s, e) =>
             {
                 if (dragStart.HasValue && e.LeftButton == MouseButtonState.Pressed)

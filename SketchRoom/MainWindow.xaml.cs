@@ -1,14 +1,6 @@
 ﻿using SketchRoom.ViewModels;
-using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using WalkthroughDemo;
 
 namespace SketchRoom
 {
@@ -17,6 +9,7 @@ namespace SketchRoom
     /// </summary>
     public partial class MainWindow : Window
     {
+        private WalkthroughManager _manager;
         public MainWindow()
         {
             InitializeComponent();
@@ -29,6 +22,8 @@ namespace SketchRoom
             {
                 vm.OnLoaded();
             }
+
+            WalkthroughService.Start(this);
         }
     }
 }
