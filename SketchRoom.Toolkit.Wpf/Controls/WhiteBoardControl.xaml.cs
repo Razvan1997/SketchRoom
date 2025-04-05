@@ -69,13 +69,28 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             var bpmnTool = new BpmnTool(DrawingCanvas, _snapService, SnapGridCanvas);
             _toolManager.RegisterTool(bpmnTool);
 
-            _connectorTool = new BpmnConnectorTool(DrawingCanvas, _connections, _nodes);
+            _connectorTool = new BpmnConnectorTool(DrawingCanvas, _connections, _nodes, this, _toolManager);
             _toolManager.RegisterTool(_connectorTool);
 
             _toolManager.SetActive("FreeDraw");
 
             DrawingCanvas.PreviewMouseRightButtonDown += Canvas_PreviewMouseRightButtonDown;
             DrawingCanvas.PreviewMouseRightButtonUp += Canvas_PreviewMouseRightButtonUp;
+
+            this.KeyDown += WhiteBoardControl_KeyDown;
+            this.Focusable = true;
+            this.Focus();
+        }
+
+        private void WhiteBoardControl_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Delete)
+            {
+                if (_toolManager.ActiveTool is BpmnConnectorTool connectorTool)
+                {
+                    connectorTool.DeleteSelectedConnections();
+                }
+            }
         }
 
         private void Canvas_MouseWheel(object sender, MouseWheelEventArgs e)
@@ -101,15 +116,15 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                 }
             }
 
-            if (Keyboard.Modifiers == ModifierKeys.Control)
-            {
-                _isPanning = true;
-                _lastPanPoint = e.GetPosition(this);
-                _previousCursor = Cursor;
-                Cursor = Cursors.SizeAll;
-                DrawingCanvas.CaptureMouse();
-                return;
-            }
+            //if (Keyboard.Modifiers == ModifierKeys.Control)
+            //{
+            //    _isPanning = true;
+            //    _lastPanPoint = e.GetPosition(this);
+            //    _previousCursor = Cursor;
+            //    Cursor = Cursors.SizeAll;
+            //    DrawingCanvas.CaptureMouse();
+            //    return;
+            //}
             if (e.OriginalSource == DrawingCanvas)
             {
                 if (_toolManager.ActiveTool is BpmnTool bpmnTool)
@@ -120,6 +135,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                 else if (_toolManager.ActiveTool is BpmnConnectorTool bpmnConnectorTool)
                 {
                     bpmnConnectorTool.DeselectCurrent();
+                    bpmnConnectorTool.DeselectAllConnections();
                     _toolManager.SetActive("FreeDraw");
                 }
                 _host.HandleMouseDown(logicalPos);
