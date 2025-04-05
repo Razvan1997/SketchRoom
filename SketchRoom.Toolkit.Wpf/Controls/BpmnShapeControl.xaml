@@ -1,0 +1,158 @@
+﻿<UserControl
+    x:Class="SketchRoom.Toolkit.Wpf.BpmnShapeControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:SketchRoom.Toolkit.Wpf"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    ClipToBounds="False"
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+
+        <Style x:Key="HorizontalDashedLineThumbStyle" TargetType="Thumb">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Canvas>
+                            <Line
+                                Stroke="DodgerBlue"
+                                StrokeDashArray="4 2"
+                                StrokeThickness="2"
+                                X1="0"
+                                X2="{TemplateBinding ActualWidth}"
+                                Y1="0"
+                                Y2="0" />
+                        </Canvas>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="VerticalDashedLineThumbStyle" TargetType="Thumb">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Canvas>
+                            <Line
+                                Stroke="DodgerBlue"
+                                StrokeDashArray="4 2"
+                                StrokeEndLineCap="Square"
+                                StrokeStartLineCap="Square"
+                                StrokeThickness="2"
+                                X1="0"
+                                X2="0"
+                                Y1="0"
+                                Y2="{TemplateBinding ActualHeight}" />
+                        </Canvas>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Background="Transparent" ClipToBounds="False">
+        <!--  SVG Viewbox (Layer 0)  -->
+        <Grid Margin="5">
+            <svgc:SvgViewbox
+                x:Name="SvgViewbox"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                Stretch="Uniform" />
+        </Grid>
+
+        <!--  Thumb pentru resize (Layer 1)  -->
+        <!--  Thumb stânga  -->
+        <Thumb
+            x:Name="ResizeLeft"
+            Width="2"
+            Margin="1,0,0,0"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Stretch"
+            Cursor="SizeWE"
+            Style="{StaticResource VerticalDashedLineThumbStyle}"
+            Visibility="Collapsed" />
+
+        <Thumb
+            x:Name="ResizeRight"
+            Width="2"
+            Margin="0,0,-2,0"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Stretch"
+            Cursor="SizeWE"
+            Style="{StaticResource VerticalDashedLineThumbStyle}"
+            Visibility="Collapsed" />
+
+        <Thumb
+            x:Name="ResizeTop"
+            Height="2"
+            Margin="0,-1,0,0"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Top"
+            Cursor="SizeNS"
+            Style="{StaticResource HorizontalDashedLineThumbStyle}"
+            Visibility="Collapsed" />
+
+        <Thumb
+            x:Name="ResizeBottom"
+            Height="2"
+            Margin="0,0,0,-2"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Bottom"
+            Cursor="SizeNS"
+            Style="{StaticResource HorizontalDashedLineThumbStyle}"
+            Visibility="Collapsed" />
+
+        <!--  Top connector  -->
+        <Rectangle
+            x:Name="ConnectorTop"
+            Width="20"
+            Height="10"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Top"
+            Cursor="Cross"
+            Fill="DodgerBlue"
+            MouseLeftButtonDown="Connector_MouseLeftButtonDown"
+            Visibility="Collapsed" />
+
+        <!--  Right connector  -->
+        <Rectangle
+            x:Name="ConnectorRight"
+            Width="10"
+            Height="20"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Center"
+            Cursor="Cross"
+            Fill="DodgerBlue"
+            MouseLeftButtonDown="Connector_MouseLeftButtonDown"
+            Visibility="Collapsed" />
+
+        <!--  Bottom connector  -->
+        <Rectangle
+            x:Name="ConnectorBottom"
+            Width="20"
+            Height="10"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Bottom"
+            Cursor="Cross"
+            Fill="DodgerBlue"
+            MouseLeftButtonDown="Connector_MouseLeftButtonDown"
+            Visibility="Collapsed" />
+
+        <!--  Left connector  -->
+        <Rectangle
+            x:Name="ConnectorLeft"
+            Width="10"
+            Height="20"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Center"
+            Cursor="Cross"
+            Fill="DodgerBlue"
+            MouseLeftButtonDown="Connector_MouseLeftButtonDown"
+            Visibility="Collapsed" />
+
+    </Grid>
+</UserControl>

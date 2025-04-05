@@ -18,7 +18,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
     /// <summary>
     /// Interaction logic for ActionButton.xaml
     /// </summary>
-    public partial class ActionButton : UserControl
+    public partial class ActionButton : System.Windows.Controls.UserControl
     {
         public ActionButton()
         {

@@ -43,6 +43,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SketchRoom.AI.Training", "S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WalkthroughDemo", "WalkthroughDemo\WalkthroughDemo.csproj", "{747B143E-A3E0-497F-8601-FB9990534523}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WhiteBoard.Core", "WhiteBoard.Core\WhiteBoard.Core.csproj", "{964CC27E-C69B-4D9D-8C04-26CB978C9815}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -109,6 +111,10 @@ Global
 		{747B143E-A3E0-497F-8601-FB9990534523}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{747B143E-A3E0-497F-8601-FB9990534523}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{747B143E-A3E0-497F-8601-FB9990534523}.Release|Any CPU.Build.0 = Release|Any CPU
+		{964CC27E-C69B-4D9D-8C04-26CB978C9815}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{964CC27E-C69B-4D9D-8C04-26CB978C9815}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{964CC27E-C69B-4D9D-8C04-26CB978C9815}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{964CC27E-C69B-4D9D-8C04-26CB978C9815}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -129,5 +135,6 @@ Global
 		{127406C9-72BE-4D66-A4E4-820823DD66BD} = {19178896-4F16-4BEF-B2F8-37E919FFC26D}
 		{2B1AB1FB-1412-4262-9089-BA9393770AD5} = {19178896-4F16-4BEF-B2F8-37E919FFC26D}
 		{747B143E-A3E0-497F-8601-FB9990534523} = {19178896-4F16-4BEF-B2F8-37E919FFC26D}
+		{964CC27E-C69B-4D9D-8C04-26CB978C9815} = {D10EF7D4-57B4-4EA2-BD8F-3048289AD537}
 	EndGlobalSection
 EndGlobal

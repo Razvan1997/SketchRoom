@@ -2,8 +2,16 @@
 using Prism.Ioc;
 using SketchRoom.Dialogs;
 using SketchRoom.Services;
+using SketchRoom.Toolkit.Wpf.Factory;
 using SketchRoom.ViewModels;
 using System.Windows;
+using System.Windows.Input;
+using WhiteBoard.Core.Colaboration.Interfaces;
+using WhiteBoard.Core.Colaboration.Services;
+using WhiteBoard.Core.Factory.Interfaces;
+using WhiteBoard.Core.Services;
+using WhiteBoard.Core.Services.Interfaces;
+using WhiteBoard.Core.Tools;
 
 namespace SketchRoom
 {
@@ -21,17 +29,24 @@ namespace SketchRoom
         protected override void RegisterTypes(IContainerRegistry containerRegistry)
         {
             containerRegistry.RegisterSingleton<MainViewModel>();
-
             ViewModelLocationProvider.Register<RegistrationDialog, RegistrationDialogViewModel>();
 
             containerRegistry.RegisterSingleton<WhiteboardHubClient>();
-            containerRegistry.RegisterSingleton<DrawingStateService.DrawingStateService>();
-            containerRegistry.RegisterSingleton<DrawingService>();
-            containerRegistry.RegisterSingleton<PanAndZoomService>();
-            containerRegistry.RegisterSingleton<SelectionService>();
-            containerRegistry.RegisterSingleton<LiveRemoteDrawingService>();
-            containerRegistry.RegisterSingleton<ImageSaveService>();
-            containerRegistry.RegisterSingleton<PredictionService>();
+
+            containerRegistry.RegisterSingleton<IToolManager, ToolManager>();
+            containerRegistry.RegisterSingleton<IDrawingService, WhiteBoard.Core.Services.DrawingService>();
+            containerRegistry.RegisterSingleton<ISelectionService, WhiteBoard.Core.Services.SelectionService>();
+            containerRegistry.RegisterSingleton<ICanvasRenderer, CanvasRenderer>();
+            containerRegistry.RegisterSingleton<ICommandManager, WhiteBoard.Core.Services.CommandManager>();
+            containerRegistry.RegisterSingleton<ISnapService, SnapService>();
+            containerRegistry.RegisterSingleton<ICollaborationService, CollaborationService>();
+            containerRegistry.RegisterSingleton<ICommandManager, WhiteBoard.Core.Services.CommandManager>();
+            containerRegistry.RegisterSingleton<IZoomPanService, ZoomPanService>();
+
+            containerRegistry.RegisterSingleton<ICollaborationService, CollaborationService>();
+
+
+            containerRegistry.RegisterSingleton<IBpmnShapeFactory, BpmnShapeFactory>();
         }
 
         protected override void OnInitialized()

@@ -18,15 +18,33 @@
 
     <Grid Background="Gray">
 
+        <!--  Whiteboard ocupă toată zona  -->
         <controls:WhiteBoardControl
             x:Name="Whiteboard"
             HorizontalAlignment="Stretch"
             VerticalAlignment="Stretch" />
 
-        <!--  Butonul de sus  -->
+        <!--  Panoul de acțiuni din stânga  -->
+        <local:LeftToolsActionsView
+            Width="200"
+            Margin="20,20,0,20"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            Background="Transparent" />
+
+        <!--  Panoul de sesiune din dreapta sus  -->
         <local:SessionActions
             Margin="20"
             HorizontalAlignment="Right"
             VerticalAlignment="Top" />
+
+
+        <local:BottomToolsActionsView
+            Width="200"
+            Margin="20,20,0,20"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Bottom"
+            Background="Transparent" />
+
     </Grid>
 </UserControl>

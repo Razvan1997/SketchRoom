@@ -14,6 +14,9 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Brush = System.Windows.Media.Brush;
+using Brushes = System.Windows.Media.Brushes;
+using UserControl = System.Windows.Controls.UserControl;
 
 namespace SketchRoom.Toolkit.Wpf.Controls
 {
@@ -110,7 +113,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             scale.BeginAnimation(ScaleTransform.ScaleYProperty, new DoubleAnimation(target, duration));
         }
 
-        private void Ellipse_MouseEnter(object sender, MouseEventArgs e)
+        private void Ellipse_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
         {
             if (sender is Ellipse ellipse)
             {
@@ -120,7 +123,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             }
         }
 
-        private void Ellipse_MouseLeave(object sender, MouseEventArgs e)
+        private void Ellipse_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
         {
             if (sender is Ellipse ellipse)
             {

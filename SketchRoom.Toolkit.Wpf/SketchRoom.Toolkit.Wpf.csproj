@@ -15,12 +15,14 @@
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
     <PackageReference Include="Prism.Core" Version="9.0.537" />
     <PackageReference Include="Prism.Wpf" Version="9.0.537" />
+    <PackageReference Include="SharpVectors" Version="1.8.4.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\DrawingStateService\DrawingStateService.csproj" />
     <ProjectReference Include="..\SketchRoom.AI.Predictions\SketchRoom.AI.Predictions.csproj" />
     <ProjectReference Include="..\SketchRoom.Models\SketchRoom.Models.csproj" />
+    <ProjectReference Include="..\WhiteBoard.Core\WhiteBoard.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

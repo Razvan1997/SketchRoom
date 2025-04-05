@@ -32,11 +32,22 @@
                     </TransformGroup>
                 </Canvas.RenderTransform>
 
+
+                <Canvas
+                    x:Name="SnapGridCanvas"
+                    Width="2244"
+                    Height="3185"
+                    Panel.ZIndex="0"
+                    IsHitTestVisible="False" />
+
                 <Canvas
                     x:Name="DrawingCanvas"
                     Width="2244"
                     Height="3185"
-                    Background="Transparent" />
+                    AllowDrop="True"
+                    Background="Transparent"
+                    DragOver="DrawingCanvas_DragOver"
+                    Drop="DrawingCanvas_Drop" />
             </Canvas>
         </ScrollViewer>
     </Grid>

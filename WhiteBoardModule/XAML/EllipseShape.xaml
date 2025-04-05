@@ -1,0 +1,96 @@
+﻿<UserControl
+    x:Class="WhiteBoardModule.XAML.EllipseShape"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:WhiteBoardModule.XAML"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Width="100"
+    Height="60"
+    Background="Transparent"
+    mc:Ignorable="d">
+    <UserControl.Resources>
+        <Style x:Key="VerticalDashedLineThumbStyle" TargetType="Thumb">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Canvas>
+                            <Line
+                                Stroke="DodgerBlue"
+                                StrokeDashArray="4 2"
+                                StrokeThickness="2"
+                                X1="0"
+                                X2="0"
+                                Y1="0"
+                                Y2="{TemplateBinding ActualHeight}" />
+                        </Canvas>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="HorizontalDashedLineThumbStyle" TargetType="Thumb">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Thumb">
+                        <Canvas>
+                            <Line
+                                Stroke="DodgerBlue"
+                                StrokeDashArray="4 2"
+                                StrokeThickness="2"
+                                X1="0"
+                                X2="{TemplateBinding ActualWidth}"
+                                Y1="0"
+                                Y2="0" />
+                        </Canvas>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Ellipse
+            Fill="Transparent"
+            IsHitTestVisible="False"
+            Stroke="Black"
+            StrokeThickness="2" />
+
+        <!--  Thumbs pentru resize  -->
+        <Thumb
+            x:Name="ResizeLeft"
+            Width="2"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Stretch"
+            Cursor="SizeWE"
+            Style="{StaticResource VerticalDashedLineThumbStyle}"
+            Visibility="Collapsed" />
+
+        <Thumb
+            x:Name="ResizeRight"
+            Width="2"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Stretch"
+            Cursor="SizeWE"
+            Style="{StaticResource VerticalDashedLineThumbStyle}"
+            Visibility="Collapsed" />
+
+        <Thumb
+            x:Name="ResizeTop"
+            Height="2"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Top"
+            Cursor="SizeNS"
+            Style="{StaticResource HorizontalDashedLineThumbStyle}"
+            Visibility="Collapsed" />
+
+        <Thumb
+            x:Name="ResizeBottom"
+            Height="2"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Bottom"
+            Cursor="SizeNS"
+            Style="{StaticResource HorizontalDashedLineThumbStyle}"
+            Visibility="Collapsed" />
+    </Grid>
+</UserControl>

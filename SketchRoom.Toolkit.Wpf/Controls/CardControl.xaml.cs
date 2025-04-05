@@ -18,7 +18,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
     /// <summary>
     /// Interaction logic for CardControl.xaml
     /// </summary>
-    public partial class CardControl : UserControl
+    public partial class CardControl : System.Windows.Controls.UserControl
     {
         public CardControl()
         {

@@ -6,229 +6,359 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using WhiteBoard.Core;
+using WhiteBoard.Core.Tools;
+using WhiteBoard.Core.Services.Interfaces;
+using WhiteBoard.Core.Colaboration.Interfaces;
+using SharpVectors.Converters;
+using SketchRoom.Models.Shapes;
+using WhiteBoard.Core.Models;
+using WhiteBoard.Core.Factory.Interfaces;
+using System.Windows.Controls.Primitives;
 
 namespace SketchRoom.Toolkit.Wpf.Controls
 {
-    public partial class WhiteBoardControl : UserControl
+    public partial class WhiteBoardControl : UserControl, IWhiteBoardAdapter
     {
-        private readonly DrawingStateService.DrawingStateService _stateService;
-        private readonly DrawingService _drawingService;
-        private readonly PanAndZoomService _panZoomService;
-        private readonly SelectionService _selectionService;
-        private readonly LiveRemoteDrawingService _remoteDrawingService;
-        private readonly ImageSaveService _imageSaveService;
+        private BpmnConnectorTool? _connectorTool;
+        private readonly List<BPMNConnection> _connections = new();
+        private readonly Dictionary<FrameworkElement, BPMNNode> _nodes = new();
+        private WhiteBoardHost _host;
+        private IZoomPanService _zoomPanService;
+        private IToolManager _toolManager;
+        private ISelectionService _selectionService;
+        private ISnapService? _snapService;
 
-        private Polyline _currentLine;
-        private bool _isDrawing;
         private bool _isPanning;
-        private Point _lastMousePosition;
-        private Polyline _remoteLine;
+        private Point _lastPanPoint;
+        private Cursor _previousCursor;
+
         private bool _isSelecting;
         private Point _selectionStart;
-        private Rectangle _selectionRectangle;
-        private DateTime _lastRemoteDrawTime = DateTime.MinValue;
+        private Rectangle? _selectionRectangle;
 
-        public event Action<List<Point>> LineDrawn;
-        public event Action<Point> LivePointDrawn;
-        public event Action<Point> MouseMoved;
+        public event Action<List<Point>>? LineDrawn;
+        public event Action<Point>? LivePointDrawn;
+        public event Action<Point>? MouseMoved;
+
+        private readonly IBpmnShapeFactory _factory;
 
         public WhiteBoardControl()
         {
             InitializeComponent();
-            //DrawingCanvas.PreviewMouseRightButtonDown += (s, e) => SaveRecentLinesAsImage();
+            _factory = ContainerLocator.Container.Resolve<IBpmnShapeFactory>();
 
-            _stateService = ContainerLocator.Container.Resolve<DrawingStateService.DrawingStateService>();
-            _drawingService = ContainerLocator.Container.Resolve<DrawingService>();
-            _panZoomService = ContainerLocator.Container.Resolve<PanAndZoomService>();
-            _selectionService = ContainerLocator.Container.Resolve<SelectionService>();
-            _remoteDrawingService = ContainerLocator.Container.Resolve<LiveRemoteDrawingService>();
-            _imageSaveService = ContainerLocator.Container.Resolve<ImageSaveService>();
+            _toolManager = ContainerLocator.Container.Resolve<IToolManager>();
+            var drawingService = ContainerLocator.Container.Resolve<IDrawingService>();
+            var canvasRenderer = ContainerLocator.Container.Resolve<ICanvasRenderer>();
+            _zoomPanService = ContainerLocator.Container.Resolve<IZoomPanService>();
+            _selectionService = ContainerLocator.Container.Resolve<ISelectionService>();
+            _snapService = ContainerLocator.Container.Resolve<ISnapService>();
+
+            _host = new WhiteBoardHost(DrawingCanvas, _toolManager, drawingService, canvasRenderer);
+
+            var freeDrawTool = new FreeDrawTool(drawingService, DrawingCanvas);
+            freeDrawTool.StrokeCompleted += points => LineDrawn?.Invoke(points);
+            freeDrawTool.PointDrawn += point => LivePointDrawn?.Invoke(point);
+            freeDrawTool.PointerMoved += point => MouseMoved?.Invoke(point);
+
+            var eraserTool = new EraserTool(drawingService, DrawingCanvas);
+            _toolManager.RegisterTool(freeDrawTool);
+            _toolManager.RegisterTool(eraserTool);
+
+            var bpmnTool = new BpmnTool(DrawingCanvas, _snapService, SnapGridCanvas);
+            _toolManager.RegisterTool(bpmnTool);
+
+            _connectorTool = new BpmnConnectorTool(DrawingCanvas, _connections, _nodes);
+            _toolManager.RegisterTool(_connectorTool);
+
+            _toolManager.SetActive("FreeDraw");
+
+            DrawingCanvas.PreviewMouseRightButtonDown += Canvas_PreviewMouseRightButtonDown;
+            DrawingCanvas.PreviewMouseRightButtonUp += Canvas_PreviewMouseRightButtonUp;
         }
 
+        private void Canvas_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                _zoomPanService.Zoom(ZoomScale, ZoomTranslate, e.GetPosition(DrawingCanvas), e.Delta);
+                e.Handled = true;
+            }
+        }
+
+        private void Canvas_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            var logicalPos = GetLogicalPosition(e);
+
+            if (e.OriginalSource is Ellipse || e.OriginalSource is TextBlock)
+            {
+                if (_toolManager.ActiveTool?.Name == "Connector")
+                {
+                    _connectorTool?.OnMouseDown(logicalPos);
+                    e.Handled = true;
+                    return;
+                }
+            }
+
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                _isPanning = true;
+                _lastPanPoint = e.GetPosition(this);
+                _previousCursor = Cursor;
+                Cursor = Cursors.SizeAll;
+                DrawingCanvas.CaptureMouse();
+                return;
+            }
+            if (e.OriginalSource == DrawingCanvas)
+            {
+                if (_toolManager.ActiveTool is BpmnTool bpmnTool)
+                {
+                    bpmnTool.DeselectCurrent();
+                    _toolManager.SetActive("FreeDraw");
+                }
+                else if (_toolManager.ActiveTool is BpmnConnectorTool bpmnConnectorTool)
+                {
+                    bpmnConnectorTool.DeselectCurrent();
+                    _toolManager.SetActive("FreeDraw");
+                }
+                _host.HandleMouseDown(logicalPos);
+            }
+        }
+
+        private void Canvas_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            var logicalPos = GetLogicalPosition(e);
+
+            if (_toolManager.ActiveTool?.Name == "Connector")
+            {
+                _connectorTool?.OnMouseMove(logicalPos);
+                return;
+            }
+
+            if (e.OriginalSource is Thumb)
+                return;
+            if (_isPanning)
+            {
+                var current = e.GetPosition(this);
+                _lastPanPoint = _zoomPanService.Pan(current, _lastPanPoint, ZoomTranslate);
+                return;
+            }
+
+            if (_isSelecting && _selectionRectangle != null)
+            {
+                var current = GetLogicalPosition(e);
+                UpdateSelectionRect(_selectionRectangle, _selectionStart, current);
+                return;
+            }
+
+            _host.HandleMouseMove(logicalPos);
+        }
+
+        private void Canvas_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            var logicalPos = GetLogicalPosition(e);
+
+            if (_toolManager.ActiveTool?.Name == "Connector")
+            {
+                _connectorTool?.OnMouseUp(logicalPos);
+                return;
+            }
+
+            if (_isPanning)
+            {
+                _isPanning = false;
+                Cursor = _previousCursor ?? Cursors.Arrow;
+                DrawingCanvas.ReleaseMouseCapture();
+                return;
+            }
+
+            _host.HandleMouseUp(logicalPos);
+        }
+
+        private void Canvas_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            _isSelecting = true;
+            _selectionStart = GetLogicalPosition(e);
+
+            _selectionRectangle = new Rectangle
+            {
+                Stroke = Brushes.Blue,
+                StrokeThickness = 1,
+                Fill = new SolidColorBrush(Color.FromArgb(60, 0, 120, 255)),
+                IsHitTestVisible = false
+            };
+
+            DrawingCanvas.Children.Add(_selectionRectangle);
+            Canvas.SetLeft(_selectionRectangle, _selectionStart.X);
+            Canvas.SetTop(_selectionRectangle, _selectionStart.Y);
+        }
+
+        private void Canvas_PreviewMouseRightButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (_isSelecting && _selectionRectangle != null)
+            {
+                var end = GetLogicalPosition(e);
+                var bounds = new Rect(_selectionStart, end);
+
+                DrawingCanvas.Children.Remove(_selectionRectangle);
+                _selectionRectangle = null;
+                _isSelecting = false;
+
+                _selectionService.HandleSelection(bounds, DrawingCanvas);
+            }
+        }
+
+        private void UpdateSelectionRect(Rectangle rect, Point start, Point current)
+        {
+            double x = Math.Min(start.X, current.X);
+            double y = Math.Min(start.Y, current.Y);
+            double width = Math.Abs(current.X - start.X);
+            double height = Math.Abs(current.Y - start.Y);
+
+            Canvas.SetLeft(rect, x);
+            Canvas.SetTop(rect, y);
+            rect.Width = width;
+            rect.Height = height;
+        }
 
         private Point GetLogicalPosition(MouseEventArgs e)
         {
             if (DrawingCanvas.RenderTransform is TransformGroup tg && tg.Inverse != null)
                 return tg.Inverse.Transform(e.GetPosition(DrawingCanvas));
-
             return e.GetPosition(DrawingCanvas);
         }
 
-        private void Canvas_MouseWheel(object sender, MouseWheelEventArgs e)
+        public void StartNewRemoteLine()
         {
-            if (Keyboard.Modifiers != ModifierKeys.Control) return;
+            _host.StartRemoteLine();
+        }
 
-            _panZoomService.Zoom(ZoomScale, ZoomTranslate, e.GetPosition(DrawingCanvas), e.Delta);
+        public void AddLine(IEnumerable<Point> points, Brush color, double thickness)
+        {
+            _host.AddRemoteLine(points, color, thickness);
+        }
+
+        public void AddLivePoint(Point point, Brush color)
+        {
+            _host.AddRemoteLivePoint(point, color);
+        }
+
+        public void MoveCursorImage(Point position, BitmapImage? image)
+        {
+            _host.UpdateCursor(position, image);
+        }
+
+
+        private void DrawingCanvas_DragOver(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(typeof(BPMNShapeModel)))
+                e.Effects = DragDropEffects.Copy;
+            else
+                e.Effects = DragDropEffects.None;
+
             e.Handled = true;
         }
 
-        private void Canvas_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void DrawingCanvas_Drop(object sender, DragEventArgs e)
         {
-            if (_stateService.IsDraggingText) return;
-
-            if (Keyboard.Modifiers == ModifierKeys.Control)
-            {
-                _isPanning = true;
-                _lastMousePosition = e.GetPosition(this);
-                DrawingCanvas.CaptureMouse();
-                Cursor = Cursors.SizeAll;
-                return;
-            }
-
-            var pos = GetLogicalPosition(e);
-
-            if (_stateService.IsSelectionModeEnabled)
-            {
-                _isSelecting = true;
-                _selectionStart = pos;
-                _selectionRectangle = _selectionService.StartSelection(pos);
-                DrawingCanvas.Children.Add(_selectionRectangle);
-                Canvas.SetLeft(_selectionRectangle, pos.X);
-                Canvas.SetTop(_selectionRectangle, pos.Y);
-                return;
-            }
-
-            _isDrawing = true;
-            _currentLine = _drawingService.StartNewLine(pos, _stateService.SelectedColor);
-            DrawingCanvas.Children.Add(_currentLine);
-
-            LivePointDrawn?.Invoke(pos);
-        }
-
-        private void Canvas_PreviewMouseMove(object sender, MouseEventArgs e)
-        {
-            if (_stateService.IsDraggingText) return;
-
-            if (_isPanning)
-            {
-                _lastMousePosition = _panZoomService.CalculatePan(e.GetPosition(this), _lastMousePosition, ZoomTranslate);
-                return;
-            }
-
-            var pos = GetLogicalPosition(e);
-
-            if (_isSelecting && _selectionRectangle != null)
-            {
-                _selectionService.UpdateSelection(_selectionRectangle, _selectionStart, pos);
-                return;
-            }
-
-            if (_isDrawing && _currentLine != null)
-            {
-                _drawingService.AddPointToLine(_currentLine, pos);
-                LivePointDrawn?.Invoke(pos);
-                MouseMoved?.Invoke(pos);
-            }
-        }
-
-        private void Canvas_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            if (_isPanning)
-            {
-                _isPanning = false;
-                DrawingCanvas.ReleaseMouseCapture();
-                Cursor = Cursors.Arrow;
-                return;
-            }
-
-            if (_isSelecting && _selectionRectangle != null)
-            {
-                _isSelecting = false;
-
-                var overlayBounds = _selectionService.GetSelectionBounds(_selectionRectangle);
-                DrawingCanvas.Children.Remove(_selectionRectangle);
-                _selectionRectangle = null;
-
-                _selectionService.HandleSelection(overlayBounds, DrawingCanvas, _currentLine);
-                _stateService.IsSelectionModeEnabled = false;
-                return;
-            }
-
-            if (_isDrawing && _currentLine != null)
-            {
-                LineDrawn?.Invoke(_currentLine.Points.ToList());
-                _isDrawing = false;
-                _drawingService.FinishLine(_currentLine);
-            }
-        }
-
-        public void AddLine(IEnumerable<Point> points, Brush color, double thickness = 2)
-        {
-            var line = _drawingService.StartNewLine(points.First(), color, thickness);
-            foreach (var p in points.Skip(1))
-                _drawingService.AddPointToLine(line, p);
-            DrawingCanvas.Children.Add(line);
-        }
-
-        public void AddLivePoint(Point point, Brush color, double thickness = 2)
-        {
-            var now = DateTime.Now;
-            if ((now - _lastRemoteDrawTime).TotalMilliseconds < 16)
+            if (e.Data.GetData(typeof(BPMNShapeModel)) is not BPMNShapeModel shape)
                 return;
 
-            _lastRemoteDrawTime = now;
+            var dropPos = e.GetPosition(DrawingCanvas);
+            FrameworkElement? visualElement = null;
 
-            if (_remoteLine == null)
+            if (shape.SvgUri is not null)
             {
-                _remoteLine = new Polyline
+                // Creează forma SVG din factory
+                var element = new BpmnWhiteBoardElement(shape.SvgUri, _factory);
+                element.SetPosition(dropPos);
+                visualElement = element.Visual as FrameworkElement;
+
+                if (element.Visual is IInteractiveShape interactiveSvg)
                 {
-                    Stroke = color,
-                    StrokeThickness = thickness
-                };
-                DrawingCanvas.Children.Add(_remoteLine);
+                    interactiveSvg.ShapeClicked += (s, evt) =>
+                    {
+                        _toolManager.SetActive("BpmnTool");
+
+                        if (_toolManager.ActiveTool is BpmnTool bpmnTool)
+                        {
+                            var pos = evt.GetPosition(DrawingCanvas);
+                            bpmnTool.OnMouseDown(pos);
+                        }
+
+                        evt.Handled = true;
+                    };
+                }
             }
-
-            _remoteLine.Points.Add(point);
-        }
-
-        public void ResetLiveLine() => _remoteDrawingService.ResetLiveLine(DrawingCanvas);
-
-        public void StartNewRemoteLine()
-        {
-            if (_remoteLine != null)
+            else if (shape.ShapeContent is IInteractiveShape shapePrototype)
             {
-                DrawingCanvas.Children.Remove(_remoteLine);
-                _remoteLine = null;
+                // Creează instanță nouă din tipul formei
+                var type = shapePrototype.GetType();
+                if (Activator.CreateInstance(type) is IInteractiveShape newInstance)
+                {
+                    var element = new BpmnWhiteBoardElementXaml(newInstance);
+                    element.SetPosition(dropPos);
+                    visualElement = element.Visual as FrameworkElement;
+
+                    element.Clicked += (s, evt) =>
+                    {
+                        _toolManager.SetActive("BpmnTool");
+
+                        if (_toolManager.ActiveTool is BpmnTool bpmnTool)
+                        {
+                            var pos = evt.GetPosition(DrawingCanvas);
+                            bpmnTool.OnMouseDown(pos);
+                        }
+
+                        evt.Handled = true;
+                    };
+                }
             }
-        }
 
-        public void MoveCursorImage(Point point, BitmapImage image = null)
-        {
-            _remoteDrawingService.MoveCursorImage(DrawingCanvas, point, image);
-        }
-
-        private void SaveRecentLinesAsImage()
-        {
-            if (!_drawingService.RecentLines.Any()) return;
-
-            var geometryGroup = new GeometryGroup();
-            foreach (var line in _drawingService.RecentLines)
-                geometryGroup.Children.Add(line.RenderedGeometry.Clone());
-
-            var bounds = geometryGroup.Bounds;
-
-            var drawingVisual = new DrawingVisual();
-            using (var dc = drawingVisual.RenderOpen())
+            if (visualElement != null)
             {
-                dc.DrawRectangle(Brushes.Black, null, new Rect(0, 0, 28, 28));
+                Canvas.SetLeft(visualElement, dropPos.X);
+                Canvas.SetTop(visualElement, dropPos.Y);
+                DrawingCanvas.Children.Add(visualElement);
 
-                var transform = new TransformGroup();
-                transform.Children.Add(new TranslateTransform(-bounds.X, -bounds.Y));
-                transform.Children.Add(new ScaleTransform(28 / bounds.Width, 28 / bounds.Height));
+                void RegisterNode()
+                {
+                    var pos = new Point(Canvas.GetLeft(visualElement), Canvas.GetTop(visualElement));
+                    var width = visualElement.ActualWidth;
+                    var height = visualElement.ActualHeight;
 
-                geometryGroup.Transform = transform;
-                dc.DrawGeometry(null, new Pen(Brushes.White, 2), geometryGroup);
+                    if (width > 0 && height > 0)
+                    {
+                        var node = new BPMNNode(pos, width, height);
+                        _nodes[visualElement] = node;
+                    }
+                }
+
+                // Dacă shape-ul e deja măsurat
+                if (visualElement.IsLoaded && visualElement.ActualWidth > 0 && visualElement.ActualHeight > 0)
+                {
+                    RegisterNode();
+                }
+                else
+                {
+                    // Dacă nu e măsurat încă, așteaptă să se încarce
+                    visualElement.Loaded += (s, e) => RegisterNode();
+                }
+
+                // 🔗 Conectare cu butonul de „bulină” dacă e BpmnShapeControl
+                if (visualElement is BpmnShapeControl shapeControl)
+                {
+                    shapeControl.ConnectionPointClicked += (s, direction) =>
+                    {
+                        if (s is IInteractiveShape interactive)
+                        {
+                            _connectorTool?.SetSelected(interactive, direction); // nou
+                        }
+                        _toolManager.SetActive("Connector");
+                    };
+                }
             }
-
-            var bmp = new RenderTargetBitmap(28, 28, 96, 96, PixelFormats.Pbgra32);
-            bmp.Render(drawingVisual);
-
-            _imageSaveService.SaveTrainingImage(bmp, "3");
-
-            foreach (var line in _drawingService.RecentLines)
-                DrawingCanvas.Children.Remove(line);
-
-            _drawingService.ClearRecentLines();
         }
     }
 }

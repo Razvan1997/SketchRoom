@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Media;
+using WhiteBoard.Core.Services.Interfaces;
+using WhiteBoard.Core.Tools;
 using WhiteBoardModule.Events;
 
 namespace WhiteBoardModule.ViewModels
@@ -64,7 +66,11 @@ namespace WhiteBoardModule.ViewModels
             SelectColorCommand = new DelegateCommand<Brush>(color =>
             {
                 SelectedColor = color;
-                _stateService.SelectedColor = color;
+
+                var toolManager = ContainerLocator.Container.Resolve<IToolManager>();
+                var freeDraw = toolManager.GetToolByName("FreeDraw") as FreeDrawTool;
+                if (freeDraw != null)
+                    freeDraw.StrokeColor = color;
             });
 
             eventAggregator.GetEvent<SessionContextEvent>().Subscribe(ctx =>

@@ -8,13 +8,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Resources\" />
+    <None Remove="Resources\cursor.svg" />
+    <None Remove="Resources\drag.svg" />
+    <None Remove="SVG\rectangle.svg" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.135" />
     <PackageReference Include="Prism.Core" Version="9.0.537" />
     <PackageReference Include="Prism.Wpf" Version="9.0.537" />
+    <PackageReference Include="SharpVectors.Wpf" Version="1.8.4.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -23,6 +26,12 @@
     <ProjectReference Include="..\SketchRoom.Services\SketchRoom.Services.csproj" />
     <ProjectReference Include="..\SketchRoom.Toolkit.Wpf\SketchRoom.Toolkit.Wpf.csproj" />
     <ProjectReference Include="..\WalkthroughDemo\WalkthroughDemo.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\cursor.svg" />
+    <Resource Include="Resources\drag.svg" />
+    <Resource Include="SVG\rectangle.svg" />
   </ItemGroup>
 
 </Project>
