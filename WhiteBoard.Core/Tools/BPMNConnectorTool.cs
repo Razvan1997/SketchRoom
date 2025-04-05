@@ -1,4 +1,7 @@
-﻿using System.Windows;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -10,157 +13,178 @@ namespace WhiteBoard.Core.Tools
 {
     public class BpmnConnectorTool : IDrawingTool
     {
-        private IInteractiveShape? _selectedShape;
-        private FrameworkElement? _selectedElement;
         private readonly Canvas _canvas;
         private readonly Dictionary<FrameworkElement, BPMNNode> _nodes;
-        private BPMNNode? _from;
-        private BPMNNode? _to;
         private readonly List<BPMNConnection> _connections;
-        private string? _startDirection;
-        private bool _isDrawingConnection = false;
-        private Point _startPoint;
-        private Polyline? _tempPolyline;
-        private Line? _tempLine;
-        private Point _currentMouse;
         private readonly List<BPMNConnection> _selectedConnections = new();
         private readonly UIElement _focusTarget;
         private readonly IToolManager _toolManager;
 
-        public string Name => "Connector";
+        private List<Point> _pathPoints = new();
+        private Polyline? _tempPolyline;
+        private BPMNNode? _fromNode;
+        private bool _isDrawing = false;
+        private DateTime _lastClickTime = DateTime.MinValue;
 
-        public BpmnConnectorTool(Canvas canvas, List<BPMNConnection> connections, Dictionary<FrameworkElement, BPMNNode> nodes, UIElement focusTarget, IToolManager toolManager)
+        private IInteractiveShape? _selectedShape;
+        private FrameworkElement? _selectedElement;
+        private readonly ISnapService _snapService;
+        private readonly List<Line> _activeSnapLines = new();
+        public string Name => "Connector";
+        public bool IsDrawing => _isDrawing;
+
+        public BpmnConnectorTool(Canvas canvas, List<BPMNConnection> connections, Dictionary<FrameworkElement, BPMNNode> nodes, UIElement focusTarget,
+            IToolManager toolManager, ISnapService snapService)
         {
             _canvas = canvas;
             _connections = connections;
             _nodes = nodes;
             _focusTarget = focusTarget;
             _toolManager = toolManager;
+            _snapService = snapService;
         }
 
         public void OnMouseDown(Point pos)
         {
-            foreach (var el in _canvas.Children.OfType<FrameworkElement>())
+            var now = DateTime.Now;
+            if (_isDrawing && (now - _lastClickTime).TotalMilliseconds < 400)
             {
-                if (_nodes.TryGetValue(el, out var node))
+                FinalizeConnection(pos);
+                return;
+            }
+
+            _lastClickTime = now;
+
+            if (!_isDrawing)
+            {
+                _isDrawing = true;
+                _pathPoints.Clear();
+
+                _fromNode = GetNodeAt(pos);
+                _pathPoints.Add(pos);
+
+                _tempPolyline = new Polyline
                 {
-                    var bounds = new Rect(Canvas.GetLeft(el), Canvas.GetTop(el), el.ActualWidth, el.ActualHeight);
-                    if (bounds.Contains(pos))
-                    {
-                        _from = node;
-                        _selectedElement = el;
+                    Stroke = Brushes.DodgerBlue,
+                    StrokeThickness = 2,
+                    Points = new PointCollection { pos }
+                };
+                _canvas.Children.Add(_tempPolyline);
+            }
+            else
+            {
+                var snapped = GetSnappedPoint(pos);
+                var toNode = GetNodeAt(snapped);
 
-                        if (el is IInteractiveShape interactive)
-                        {
-                            _selectedShape = interactive;
-                            _selectedShape.Select(); // Afișează thumbs + buton
-                        }
-
-                        Highlight(el);
-                        return;
-
-
-                    }
+                if (toNode != null && _fromNode != null && toNode != _fromNode)
+                {
+                    _pathPoints.Add(snapped);
+                    FinalizeConnection(snapped);
+                }
+                else
+                {
+                    _pathPoints.Add(pos);
                 }
             }
         }
 
         public void OnMouseMove(Point pos)
         {
-            if (_isDrawingConnection && _tempPolyline != null)
+            if (_isDrawing && _tempPolyline != null && _pathPoints.Count > 0)
             {
-                var snapped = GetSnappedPoint(pos);
+                foreach (var line in _activeSnapLines)
+                    _canvas.Children.Remove(line);
+                _activeSnapLines.Clear();
 
-                _tempPolyline.Points.Clear();
-                _tempPolyline.Points.Add(_startPoint);
+                var elements = _nodes.Keys;
+                var snapped = _snapService.GetSnappedPoint(pos, elements, _tempPolyline, out var newLines);
 
-                switch (_startDirection)
+                foreach (var line in newLines)
                 {
-                    case "Top":
-                    case "Bottom":
-                        _tempPolyline.Points.Add(new Point(_startPoint.X, snapped.Y));
-                        break;
-
-                    case "Left":
-                    case "Right":
-                        _tempPolyline.Points.Add(new Point(snapped.X, _startPoint.Y));
-                        break;
+                    _canvas.Children.Add(line);
+                    _activeSnapLines.Add(line);
                 }
 
-                _tempPolyline.Points.Add(snapped);
+                var preview = new List<Point>(_pathPoints) { snapped };
+                _tempPolyline.Points = new PointCollection(preview);
             }
         }
-        public void OnMouseUp(Point pos)
-        {
-            if (!_isDrawingConnection || _from == null || _tempPolyline == null)
-                return;
 
+        private void FinalizeConnection(Point endPoint)
+        {
+            // 1. Curățare linii de snap
+            foreach (var line in _activeSnapLines)
+                _canvas.Children.Remove(line);
+            _activeSnapLines.Clear();
+
+            // 2. Obține punctul snap-uit
+            var snapped = _snapService.GetSnappedPoint(endPoint, _nodes.Keys, _tempPolyline, out _);
+
+            // 3. Obține nodul de destinație
+            var toNode = GetNodeAt(snapped);
+
+            // 4. Elimină linia temporară
+            if (_tempPolyline != null)
+            {
+                _canvas.Children.Remove(_tempPolyline);
+                _tempPolyline = null;
+            }
+
+            // 5. Dacă sunt doi noduri valide și diferite, creăm conexiunea
+            if (_fromNode != null && toNode != null && _fromNode != toNode)
+            {
+                if (!_pathPoints.Last().Equals(snapped))
+                    _pathPoints.Add(snapped);
+
+                var connection = new BPMNConnection(_fromNode, toNode, _pathPoints);
+                connection.Clicked += (s, e) =>
+                {
+                    bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+                    OnConnectionClicked((BPMNConnection)s, ctrl);
+                };
+
+                _connections.Add(connection);
+                _canvas.Children.Add(connection.Visual);
+            }
+
+            // 6. Resetare stare
+            _pathPoints.Clear();
+            _isDrawing = false;
+            _fromNode = null;
+        }
+
+        private BPMNNode? GetNodeAt(Point pos)
+        {
             foreach (var el in _canvas.Children.OfType<FrameworkElement>())
             {
-                if (_nodes.TryGetValue(el, out var toNode))
+                if (_nodes.TryGetValue(el, out var node))
                 {
-                    var bounds = new Rect(Canvas.GetLeft(el), Canvas.GetTop(el), el.ActualWidth, el.ActualHeight);
-                    if (bounds.Contains(pos) && toNode != _from)
-                    {
-                        var connection = new BPMNConnection(_from, toNode, _tempPolyline.Points);
-
-                        connection.Clicked += (s, e) =>
-                        {
-                            bool isCtrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
-                            OnConnectionClicked((BPMNConnection)s, isCtrl);
-                        };
-
-                        _canvas.Children.Add(connection.Visual);
-                        _connections.Add(connection);
-                        break;
-                    }
+                    var rect = new Rect(Canvas.GetLeft(el), Canvas.GetTop(el), el.ActualWidth, el.ActualHeight);
+                    if (rect.Contains(pos)) return node;
                 }
             }
-
-            _canvas.Children.Remove(_tempPolyline);
-            _tempPolyline = null;
-            _isDrawingConnection = false;
-            _from = null;
+            return null;
         }
 
-        private void Highlight(UIElement element)
+        private Point GetSnappedPoint(Point pos, double threshold = 15)
         {
-            if (element is Control control)
-                control.BorderBrush = System.Windows.Media.Brushes.Orange;
+            var allSnapPoints = _nodes.SelectMany(kvp => new[]
+            {
+                new Point(Canvas.GetLeft(kvp.Key) + kvp.Key.ActualWidth / 2, Canvas.GetTop(kvp.Key)),
+                new Point(Canvas.GetLeft(kvp.Key) + kvp.Key.ActualWidth, Canvas.GetTop(kvp.Key) + kvp.Key.ActualHeight / 2),
+                new Point(Canvas.GetLeft(kvp.Key) + kvp.Key.ActualWidth / 2, Canvas.GetTop(kvp.Key) + kvp.Key.ActualHeight),
+                new Point(Canvas.GetLeft(kvp.Key), Canvas.GetTop(kvp.Key) + kvp.Key.ActualHeight / 2)
+            });
+
+            return allSnapPoints
+                .Select(p => new { Point = p, Distance = (p - pos).Length })
+                .Where(x => x.Distance < threshold)
+                .OrderBy(x => x.Distance)
+                .Select(x => x.Point)
+                .FirstOrDefault(pos);
         }
 
-        private void ClearHighlights()
-        {
-            foreach (var kvp in _nodes)
-            {
-                if (kvp.Key is Control control)
-                    control.ClearValue(Control.BorderBrushProperty);
-            }
-        }
-
-        public void DeselectCurrent()
-        {
-            if (_selectedShape != null)
-            {
-                _selectedShape.Deselect(); // Ascunde thumbs și buton
-                _selectedShape = null;
-            }
-
-            if (_selectedElement is Control control)
-            {
-                control.ClearValue(Control.BorderBrushProperty);
-                _selectedElement = null;
-            }
-
-            _from = null;
-            _to = null;
-
-            if (_tempLine != null)
-            {
-                _canvas.Children.Remove(_tempLine);
-                _tempLine = null;
-            }
-        }
+        public void OnMouseUp(Point pos) { }
 
         public void SetSelected(IInteractiveShape fromShape, string direction)
         {
@@ -168,22 +192,21 @@ namespace WhiteBoard.Core.Tools
             if (fe == null || !_nodes.TryGetValue(fe, out var node))
                 return;
 
-            _from = node;
-            _startDirection = direction;
+            _fromNode = node;
 
             var start = GetDirectionPoint(fe, direction);
-            _startPoint = start;
-
-            _isDrawingConnection = true;
+            _pathPoints.Clear();
+            _pathPoints.Add(start);
 
             _tempPolyline = new Polyline
             {
                 Stroke = Brushes.DodgerBlue,
                 StrokeThickness = 2,
-                Points = new PointCollection { start, start } // inițial
+                Points = new PointCollection { start, start }
             };
 
             _canvas.Children.Add(_tempPolyline);
+            _isDrawing = true;
         }
 
         private Point GetDirectionPoint(FrameworkElement el, string direction)
@@ -203,65 +226,19 @@ namespace WhiteBoard.Core.Tools
             };
         }
 
-        private List<(FrameworkElement Element, Point SnapPoint)> GetAllSnapPoints()
+        public void DeselectCurrent()
         {
-            var snapPoints = new List<(FrameworkElement, Point)>();
-
-            foreach (var el in _canvas.Children.OfType<FrameworkElement>())
+            if (_selectedShape != null)
             {
-                if (_nodes.ContainsKey(el))
-                {
-                    double left = Canvas.GetLeft(el);
-                    double top = Canvas.GetTop(el);
-                    double width = el.ActualWidth;
-                    double height = el.ActualHeight;
-
-                    // Top, Right, Bottom, Left
-                    snapPoints.Add((el, new Point(left + width / 2, top)));                  // Top
-                    snapPoints.Add((el, new Point(left + width, top + height / 2)));         // Right
-                    snapPoints.Add((el, new Point(left + width / 2, top + height)));         // Bottom
-                    snapPoints.Add((el, new Point(left, top + height / 2)));                 // Left
-                }
+                _selectedShape.Deselect();
+                _selectedShape = null;
             }
 
-            return snapPoints;
-        }
-
-        private Point GetSnappedPoint(Point current, double threshold = 15)
-        {
-            var snapPoints = GetAllSnapPoints();
-
-            var closest = snapPoints
-                .Select(sp => new { sp.Element, sp.SnapPoint, Distance = (sp.SnapPoint - current).Length })
-                .Where(x => x.Distance < threshold)
-                .OrderBy(x => x.Distance)
-                .FirstOrDefault();
-
-            return closest?.SnapPoint ?? current;
-        }
-
-        public void OnConnectionClicked(BPMNConnection conn, bool isCtrlPressed)
-        {
-            _toolManager.SetActive("Connector");
-            _focusTarget.Focus();
-
-            if (!isCtrlPressed)
-                ClearSelectedConnections();
-
-            if (_selectedConnections.Contains(conn))
-                _selectedConnections.Remove(conn);
-            else
-                _selectedConnections.Add(conn);
-
-            conn.IsSelected = true;
-        }
-
-        private void ClearSelectedConnections()
-        {
-            foreach (var conn in _selectedConnections)
-                conn.IsSelected = false;
-
-            _selectedConnections.Clear();
+            if (_selectedElement is Control control)
+            {
+                control.ClearValue(Control.BorderBrushProperty);
+                _selectedElement = null;
+            }
         }
 
         public void DeleteSelectedConnections()
@@ -271,7 +248,6 @@ namespace WhiteBoard.Core.Tools
                 _canvas.Children.Remove(conn.Visual);
                 _connections.Remove(conn);
             }
-
             _selectedConnections.Clear();
         }
 
@@ -279,8 +255,24 @@ namespace WhiteBoard.Core.Tools
         {
             foreach (var conn in _selectedConnections)
                 conn.IsSelected = false;
-
             _selectedConnections.Clear();
+        }
+
+        public void OnConnectionClicked(BPMNConnection conn, bool ctrl)
+        {
+            _toolManager.SetActive("Connector");
+            _focusTarget.Focus();
+
+            if (!ctrl)
+                DeselectAllConnections();
+
+            if (_selectedConnections.Contains(conn))
+                _selectedConnections.Remove(conn);
+            else
+                _selectedConnections.Add(conn);
+
+            foreach (var c in _connections)
+                c.IsSelected = _selectedConnections.Contains(c);
         }
     }
 }

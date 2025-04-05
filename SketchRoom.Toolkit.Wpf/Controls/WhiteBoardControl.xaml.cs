@@ -69,7 +69,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             var bpmnTool = new BpmnTool(DrawingCanvas, _snapService, SnapGridCanvas);
             _toolManager.RegisterTool(bpmnTool);
 
-            _connectorTool = new BpmnConnectorTool(DrawingCanvas, _connections, _nodes, this, _toolManager);
+            _connectorTool = new BpmnConnectorTool(DrawingCanvas, _connections, _nodes, this, _toolManager, _snapService);
             _toolManager.RegisterTool(_connectorTool);
 
             _toolManager.SetActive("FreeDraw");
@@ -106,25 +106,41 @@ namespace SketchRoom.Toolkit.Wpf.Controls
         {
             var logicalPos = GetLogicalPosition(e);
 
-            if (e.OriginalSource is Ellipse || e.OriginalSource is TextBlock)
+            if (_toolManager.ActiveTool?.Name == "Connector")
             {
-                if (_toolManager.ActiveTool?.Name == "Connector")
+                // Evită selectarea liniei deja trasate
+                if (e.OriginalSource is Path path && path.Data is Geometry)
+                    return;
+
+                // Dacă se trasează o linie, continuăm trasarea
+                if (_connectorTool?.IsDrawing == true)
                 {
-                    _connectorTool?.OnMouseDown(logicalPos);
+                    _connectorTool.OnMouseDown(logicalPos);
                     e.Handled = true;
                     return;
                 }
+
+                if (e.OriginalSource is Rectangle)
+                {
+                    _connectorTool.OnMouseDown(logicalPos);
+                    e.Handled = true;
+                    return;
+                }
+
+                // Dacă nu se trasează, click pe whiteboard = deselectare + schimbare tool
+                if (e.OriginalSource == DrawingCanvas)
+                {
+                    _connectorTool?.DeselectCurrent();
+                    _connectorTool?.DeselectAllConnections();
+                    _toolManager.SetActive("FreeDraw");
+                    _host.HandleMouseDown(logicalPos);
+                }
+
+                e.Handled = true;
+                return;
             }
 
-            //if (Keyboard.Modifiers == ModifierKeys.Control)
-            //{
-            //    _isPanning = true;
-            //    _lastPanPoint = e.GetPosition(this);
-            //    _previousCursor = Cursor;
-            //    Cursor = Cursors.SizeAll;
-            //    DrawingCanvas.CaptureMouse();
-            //    return;
-            //}
+            // Alte tool-uri (ex: BpmnTool)
             if (e.OriginalSource == DrawingCanvas)
             {
                 if (_toolManager.ActiveTool is BpmnTool bpmnTool)
@@ -138,6 +154,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                     bpmnConnectorTool.DeselectAllConnections();
                     _toolManager.SetActive("FreeDraw");
                 }
+
                 _host.HandleMouseDown(logicalPos);
             }
         }
