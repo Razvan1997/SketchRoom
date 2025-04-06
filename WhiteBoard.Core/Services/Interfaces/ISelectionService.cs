@@ -12,5 +12,8 @@ namespace WhiteBoard.Core.Services.Interfaces
     {
         Rect GetBoundsFromPoints(IEnumerable<Point> points);
         void HandleSelection(Rect bounds, Canvas canvas);
+        void ClearSelection(Canvas canvas);
+        IReadOnlyList<UIElement> SelectedElements { get; }
+        event EventHandler SelectionChanged;
     }
 }

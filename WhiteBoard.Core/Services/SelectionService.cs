@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services.Interfaces;
@@ -14,6 +15,11 @@ namespace WhiteBoard.Core.Services
 {
     public class SelectionService : ISelectionService
     {
+        private readonly List<UIElement> _selected = new();
+        private readonly Dictionary<UIElement, UIElement> _selectionMarkers = new(); // poate fi Path sau Rectangle
+        public event EventHandler? SelectionChanged;
+        public IReadOnlyList<UIElement> SelectedElements => _selected.AsReadOnly();
+
         public Rect GetBoundsFromPoints(IEnumerable<Point> points)
         {
             if (points == null || !points.Any())
@@ -29,32 +35,95 @@ namespace WhiteBoard.Core.Services
 
         public void HandleSelection(Rect bounds, Canvas canvas)
         {
-            var selected = new List<UIElement>();
+            ClearSelection(canvas);
 
-            foreach (UIElement element in canvas.Children)
+            foreach (UIElement element in canvas.Children.OfType<UIElement>().ToList())
             {
-                if (element is FrameworkElement fe)
+                Rect elementRect;
+                UIElement? marker = null;
+
+                if (element is FrameworkElement fe && !(element is Path))
                 {
                     double left = Canvas.GetLeft(fe);
                     double top = Canvas.GetTop(fe);
                     double width = fe.ActualWidth;
                     double height = fe.ActualHeight;
 
-                    var elementRect = new Rect(left, top, width, height);
+                    if (width == 0 || height == 0)
+                        continue;
 
-                    if (bounds.IntersectsWith(elementRect))
-                        selected.Add(element);
+                    elementRect = new Rect(left, top, width, height);
+
+                    if (!bounds.IntersectsWith(elementRect))
+                        continue;
+
+                    marker = new Rectangle
+                    {
+                        Width = width,
+                        Height = height,
+                        Stroke = Brushes.DeepSkyBlue,
+                        StrokeThickness = 2,
+                        StrokeDashArray = new DoubleCollection { 4, 2 },
+                        IsHitTestVisible = false,
+                        RadiusX = (fe is Ellipse) ? width / 2 : 0,
+                        RadiusY = (fe is Ellipse) ? height / 2 : 0
+                    };
+
+                    Canvas.SetLeft(marker, left);
+                    Canvas.SetTop(marker, top);
+                }
+                else if (element is Path path && path.Data != null)
+                {
+                    elementRect = path.Data.GetRenderBounds(new Pen(path.Stroke, path.StrokeThickness));
+
+                    if (!bounds.IntersectsWith(elementRect))
+                        continue;
+
+                    marker = new Path
+                    {
+                        Data = path.Data.Clone(), // clone geometry
+                        Stroke = Brushes.DeepSkyBlue,
+                        StrokeThickness = 3,
+                        StrokeDashArray = new DoubleCollection { 4, 2 },
+                        IsHitTestVisible = false
+                    };
+                }
+
+                if (marker != null)
+                {
+                    _selected.Add(element);
+                    _selectionMarkers[element] = marker;
+                    canvas.Children.Add(marker);
+
+                    // animare stroke
+                    var animation = new DoubleAnimation
+                    {
+                        From = 0,
+                        To = 6,
+                        Duration = new Duration(TimeSpan.FromSeconds(0.5)),
+                        RepeatBehavior = RepeatBehavior.Forever
+                    };
+
+                    if (marker is Shape shape)
+                        shape.BeginAnimation(Shape.StrokeDashOffsetProperty, animation);
                 }
             }
 
-            // exemplu: evidențiere (doar pentru demo)
-            foreach (var el in selected)
+            SelectionChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void ClearSelection(Canvas canvas)
+        {
+            foreach (var marker in _selectionMarkers.Values)
             {
-                if (el is Shape shape)
-                    shape.Stroke = Brushes.Red;
+                if (marker is Shape shape)
+                    shape.BeginAnimation(Shape.StrokeDashOffsetProperty, null);
+
+                canvas.Children.Remove(marker);
             }
 
-            // aici poți emite eveniment sau trimite către un handler
+            _selectionMarkers.Clear();
+            _selected.Clear();
         }
     }
 }

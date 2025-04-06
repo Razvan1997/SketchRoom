@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using System.Windows;
-using System.Windows.Input;
-using System.Windows.Controls;
 
 namespace WhiteBoard.Core.Models
 {
@@ -18,9 +16,13 @@ namespace WhiteBoard.Core.Models
         private readonly PathFigure _figure;
         private readonly Canvas _containerCanvas;
         private Polygon? _arrowHead;
+        private Ellipse? _intersectionDot;
 
-        public BPMNNode From { get; set; }
-        public BPMNNode To { get; set; }
+        public BPMNNode? From { get; set; }
+        public BPMNNode? To { get; set; }
+
+        public BPMNConnection? ConnectedToConnection { get; set; }
+        public Point? ConnectionIntersectionPoint { get; set; }
 
         private bool _isSelected;
         public bool IsSelected
@@ -37,8 +39,12 @@ namespace WhiteBoard.Core.Models
         }
 
         public event EventHandler? Clicked;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public PathGeometry Geometry => _geometry;
 
-        public BPMNConnection(BPMNNode from, BPMNNode to)
+        public Ellipse? ConnectionDot { get; set; }
+
+        public BPMNConnection(BPMNNode? from, BPMNNode? to)
         {
             From = from;
             To = to;
@@ -63,17 +69,16 @@ namespace WhiteBoard.Core.Models
 
             _containerCanvas = new Canvas();
             _containerCanvas.Children.Add(_path);
-
-            UpdateLinePosition();
         }
 
-        public BPMNConnection(BPMNNode from, BPMNNode to, IEnumerable<Point> pathPoints) : this(from, to)
+        public BPMNConnection(BPMNNode from, BPMNNode? to, IEnumerable<Point> pathPoints, bool addArrow = true)
+    : this(from, to)
         {
             if (pathPoints != null)
-                SetCustomPath(pathPoints);
+                SetCustomPath(pathPoints, addArrow);
         }
 
-        public void SetCustomPath(IEnumerable<Point> points)
+        public void SetCustomPath(IEnumerable<Point> points, bool addArrow = true)
         {
             var pointList = points.ToList();
             if (pointList.Count < 2) return;
@@ -84,7 +89,8 @@ namespace WhiteBoard.Core.Models
             for (int i = 1; i < pointList.Count; i++)
                 _figure.Segments.Add(new LineSegment(pointList[i], true));
 
-            AddArrowHead(pointList[pointList.Count - 2], pointList[pointList.Count - 1]);
+            if (addArrow)
+                AddArrowHead(pointList[pointList.Count - 2], pointList[pointList.Count - 1]);
         }
 
         private void AddArrowHead(Point from, Point to)
@@ -112,20 +118,7 @@ namespace WhiteBoard.Core.Models
             _containerCanvas.Children.Add(_arrowHead);
         }
 
-        public void UpdateLinePosition()
-        {
-            var fromCenter = From.Center;
-            var toCenter = To.Center;
-
-            _figure.StartPoint = fromCenter;
-            _figure.Segments.Clear();
-            _figure.Segments.Add(new LineSegment(toCenter, true));
-
-            AddArrowHead(fromCenter, toCenter);
-        }
-
         public override UIElement Visual => _containerCanvas;
-
         public override Rect Bounds => _geometry.Bounds;
     }
 }

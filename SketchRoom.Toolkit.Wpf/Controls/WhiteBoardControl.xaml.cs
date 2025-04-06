@@ -77,9 +77,20 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             DrawingCanvas.PreviewMouseRightButtonDown += Canvas_PreviewMouseRightButtonDown;
             DrawingCanvas.PreviewMouseRightButtonUp += Canvas_PreviewMouseRightButtonUp;
 
+            _selectionService.SelectionChanged += OnSelectionChanged;
+
             this.KeyDown += WhiteBoardControl_KeyDown;
             this.Focusable = true;
             this.Focus();
+        }
+
+        private void OnSelectionChanged(object? sender, EventArgs e)
+        {
+            Dispatcher.InvokeAsync(() =>
+            {
+                FocusManager.SetFocusedElement(this, this);
+                Keyboard.Focus(this);
+            }, System.Windows.Threading.DispatcherPriority.Input);
         }
 
         private void WhiteBoardControl_KeyDown(object sender, KeyEventArgs e)
@@ -90,6 +101,14 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                 {
                     connectorTool.DeleteSelectedConnections();
                 }
+
+                foreach (var el in _selectionService.SelectedElements.ToList())
+                {
+                    DrawingCanvas.Children.Remove(el);
+                }
+
+                _selectionService.ClearSelection(DrawingCanvas);
+                e.Handled = true;
             }
         }
 
@@ -163,26 +182,31 @@ namespace SketchRoom.Toolkit.Wpf.Controls
         {
             var logicalPos = GetLogicalPosition(e);
 
-            if (_toolManager.ActiveTool?.Name == "Connector")
+            if(!_isSelecting && _selectionRectangle == null)
             {
-                _connectorTool?.OnMouseMove(logicalPos);
-                return;
-            }
+                if (_toolManager.ActiveTool?.Name == "Connector")
+                {
+                    _connectorTool?.OnMouseMove(logicalPos);
+                    return;
+                }
 
-            if (e.OriginalSource is Thumb)
-                return;
-            if (_isPanning)
-            {
-                var current = e.GetPosition(this);
-                _lastPanPoint = _zoomPanService.Pan(current, _lastPanPoint, ZoomTranslate);
-                return;
+                if (e.OriginalSource is Thumb)
+                    return;
+                if (_isPanning)
+                {
+                    var current = e.GetPosition(this);
+                    _lastPanPoint = _zoomPanService.Pan(current, _lastPanPoint, ZoomTranslate);
+                    return;
+                }
             }
-
-            if (_isSelecting && _selectionRectangle != null)
+            else
             {
-                var current = GetLogicalPosition(e);
-                UpdateSelectionRect(_selectionRectangle, _selectionStart, current);
-                return;
+                if (_isSelecting && _selectionRectangle != null)
+                {
+                    var current = GetLogicalPosition(e);
+                    UpdateSelectionRect(_selectionRectangle, _selectionStart, current);
+                    return;
+                }
             }
 
             _host.HandleMouseMove(logicalPos);
@@ -211,6 +235,9 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
         private void Canvas_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
+            // Curățăm selecția anterioară
+            _selectionService.ClearSelection(DrawingCanvas);
+
             _isSelecting = true;
             _selectionStart = GetLogicalPosition(e);
 

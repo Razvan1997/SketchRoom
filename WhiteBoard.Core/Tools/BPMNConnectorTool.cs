@@ -73,8 +73,18 @@ namespace WhiteBoard.Core.Tools
             }
             else
             {
+                // DETECTĂM DACĂ AM DAT CLICK PE ALTĂ LINIE
                 var snapped = GetSnappedPoint(pos);
                 var toNode = GetNodeAt(snapped);
+                var toConnection = GetConnectionAt(snapped);
+
+                if (toConnection != null)
+                {
+                    // STOP TRASARE + CREAȚIE BULINĂ
+                    _pathPoints.Add(snapped);
+                    FinalizeConnectionToConnection(snapped, toConnection);
+                    return;
+                }
 
                 if (toNode != null && _fromNode != null && toNode != _fromNode)
                 {
@@ -86,6 +96,64 @@ namespace WhiteBoard.Core.Tools
                     _pathPoints.Add(pos);
                 }
             }
+        }
+
+        private void FinalizeConnectionToConnection(Point snapped, BPMNConnection toConnection)
+        {
+            foreach (var line in _activeSnapLines)
+                _canvas.Children.Remove(line);
+            _activeSnapLines.Clear();
+
+            if (_tempPolyline != null)
+            {
+                _canvas.Children.Remove(_tempPolyline);
+                _tempPolyline = null;
+            }
+
+            if (_fromNode != null)
+            {
+                var connection = new BPMNConnection(_fromNode, null, _pathPoints, addArrow: false)
+                {
+                    ConnectedToConnection = toConnection,
+                    ConnectionIntersectionPoint = snapped,
+                    CreatedAt = DateTime.Now
+                };
+
+                // Adaugă bulina
+                var dot = CreateConnectionDot(snapped);
+                _canvas.Children.Add(dot);
+                connection.ConnectionDot = dot;
+
+                connection.Clicked += (s, e) =>
+                {
+                    bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+                    OnConnectionClicked((BPMNConnection)s, ctrl);
+                };
+
+                _connections.Add(connection);
+                _canvas.Children.Add(connection.Visual);
+            }
+
+            _pathPoints.Clear();
+            _isDrawing = false;
+            _fromNode = null;
+        }
+
+        private Ellipse CreateConnectionDot(Point pos)
+        {
+            var dot = new Ellipse
+            {
+                Width = 10,
+                Height = 10,
+                Fill = new SolidColorBrush(Color.FromRgb(173, 216, 230)), // light blue
+                Stroke = new SolidColorBrush(Color.FromRgb(0, 51, 102)),   // dark blue
+                StrokeThickness = 1.5,
+                IsHitTestVisible = false
+            };
+
+            Canvas.SetLeft(dot, pos.X - dot.Width / 2);
+            Canvas.SetTop(dot, pos.Y - dot.Height / 2);
+            return dot;
         }
 
         public void OnMouseMove(Point pos)
@@ -112,31 +180,37 @@ namespace WhiteBoard.Core.Tools
 
         private void FinalizeConnection(Point endPoint)
         {
-            // 1. Curățare linii de snap
             foreach (var line in _activeSnapLines)
                 _canvas.Children.Remove(line);
             _activeSnapLines.Clear();
 
-            // 2. Obține punctul snap-uit
-            var snapped = _snapService.GetSnappedPoint(endPoint, _nodes.Keys, _tempPolyline, out _);
+            var snapped = _snapService.GetSnappedPoint(endPoint, _nodes.Keys, _tempPolyline!, out _);
 
-            // 3. Obține nodul de destinație
             var toNode = GetNodeAt(snapped);
+            var toConnection = GetConnectionAt(snapped);
 
-            // 4. Elimină linia temporară
             if (_tempPolyline != null)
             {
                 _canvas.Children.Remove(_tempPolyline);
                 _tempPolyline = null;
             }
 
-            // 5. Dacă sunt doi noduri valide și diferite, creăm conexiunea
-            if (_fromNode != null && toNode != null && _fromNode != toNode)
+            if (_fromNode != null)
             {
                 if (!_pathPoints.Last().Equals(snapped))
                     _pathPoints.Add(snapped);
 
-                var connection = new BPMNConnection(_fromNode, toNode, _pathPoints);
+                var connection = new BPMNConnection(_fromNode, toNode, _pathPoints)
+                {
+                    CreatedAt = DateTime.Now
+                };
+
+                if (toConnection != null)
+                {
+                    connection.ConnectedToConnection = toConnection;
+                    connection.ConnectionIntersectionPoint = snapped;
+                }
+
                 connection.Clicked += (s, e) =>
                 {
                     bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
@@ -147,7 +221,6 @@ namespace WhiteBoard.Core.Tools
                 _canvas.Children.Add(connection.Visual);
             }
 
-            // 6. Resetare stare
             _pathPoints.Clear();
             _isDrawing = false;
             _fromNode = null;
@@ -243,11 +316,21 @@ namespace WhiteBoard.Core.Tools
 
         public void DeleteSelectedConnections()
         {
-            foreach (var conn in _selectedConnections)
+            var ordered = _selectedConnections.OrderByDescending(c => c.CreatedAt).ToList();
+
+            foreach (var conn in ordered)
             {
                 _canvas.Children.Remove(conn.Visual);
+
+                if (conn.ConnectionDot != null)
+                {
+                    _canvas.Children.Remove(conn.ConnectionDot);
+                    conn.ConnectionDot = null;
+                }
+
                 _connections.Remove(conn);
             }
+
             _selectedConnections.Clear();
         }
 
@@ -275,15 +358,12 @@ namespace WhiteBoard.Core.Tools
                 c.IsSelected = _selectedConnections.Contains(c);
         }
 
-        private BPMNConnection? GetConnectionAt(Point pos, double tolerance = 8)
+        private BPMNConnection? GetConnectionAt(Point pos, double threshold = 8)
         {
             foreach (var conn in _connections)
             {
-                var geometry = conn.Visual is Canvas canvas
-                    ? (canvas.Children.OfType<Path>().FirstOrDefault()?.Data as PathGeometry)
-                    : null;
-
-                if (geometry != null && geometry.StrokeContains(new Pen(Brushes.Black, tolerance), pos))
+                var geometry = conn.Geometry.GetWidenedPathGeometry(new Pen(Brushes.Black, threshold));
+                if (geometry.FillContains(pos))
                     return conn;
             }
             return null;
