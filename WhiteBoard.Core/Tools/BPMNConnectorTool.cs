@@ -274,5 +274,19 @@ namespace WhiteBoard.Core.Tools
             foreach (var c in _connections)
                 c.IsSelected = _selectedConnections.Contains(c);
         }
+
+        private BPMNConnection? GetConnectionAt(Point pos, double tolerance = 8)
+        {
+            foreach (var conn in _connections)
+            {
+                var geometry = conn.Visual is Canvas canvas
+                    ? (canvas.Children.OfType<Path>().FirstOrDefault()?.Data as PathGeometry)
+                    : null;
+
+                if (geometry != null && geometry.StrokeContains(new Pen(Brushes.Black, tolerance), pos))
+                    return conn;
+            }
+            return null;
+        }
     }
 }

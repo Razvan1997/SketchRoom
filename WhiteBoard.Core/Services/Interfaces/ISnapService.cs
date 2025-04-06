@@ -12,5 +12,6 @@ namespace WhiteBoard.Core.Services.Interfaces
     {
         Point GetSnappedPoint(Point rawPoint, double gridSize = 10);
         Point GetSnappedPoint(Point rawPoint, IEnumerable<FrameworkElement> others, FrameworkElement movingElement, out List<Line> snapLines);
+        List<Line> GetSnapGuides(Point rawPoint, IEnumerable<FrameworkElement> others, FrameworkElement movingElement);
     }
 }

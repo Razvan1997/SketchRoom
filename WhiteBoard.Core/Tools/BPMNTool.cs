@@ -16,12 +16,14 @@ namespace WhiteBoard.Core.Tools
 
         private readonly Canvas _canvas;
         private readonly ISnapService _snapService;
+        private readonly Canvas _snapCanvas;
+
         private IInteractiveShape? _selectedShape;
         private IInteractiveShape? _draggingShape;
         private Point _lastMousePos;
 
         public event Action<IInteractiveShape?>? ShapeSelected;
-        private readonly Canvas _snapCanvas;
+
         public BpmnTool(Canvas canvas, ISnapService snapService, Canvas snapCanvas)
         {
             _canvas = canvas;
@@ -70,24 +72,26 @@ namespace WhiteBoard.Core.Tools
 
             if (_draggingShape is FrameworkElement fe)
             {
-                var currentLeft = Canvas.GetLeft(fe);
-                var currentTop = Canvas.GetTop(fe);
-                var newPos = new Point(currentLeft + dx, currentTop + dy);
+                double currentLeft = Canvas.GetLeft(fe);
+                double currentTop = Canvas.GetTop(fe);
 
+                Point rawNewPos = new Point(currentLeft + dx, currentTop + dy);
+
+                // Elemente la care să se alinieze (excludem shape-ul curent)
                 var others = _canvas.Children.OfType<FrameworkElement>()
-                        .Where(e => e != fe).ToList();
+                                .Where(e => e != fe).ToList();
 
-                // Obține doar liniile de snap (nu poziția ajustată!)
-                _snapService.GetSnappedPoint(newPos, others, fe, out List<Line> snapLines);
+                // Obține poziția snap-uită și liniile de ghidaj
+                var snappedPos = _snapService.GetSnappedPoint(rawNewPos, others, fe, out List<Line> snapLines);
 
-                // Afișează ghidajele (snap lines)
+                // Afișează liniile de snap
                 _snapCanvas.Children.Clear();
                 foreach (var line in snapLines)
                     _snapCanvas.Children.Add(line);
 
-                // Mutare reală (fără snap)
-                Canvas.SetLeft(fe, newPos.X);
-                Canvas.SetTop(fe, newPos.Y);
+                // Aplică poziția nouă snap-uită
+                Canvas.SetLeft(fe, rawNewPos.X); // noua poziție reală, fără snap
+                Canvas.SetTop(fe, rawNewPos.Y);
 
                 _lastMousePos = pos;
             }
