@@ -74,6 +74,7 @@
             VerticalAlignment="Stretch"
             Cursor="SizeWE"
             Style="{StaticResource VerticalDashedLineThumbStyle}"
+            Tag="NoSnap"
             Visibility="Collapsed" />
 
         <Thumb
@@ -84,6 +85,7 @@
             VerticalAlignment="Stretch"
             Cursor="SizeWE"
             Style="{StaticResource VerticalDashedLineThumbStyle}"
+            Tag="NoSnap"
             Visibility="Collapsed" />
 
         <Thumb
@@ -94,6 +96,7 @@
             VerticalAlignment="Top"
             Cursor="SizeNS"
             Style="{StaticResource HorizontalDashedLineThumbStyle}"
+            Tag="NoSnap"
             Visibility="Collapsed" />
 
         <Thumb
@@ -104,6 +107,7 @@
             VerticalAlignment="Bottom"
             Cursor="SizeNS"
             Style="{StaticResource HorizontalDashedLineThumbStyle}"
+            Tag="NoSnap"
             Visibility="Collapsed" />
 
         <!--  Top connector  -->
@@ -116,6 +120,7 @@
             Cursor="Cross"
             Fill="DodgerBlue"
             MouseLeftButtonDown="Connector_MouseLeftButtonDown"
+            Tag="NoSnap"
             Visibility="Collapsed" />
 
         <!--  Right connector  -->
@@ -128,6 +133,7 @@
             Cursor="Cross"
             Fill="DodgerBlue"
             MouseLeftButtonDown="Connector_MouseLeftButtonDown"
+            Tag="NoSnap"
             Visibility="Collapsed" />
 
         <!--  Bottom connector  -->
@@ -140,6 +146,7 @@
             Cursor="Cross"
             Fill="DodgerBlue"
             MouseLeftButtonDown="Connector_MouseLeftButtonDown"
+            Tag="NoSnap"
             Visibility="Collapsed" />
 
         <!--  Left connector  -->
@@ -152,6 +159,7 @@
             Cursor="Cross"
             Fill="DodgerBlue"
             MouseLeftButtonDown="Connector_MouseLeftButtonDown"
+            Tag="NoSnap"
             Visibility="Collapsed" />
 
     </Grid>

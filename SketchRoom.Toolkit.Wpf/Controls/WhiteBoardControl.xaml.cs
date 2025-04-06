@@ -15,6 +15,7 @@ using SketchRoom.Models.Shapes;
 using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Factory.Interfaces;
 using System.Windows.Controls.Primitives;
+using WhiteBoard.Core.Services;
 
 namespace SketchRoom.Toolkit.Wpf.Controls
 {
@@ -52,7 +53,6 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             var drawingService = ContainerLocator.Container.Resolve<IDrawingService>();
             var canvasRenderer = ContainerLocator.Container.Resolve<ICanvasRenderer>();
             _zoomPanService = ContainerLocator.Container.Resolve<IZoomPanService>();
-            _selectionService = ContainerLocator.Container.Resolve<ISelectionService>();
             _snapService = ContainerLocator.Container.Resolve<ISnapService>();
 
             _host = new WhiteBoardHost(DrawingCanvas, _toolManager, drawingService, canvasRenderer);
@@ -77,6 +77,8 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             DrawingCanvas.PreviewMouseRightButtonDown += Canvas_PreviewMouseRightButtonDown;
             DrawingCanvas.PreviewMouseRightButtonUp += Canvas_PreviewMouseRightButtonUp;
 
+
+            _selectionService = new SelectionService(_connectorTool);
             _selectionService.SelectionChanged += OnSelectionChanged;
 
             this.KeyDown += WhiteBoardControl_KeyDown;

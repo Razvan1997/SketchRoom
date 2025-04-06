@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using WhiteBoard.Core.Helpers;
 using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services.Interfaces;
 
@@ -160,12 +162,23 @@ namespace WhiteBoard.Core.Tools
         {
             if (_isDrawing && _tempPolyline != null && _pathPoints.Count > 0)
             {
+                // Șterge liniile anterioare
                 foreach (var line in _activeSnapLines)
                     _canvas.Children.Remove(line);
                 _activeSnapLines.Clear();
 
-                var elements = _nodes.Keys;
-                var snapped = _snapService.GetSnappedPoint(pos, elements, _tempPolyline, out var newLines);
+                var elements = _nodes.Keys
+                                .Where(e => IsSnappable(e))
+                                .ToList();
+
+                // 👇 Aici forțăm snapping pe ambele axe
+                var snapped = _snapService.GetSnappedPointCursor(
+                    pos,
+                    elements,
+                    _tempPolyline,
+                    out var newLines,
+                    snapX: true,
+                    snapY: true);
 
                 foreach (var line in newLines)
                 {
@@ -173,6 +186,7 @@ namespace WhiteBoard.Core.Tools
                     _activeSnapLines.Add(line);
                 }
 
+                // Adaugă punctul de previzualizare
                 var preview = new List<Point>(_pathPoints) { snapped };
                 _tempPolyline.Points = new PointCollection(preview);
             }
@@ -329,6 +343,12 @@ namespace WhiteBoard.Core.Tools
                 }
 
                 _connections.Remove(conn);
+
+                // 👇 Eliminăm nodurile din _nodes care au fost legate de conexiune (doar dacă sunt incluse)
+                if (conn.From?.Visual is FrameworkElement fromEl)
+                    _nodes.Remove(fromEl);
+                if (conn.To?.Visual is FrameworkElement toEl)
+                    _nodes.Remove(toEl);
             }
 
             _selectedConnections.Clear();
@@ -367,6 +387,28 @@ namespace WhiteBoard.Core.Tools
                     return conn;
             }
             return null;
+        }
+
+        public void AddToSelection(BPMNConnection conn)
+        {
+            if (!_selectedConnections.Contains(conn))
+            {
+                conn.IsSelected = true;
+                _selectedConnections.Add(conn);
+            }
+        }
+
+        public IEnumerable<BPMNConnection> GetAllConnections() => _connections;
+
+        private bool IsSnappable(UIElement element)
+        {
+            if (element is FrameworkElement fe && fe.Tag?.ToString() == "NoSnap")
+                return false;
+
+            if (element is Thumb || element is Line)
+                return false;
+
+            return true;
         }
     }
 }

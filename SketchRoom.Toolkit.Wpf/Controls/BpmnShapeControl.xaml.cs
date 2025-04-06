@@ -47,6 +47,8 @@ namespace SketchRoom.Toolkit.Wpf
 
             this.MouseEnter += (_, _) => ShowConnectors();
             this.MouseLeave += (_, _) => HideConnectors();
+
+            //this.Tag = "Snappable";
         }
 
         private void ResizeLeft_DragDelta(object sender, DragDeltaEventArgs e)

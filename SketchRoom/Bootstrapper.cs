@@ -35,7 +35,6 @@ namespace SketchRoom
 
             containerRegistry.RegisterSingleton<IToolManager, ToolManager>();
             containerRegistry.RegisterSingleton<IDrawingService, WhiteBoard.Core.Services.DrawingService>();
-            containerRegistry.RegisterSingleton<ISelectionService, WhiteBoard.Core.Services.SelectionService>();
             containerRegistry.RegisterSingleton<ICanvasRenderer, CanvasRenderer>();
             containerRegistry.RegisterSingleton<ICommandManager, WhiteBoard.Core.Services.CommandManager>();
             containerRegistry.RegisterSingleton<ISnapService, SnapService>();

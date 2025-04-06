@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows;
 using WhiteBoard.Core.Services.Interfaces;
 using System.Windows.Shapes;
+using System.Windows.Controls.Primitives;
 
 namespace WhiteBoard.Core.Tools
 {
@@ -79,7 +80,8 @@ namespace WhiteBoard.Core.Tools
 
                 // Elemente la care să se alinieze (excludem shape-ul curent)
                 var others = _canvas.Children.OfType<FrameworkElement>()
-                                .Where(e => e != fe).ToList();
+                             .Where(e => e != fe && IsSnappable(e))
+                             .ToList();
 
                 // Obține poziția snap-uită și liniile de ghidaj
                 var snappedPos = _snapService.GetSnappedPoint(rawNewPos, others, fe, out List<Line> snapLines);
@@ -110,6 +112,18 @@ namespace WhiteBoard.Core.Tools
                 _selectedShape.Deselect();
                 _selectedShape = null;
             }
+        }
+
+        private bool IsSnappable(FrameworkElement element)
+        {
+            if (element is Thumb || element is Rectangle)
+                return false;
+
+            if (element is IInteractiveShape)
+                return true;
+
+            // exclude orice altceva ce nu este shape vizibil principal
+            return !(element is Line or Ellipse or Path or Border or TextBlock);
         }
     }
 }

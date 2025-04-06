@@ -26,7 +26,6 @@ namespace WhiteBoard.Core.Services
         {
             snapLines = new List<Line>();
 
-            // 1. Coordonatele elementului mutat
             double elementLeft = rawPoint.X;
             double elementTop = rawPoint.Y;
             double elementRight = elementLeft + movingElement.ActualWidth;
@@ -34,7 +33,68 @@ namespace WhiteBoard.Core.Services
             double elementCenterX = elementLeft + movingElement.ActualWidth / 2;
             double elementCenterY = elementTop + movingElement.ActualHeight / 2;
 
-            // 2. Toate punctele de interes ale elementului mutat
+            var pointsToCheckX = new[] { elementLeft, elementRight, elementCenterX };
+            var pointsToCheckY = new[] { elementTop, elementBottom, elementCenterY };
+
+            foreach (var el in others)
+            {
+                // 🔒 Verificare de siguranță: să fie în canvas și valid
+                if (el == null || el == movingElement || el.ActualWidth == 0 || el.ActualHeight == 0)
+                    continue;
+
+                if (VisualTreeHelper.GetParent(el) is not Canvas)
+                    continue;
+
+                double left = Canvas.GetLeft(el);
+                double top = Canvas.GetTop(el);
+                double right = left + el.ActualWidth;
+                double bottom = top + el.ActualHeight;
+                double centerX = left + el.ActualWidth / 2;
+                double centerY = top + el.ActualHeight / 2;
+
+                var snapTargetsX = new[] { left, right, centerX };
+                var snapTargetsY = new[] { top, bottom, centerY };
+
+                foreach (var x in pointsToCheckX)
+                {
+                    foreach (var tx in snapTargetsX)
+                    {
+                        if (Math.Abs(x - tx) < _snapThreshold)
+                            snapLines.Add(CreateVerticalLine(tx));
+                    }
+                }
+
+                foreach (var y in pointsToCheckY)
+                {
+                    foreach (var ty in snapTargetsY)
+                    {
+                        if (Math.Abs(y - ty) < _snapThreshold)
+                            snapLines.Add(CreateHorizontalLine(ty));
+                    }
+                }
+            }
+
+            return rawPoint;
+        }
+
+
+        public Point GetSnappedPointCursor(
+    Point rawPoint,
+    IEnumerable<FrameworkElement> others,
+    FrameworkElement movingElement,
+    out List<Line> snapLines,
+    bool snapX = true,
+    bool snapY = true)
+        {
+            snapLines = new List<Line>();
+
+            double elementLeft = rawPoint.X;
+            double elementTop = rawPoint.Y;
+            double elementRight = elementLeft + movingElement.ActualWidth;
+            double elementBottom = elementTop + movingElement.ActualHeight;
+            double elementCenterX = elementLeft + movingElement.ActualWidth / 2;
+            double elementCenterY = elementTop + movingElement.ActualHeight / 2;
+
             var pointsToCheckX = new[] { elementLeft, elementRight, elementCenterX };
             var pointsToCheckY = new[] { elementTop, elementBottom, elementCenterY };
 
@@ -53,35 +113,32 @@ namespace WhiteBoard.Core.Services
                 var snapTargetsX = new[] { left, right, centerX };
                 var snapTargetsY = new[] { top, bottom, centerY };
 
-                // Compară toate punctele de pe X cu targetele
-                foreach (var x in pointsToCheckX)
+                if (snapX)
                 {
-                    foreach (var tx in snapTargetsX)
+                    foreach (var x in pointsToCheckX)
                     {
-                        if (Math.Abs(x - tx) < _snapThreshold)
-                            snapLines.Add(CreateVerticalLine(tx));
+                        foreach (var tx in snapTargetsX)
+                        {
+                            if (Math.Abs(x - tx) < _snapThreshold)
+                                snapLines.Add(CreateVerticalLine(tx));
+                        }
                     }
                 }
 
-                // Compară toate punctele de pe Y cu targetele
-                foreach (var y in pointsToCheckY)
+                if (snapY)
                 {
-                    foreach (var ty in snapTargetsY)
+                    foreach (var y in pointsToCheckY)
                     {
-                        if (Math.Abs(y - ty) < _snapThreshold)
-                            snapLines.Add(CreateHorizontalLine(ty));
+                        foreach (var ty in snapTargetsY)
+                        {
+                            if (Math.Abs(y - ty) < _snapThreshold)
+                                snapLines.Add(CreateHorizontalLine(ty));
+                        }
                     }
                 }
             }
 
-            // Nu ajustăm poziția efectivă, deci returnăm rawPoint
-            return rawPoint;
-        }
-
-
-        private bool IsClose(double a, double b)
-        {
-            return Math.Abs(a - b) < _snapThreshold;
+            return rawPoint; // Snap vizual, fără a forța poziția
         }
 
         private Line CreateVerticalLine(double x)
@@ -145,11 +202,14 @@ namespace WhiteBoard.Core.Services
                 var snapTargetsX = new[] { left, right, centerX };
                 var snapTargetsY = new[] { top, bottom, centerY };
 
+                var seenX = new HashSet<double>();
+                var seenY = new HashSet<double>();
+
                 foreach (var x in pointsToCheckX)
                 {
                     foreach (var tx in snapTargetsX)
                     {
-                        if (Math.Abs(x - tx) < _snapThreshold)
+                        if (Math.Abs(x - tx) < _snapThreshold && seenX.Add(tx))
                             snapLines.Add(CreateVerticalLine(tx));
                     }
                 }
@@ -158,7 +218,7 @@ namespace WhiteBoard.Core.Services
                 {
                     foreach (var ty in snapTargetsY)
                     {
-                        if (Math.Abs(y - ty) < _snapThreshold)
+                        if (Math.Abs(y - ty) < _snapThreshold && seenY.Add(ty))
                             snapLines.Add(CreateHorizontalLine(ty));
                     }
                 }

@@ -16,8 +16,6 @@ namespace WhiteBoard.Core.Models
         private readonly PathFigure _figure;
         private readonly Canvas _containerCanvas;
         private Polygon? _arrowHead;
-        private Ellipse? _intersectionDot;
-
         public BPMNNode? From { get; set; }
         public BPMNNode? To { get; set; }
 

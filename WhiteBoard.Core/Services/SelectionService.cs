@@ -10,15 +10,22 @@ using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services.Interfaces;
+using WhiteBoard.Core.Tools;
 
 namespace WhiteBoard.Core.Services
 {
     public class SelectionService : ISelectionService
     {
+        private readonly BpmnConnectorTool _connectorTool;
         private readonly List<UIElement> _selected = new();
         private readonly Dictionary<UIElement, UIElement> _selectionMarkers = new(); // poate fi Path sau Rectangle
         public event EventHandler? SelectionChanged;
         public IReadOnlyList<UIElement> SelectedElements => _selected.AsReadOnly();
+
+        public SelectionService(BpmnConnectorTool connectorTool)
+        {
+            _connectorTool = connectorTool;
+        }
 
         public Rect GetBoundsFromPoints(IEnumerable<Point> points)
         {
@@ -42,7 +49,51 @@ namespace WhiteBoard.Core.Services
                 Rect elementRect;
                 UIElement? marker = null;
 
-                if (element is FrameworkElement fe && !(element is Path))
+                if (element is Path path && path.Data != null)
+                {
+                    elementRect = path.Data.GetRenderBounds(new Pen(path.Stroke, path.StrokeThickness));
+
+                    if (!bounds.IntersectsWith(elementRect))
+                        continue;
+
+                    marker = new Path
+                    {
+                        Data = path.Data.Clone(),
+                        Stroke = Brushes.DeepSkyBlue,
+                        StrokeThickness = 3,
+                        StrokeDashArray = new DoubleCollection { 4, 2 },
+                        IsHitTestVisible = false
+                    };
+                }
+                else if (element is Canvas canvasWrapper)
+                {
+                    var path2 = canvasWrapper.Children.OfType<Path>().FirstOrDefault();
+                    if (path2 != null && path2.Data != null)
+                    {
+                        elementRect = path2.Data.GetRenderBounds(new Pen(path2.Stroke, path2.StrokeThickness));
+
+                        if (!bounds.IntersectsWith(elementRect))
+                            continue;
+
+                        var conn = FindConnectionByVisual(canvasWrapper);
+                        if (conn != null)
+                            _connectorTool.AddToSelection(conn);
+
+                        marker = new Path
+                        {
+                            Data = path2.Data.Clone(), // clone geometry
+                            Stroke = Brushes.DeepSkyBlue,
+                            StrokeThickness = 3,
+                            StrokeDashArray = new DoubleCollection { 4, 2 },
+                            IsHitTestVisible = false
+                        };
+
+                        // Poziționează Path-ul exact pe cel original
+                        Canvas.SetLeft(marker, 0);
+                        Canvas.SetTop(marker, 0);
+                    }
+                }
+                else if (element is FrameworkElement fe)
                 {
                     double left = Canvas.GetLeft(fe);
                     double top = Canvas.GetTop(fe);
@@ -72,30 +123,12 @@ namespace WhiteBoard.Core.Services
                     Canvas.SetLeft(marker, left);
                     Canvas.SetTop(marker, top);
                 }
-                else if (element is Path path && path.Data != null)
-                {
-                    elementRect = path.Data.GetRenderBounds(new Pen(path.Stroke, path.StrokeThickness));
-
-                    if (!bounds.IntersectsWith(elementRect))
-                        continue;
-
-                    marker = new Path
-                    {
-                        Data = path.Data.Clone(), // clone geometry
-                        Stroke = Brushes.DeepSkyBlue,
-                        StrokeThickness = 3,
-                        StrokeDashArray = new DoubleCollection { 4, 2 },
-                        IsHitTestVisible = false
-                    };
-                }
-
                 if (marker != null)
                 {
                     _selected.Add(element);
                     _selectionMarkers[element] = marker;
                     canvas.Children.Add(marker);
 
-                    // animare stroke
                     var animation = new DoubleAnimation
                     {
                         From = 0,
@@ -124,6 +157,12 @@ namespace WhiteBoard.Core.Services
 
             _selectionMarkers.Clear();
             _selected.Clear();
+        }
+
+        private BPMNConnection? FindConnectionByVisual(UIElement visual)
+        {
+            return _connectorTool.GetAllConnections()
+                .FirstOrDefault(c => c.Visual == visual);
         }
     }
 }
