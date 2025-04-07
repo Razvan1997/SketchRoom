@@ -16,6 +16,10 @@ namespace WhiteBoard.Core.Services.Interfaces
         event MouseButtonEventHandler ShapeClicked;
 
         /// <summary>
+        /// Eveniment declanșat când se face click pe un punct de conexiune (ex: Top, Right, Bottom, Left).
+        /// </summary>
+        event EventHandler<string>? ConnectionPointClicked;
+        /// <summary>
         /// Returnează UIElement-ul vizual pentru a fi adăugat pe Canvas.
         /// </summary>
         UIElement Visual { get; }
@@ -34,5 +38,7 @@ namespace WhiteBoard.Core.Services.Interfaces
         /// Setează poziția pe Canvas.
         /// </summary>
         void SetPosition(Point position);
+
+        bool EnableConnectors { get; set; }
     }
 }

@@ -92,5 +92,58 @@
             Cursor="SizeNS"
             Style="{StaticResource HorizontalDashedLineThumbStyle}"
             Visibility="Collapsed" />
+
+
+        <!--  Top connector  -->
+        <Rectangle
+            x:Name="ConnectorTop"
+            Width="20"
+            Height="10"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Top"
+            Cursor="Cross"
+            Fill="DodgerBlue"
+            MouseLeftButtonDown="Connector_MouseLeftButtonDown"
+            Tag="NoSnap"
+            Visibility="Collapsed" />
+
+        <!--  Right connector  -->
+        <Rectangle
+            x:Name="ConnectorRight"
+            Width="10"
+            Height="20"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Center"
+            Cursor="Cross"
+            Fill="DodgerBlue"
+            MouseLeftButtonDown="Connector_MouseLeftButtonDown"
+            Tag="NoSnap"
+            Visibility="Collapsed" />
+
+        <!--  Bottom connector  -->
+        <Rectangle
+            x:Name="ConnectorBottom"
+            Width="20"
+            Height="10"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Bottom"
+            Cursor="Cross"
+            Fill="DodgerBlue"
+            MouseLeftButtonDown="Connector_MouseLeftButtonDown"
+            Tag="NoSnap"
+            Visibility="Collapsed" />
+
+        <!--  Left connector  -->
+        <Rectangle
+            x:Name="ConnectorLeft"
+            Width="10"
+            Height="20"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Center"
+            Cursor="Cross"
+            Fill="DodgerBlue"
+            MouseLeftButtonDown="Connector_MouseLeftButtonDown"
+            Tag="NoSnap"
+            Visibility="Collapsed" />
     </Grid>
 </UserControl>

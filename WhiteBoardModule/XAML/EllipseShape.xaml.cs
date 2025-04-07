@@ -22,11 +22,11 @@ namespace WhiteBoardModule.XAML
     /// </summary>
     public partial class EllipseShape : UserControl, IInteractiveShape
     {
+        public event EventHandler<string>? ConnectionPointClicked;
+        public bool EnableConnectors { get; set; } = false;
         public EllipseShape()
         {
             InitializeComponent();
-
-            this.Cursor = Cursors.Hand;
 
             this.MouseLeftButtonDown += OnMouseLeftButtonDown;
 
@@ -39,6 +39,9 @@ namespace WhiteBoardModule.XAML
             ResizeRight.DragDelta += ResizeRight_DragDelta;
             ResizeTop.DragDelta += ResizeTop_DragDelta;
             ResizeBottom.DragDelta += ResizeBottom_DragDelta;
+
+            this.MouseEnter += (_, _) => ShowConnectors();
+            this.MouseLeave += (_, _) => HideConnectors();
         }
 
         public event MouseButtonEventHandler? ShapeClicked;
@@ -145,6 +148,36 @@ namespace WhiteBoardModule.XAML
             this.Height = newHeight;
         }
 
+        private void ShowConnectors()
+        {
+            if (!EnableConnectors) return;
+
+            ConnectorTop.Visibility = Visibility.Visible;
+            ConnectorRight.Visibility = Visibility.Visible;
+            ConnectorBottom.Visibility = Visibility.Visible;
+            ConnectorLeft.Visibility = Visibility.Visible;
+        }
+
+        private void HideConnectors()
+        {
+            if (!EnableConnectors) return;
+
+            ConnectorTop.Visibility = Visibility.Collapsed;
+            ConnectorRight.Visibility = Visibility.Collapsed;
+            ConnectorBottom.Visibility = Visibility.Collapsed;
+            ConnectorLeft.Visibility = Visibility.Collapsed;
+        }
+
         public UIElement Visual => this;
+
+        private void Connector_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (sender == ConnectorTop) ConnectionPointClicked?.Invoke(this, "Top");
+            else if (sender == ConnectorRight) ConnectionPointClicked?.Invoke(this, "Right");
+            else if (sender == ConnectorBottom) ConnectionPointClicked?.Invoke(this, "Bottom");
+            else if (sender == ConnectorLeft) ConnectionPointClicked?.Invoke(this, "Left");
+
+            e.Handled = true;
+        }
     }
 }

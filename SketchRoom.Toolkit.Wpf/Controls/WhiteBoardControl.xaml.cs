@@ -339,6 +339,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
                 if (element.Visual is IInteractiveShape interactiveSvg)
                 {
+                    interactiveSvg.EnableConnectors = true;
                     interactiveSvg.ShapeClicked += (s, evt) =>
                     {
                         _toolManager.SetActive("BpmnTool");
@@ -362,7 +363,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                     var element = new BpmnWhiteBoardElementXaml(newInstance);
                     element.SetPosition(dropPos);
                     visualElement = element.Visual as FrameworkElement;
-
+                    newInstance.EnableConnectors = true;
                     element.Clicked += (s, evt) =>
                     {
                         _toolManager.SetActive("BpmnTool");
@@ -374,6 +375,11 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                         }
 
                         evt.Handled = true;
+                    };
+                    newInstance.ConnectionPointClicked += (s, direction) =>
+                    {
+                        _toolManager.SetActive("Connector");
+                        _connectorTool?.SetSelected(newInstance, direction);
                     };
                 }
             }

@@ -26,6 +26,7 @@ namespace SketchRoom.Toolkit.Wpf
         public event MouseButtonEventHandler? ShapeClicked;
         public event EventHandler? ConnectionRequested;
         public event EventHandler<string>? ConnectionPointClicked;
+        public bool EnableConnectors { get; set; } = false;
         public BpmnShapeControl(Uri svgUri)
         {
             InitializeComponent();
@@ -94,6 +95,8 @@ namespace SketchRoom.Toolkit.Wpf
 
         public void Select()
         {
+            if (!EnableConnectors) return;
+
             ResizeLeft.Visibility = Visibility.Visible;
             ResizeRight.Visibility = Visibility.Visible;
             ResizeTop.Visibility = Visibility.Visible;
@@ -103,6 +106,8 @@ namespace SketchRoom.Toolkit.Wpf
 
         public void Deselect()
         {
+            if (!EnableConnectors) return;
+
             ResizeLeft.Visibility = Visibility.Collapsed;
             ResizeRight.Visibility = Visibility.Collapsed;
             ResizeTop.Visibility = Visibility.Collapsed;

@@ -12,10 +12,10 @@
     prism:ViewModelLocator.AutoWireViewModel="True"
     mc:Ignorable="d">
     <Border
-        Margin="10"
-        Padding="10"
-        Background="#eeeeee"
-        BorderBrush="#ccc"
+        Margin="0,20,0,0"
+        Padding="12"
+        Background="#2e2e2e"
+        BorderBrush="#1f1f1f"
         BorderThickness="1"
         CornerRadius="10">
         <controls:ShapesControl
