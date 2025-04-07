@@ -16,6 +16,7 @@ using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Factory.Interfaces;
 using System.Windows.Controls.Primitives;
 using WhiteBoard.Core.Services;
+using SketchRoom.Models.Enums;
 
 namespace SketchRoom.Toolkit.Wpf.Controls
 {
@@ -71,6 +72,9 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
             _connectorTool = new BpmnConnectorTool(DrawingCanvas, _connections, _nodes, this, _toolManager, _snapService);
             _toolManager.RegisterTool(_connectorTool);
+
+            var rotateTool = new RotateTool(DrawingCanvas);
+            _toolManager.RegisterTool(rotateTool);
 
             _toolManager.SetActive("FreeDraw");
 
@@ -360,6 +364,11 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                 var type = shapePrototype.GetType();
                 if (Activator.CreateInstance(type) is IInteractiveShape newInstance)
                 {
+                    if (newInstance is IInteractiveShape generic && shape.Type is ShapeType shapeType)
+                    {
+                        generic.SetShape(shapeType);
+                    }
+
                     var element = new BpmnWhiteBoardElementXaml(newInstance);
                     element.SetPosition(dropPos);
                     visualElement = element.Visual as FrameworkElement;

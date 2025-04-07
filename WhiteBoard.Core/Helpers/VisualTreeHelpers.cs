@@ -25,5 +25,20 @@ namespace WhiteBoard.Core.Helpers
             }
             return null;
         }
+
+        public static IEnumerable<T> FindChildren<T>(this DependencyObject depObj) where T : DependencyObject
+        {
+            if (depObj == null) yield break;
+
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(depObj); i++)
+            {
+                var child = VisualTreeHelper.GetChild(depObj, i);
+                if (child is T variable)
+                    yield return variable;
+
+                foreach (var childOfChild in FindChildren<T>(child))
+                    yield return childOfChild;
+            }
+        }
     }
 }

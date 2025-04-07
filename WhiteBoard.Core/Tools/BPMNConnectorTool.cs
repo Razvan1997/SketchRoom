@@ -63,26 +63,28 @@ namespace WhiteBoard.Core.Tools
                 _pathPoints.Clear();
 
                 _fromNode = GetNodeAt(pos);
-                _pathPoints.Add(pos);
+                var elements = _nodes.Keys.Where(e => IsSnappable(e)).ToList();
+                var snappedStart = _snapService.GetSnappedPointCursor(pos, elements, _canvas, out var _, true, true);
+                _pathPoints.Add(snappedStart);
 
                 _tempPolyline = new Polyline
                 {
                     Stroke = Brushes.DodgerBlue,
                     StrokeThickness = 2,
-                    Points = new PointCollection { pos }
+                    Points = new PointCollection { snappedStart } 
                 };
                 _canvas.Children.Add(_tempPolyline);
             }
             else
             {
-                // DETECTĂM DACĂ AM DAT CLICK PE ALTĂ LINIE
-                var snapped = GetSnappedPoint(pos);
+                var elements = _nodes.Keys.Where(e => IsSnappable(e)).ToList();
+                var snapped = _snapService.GetSnappedPointCursor(pos, elements, _tempPolyline!, out var _, true, true);
+
                 var toNode = GetNodeAt(snapped);
                 var toConnection = GetConnectionAt(snapped);
 
                 if (toConnection != null)
                 {
-                    // STOP TRASARE + CREAȚIE BULINĂ
                     _pathPoints.Add(snapped);
                     FinalizeConnectionToConnection(snapped, toConnection);
                     return;
@@ -95,7 +97,7 @@ namespace WhiteBoard.Core.Tools
                 }
                 else
                 {
-                    _pathPoints.Add(pos);
+                    _pathPoints.Add(snapped);
                 }
             }
         }
@@ -173,12 +175,12 @@ namespace WhiteBoard.Core.Tools
 
                 // 👇 Aici forțăm snapping pe ambele axe
                 var snapped = _snapService.GetSnappedPointCursor(
-                    pos,
-                    elements,
-                    _tempPolyline,
-                    out var newLines,
-                    snapX: true,
-                    snapY: true);
+                                pos,
+                                elements,
+                                _tempPolyline,
+                                out var newLines,
+                                snapX: true,
+                                snapY: true);
 
                 foreach (var line in newLines)
                 {
@@ -198,7 +200,8 @@ namespace WhiteBoard.Core.Tools
                 _canvas.Children.Remove(line);
             _activeSnapLines.Clear();
 
-            var snapped = _snapService.GetSnappedPoint(endPoint, _nodes.Keys, _tempPolyline!, out _);
+            var elements = _nodes.Keys.Where(e => IsSnappable(e)).ToList();
+            var snapped = _snapService.GetSnappedPointCursor(endPoint, elements, _tempPolyline!, out _, true, true);
 
             var toNode = GetNodeAt(snapped);
             var toConnection = GetConnectionAt(snapped);
@@ -251,24 +254,6 @@ namespace WhiteBoard.Core.Tools
                 }
             }
             return null;
-        }
-
-        private Point GetSnappedPoint(Point pos, double threshold = 15)
-        {
-            var allSnapPoints = _nodes.SelectMany(kvp => new[]
-            {
-                new Point(Canvas.GetLeft(kvp.Key) + kvp.Key.ActualWidth / 2, Canvas.GetTop(kvp.Key)),
-                new Point(Canvas.GetLeft(kvp.Key) + kvp.Key.ActualWidth, Canvas.GetTop(kvp.Key) + kvp.Key.ActualHeight / 2),
-                new Point(Canvas.GetLeft(kvp.Key) + kvp.Key.ActualWidth / 2, Canvas.GetTop(kvp.Key) + kvp.Key.ActualHeight),
-                new Point(Canvas.GetLeft(kvp.Key), Canvas.GetTop(kvp.Key) + kvp.Key.ActualHeight / 2)
-            });
-
-            return allSnapPoints
-                .Select(p => new { Point = p, Distance = (p - pos).Length })
-                .Where(x => x.Distance < threshold)
-                .OrderBy(x => x.Distance)
-                .Select(x => x.Point)
-                .FirstOrDefault(pos);
         }
 
         public void OnMouseUp(Point pos) { }

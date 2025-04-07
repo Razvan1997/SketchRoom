@@ -8,11 +8,13 @@ using System.Windows;
 using WhiteBoard.Core.Services.Interfaces;
 using System.Windows.Shapes;
 using System.Windows.Controls.Primitives;
+using Microsoft.VisualBasic;
 
 namespace WhiteBoard.Core.Tools
 {
     public class BpmnTool : IDrawingTool
     {
+        private Vector _dragOffset;
         public string Name => "BpmnTool";
 
         private readonly Canvas _canvas;
@@ -36,6 +38,8 @@ namespace WhiteBoard.Core.Tools
         {
             _draggingShape = null;
 
+            
+
             foreach (var el in _canvas.Children.OfType<FrameworkElement>().Reverse())
             {
                 var bounds = new Rect(
@@ -56,6 +60,17 @@ namespace WhiteBoard.Core.Tools
 
                     _draggingShape = interactive;
                     _lastMousePos = pos;
+
+                    _draggingShape = interactive;
+                    _lastMousePos = pos;
+
+                    // 🔁 Calculează offsetul dintre mouse și colțul shape-ului
+                    if (interactive is FrameworkElement fe)
+                    {
+                        var left = Canvas.GetLeft(fe);
+                        var top = Canvas.GetTop(fe);
+                        _dragOffset = pos - new Point(left, top);
+                    }
                     return;
                 }
             }
@@ -68,34 +83,27 @@ namespace WhiteBoard.Core.Tools
         {
             if (_draggingShape == null) return;
 
-            var dx = pos.X - _lastMousePos.X;
-            var dy = pos.Y - _lastMousePos.Y;
-
             if (_draggingShape is FrameworkElement fe)
             {
-                double currentLeft = Canvas.GetLeft(fe);
-                double currentTop = Canvas.GetTop(fe);
+                // 🧮 Calculăm poziția reală dorită pe bază de offset
+                Point desiredTopLeft = pos - _dragOffset;
 
-                Point rawNewPos = new Point(currentLeft + dx, currentTop + dy);
+                // 🧲 Snap la grid (doar top-left-ul formei)
+                Point gridSnapped = _snapService.GetSnappedPoint(desiredTopLeft, gridSize: 20);
 
-                // Elemente la care să se alinieze (excludem shape-ul curent)
+                // 🔁 Afișează ghidaje dacă e cazul
                 var others = _canvas.Children.OfType<FrameworkElement>()
-                             .Where(e => e != fe && IsSnappable(e))
-                             .ToList();
+                                 .Where(e => e != fe && IsSnappable(e))
+                                 .ToList();
+                var formSnapLines = _snapService.GetSnapGuides(gridSnapped, others, fe);
 
-                // Obține poziția snap-uită și liniile de ghidaj
-                var snappedPos = _snapService.GetSnappedPoint(rawNewPos, others, fe, out List<Line> snapLines);
-
-                // Afișează liniile de snap
                 _snapCanvas.Children.Clear();
-                foreach (var line in snapLines)
+                foreach (var line in formSnapLines)
                     _snapCanvas.Children.Add(line);
 
-                // Aplică poziția nouă snap-uită
-                Canvas.SetLeft(fe, rawNewPos.X); // noua poziție reală, fără snap
-                Canvas.SetTop(fe, rawNewPos.Y);
-
-                _lastMousePos = pos;
+                // 🔩 Mutăm forma în poziția snap-uită
+                Canvas.SetLeft(fe, gridSnapped.X);
+                Canvas.SetTop(fe, gridSnapped.Y);
             }
         }
 

@@ -15,7 +15,7 @@ namespace WhiteBoard.Core.Services
     {
         private const double _snapThreshold = 10;
 
-        public Point GetSnappedPoint(Point rawPoint, double gridSize = 10)
+        public Point GetSnappedPoint(Point rawPoint, double gridSize = 20)
         {
             return new Point(
                 Math.Round(rawPoint.X / gridSize) * gridSize,
@@ -87,16 +87,11 @@ namespace WhiteBoard.Core.Services
     bool snapY = true)
         {
             snapLines = new List<Line>();
+            double closestX = rawPoint.X;
+            double closestY = rawPoint.Y;
 
-            double elementLeft = rawPoint.X;
-            double elementTop = rawPoint.Y;
-            double elementRight = elementLeft + movingElement.ActualWidth;
-            double elementBottom = elementTop + movingElement.ActualHeight;
-            double elementCenterX = elementLeft + movingElement.ActualWidth / 2;
-            double elementCenterY = elementTop + movingElement.ActualHeight / 2;
-
-            var pointsToCheckX = new[] { elementLeft, elementRight, elementCenterX };
-            var pointsToCheckY = new[] { elementTop, elementBottom, elementCenterY };
+            double minXDelta = double.MaxValue;
+            double minYDelta = double.MaxValue;
 
             foreach (var el in others)
             {
@@ -115,30 +110,38 @@ namespace WhiteBoard.Core.Services
 
                 if (snapX)
                 {
-                    foreach (var x in pointsToCheckX)
+                    foreach (var tx in snapTargetsX)
                     {
-                        foreach (var tx in snapTargetsX)
+                        double delta = Math.Abs(tx - rawPoint.X);
+                        if (delta < _snapThreshold && delta < minXDelta)
                         {
-                            if (Math.Abs(x - tx) < _snapThreshold)
-                                snapLines.Add(CreateVerticalLine(tx));
+                            minXDelta = delta;
+                            closestX = tx;
                         }
                     }
                 }
 
                 if (snapY)
                 {
-                    foreach (var y in pointsToCheckY)
+                    foreach (var ty in snapTargetsY)
                     {
-                        foreach (var ty in snapTargetsY)
+                        double delta = Math.Abs(ty - rawPoint.Y);
+                        if (delta < _snapThreshold && delta < minYDelta)
                         {
-                            if (Math.Abs(y - ty) < _snapThreshold)
-                                snapLines.Add(CreateHorizontalLine(ty));
+                            minYDelta = delta;
+                            closestY = ty;
                         }
                     }
                 }
             }
 
-            return rawPoint; // Snap vizual, fără a forța poziția
+            // Adaugă ghidajele doar dacă sunt relevante
+            if (minXDelta < _snapThreshold)
+                snapLines.Add(CreateVerticalLine(closestX));
+            if (minYDelta < _snapThreshold)
+                snapLines.Add(CreateHorizontalLine(closestY));
+
+            return new Point(closestX, closestY);
         }
 
         private Line CreateVerticalLine(double x)

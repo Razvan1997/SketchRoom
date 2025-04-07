@@ -1,4 +1,5 @@
 ﻿using SharpVectors.Converters;
+using SketchRoom.Models.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +16,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using WhiteBoard.Core.Services.Interfaces;
+using WhiteBoard.Core.Tools;
 
 namespace SketchRoom.Toolkit.Wpf
 {
@@ -23,6 +25,8 @@ namespace SketchRoom.Toolkit.Wpf
     /// </summary>
     public partial class BpmnShapeControl : UserControl, IInteractiveShape
     {
+        private bool _isRotating = false;
+        private Point _rotateStart;
         public event MouseButtonEventHandler? ShapeClicked;
         public event EventHandler? ConnectionRequested;
         public event EventHandler<string>? ConnectionPointClicked;
@@ -46,8 +50,17 @@ namespace SketchRoom.Toolkit.Wpf
             ResizeTop.DragDelta += ResizeTop_DragDelta;
             ResizeBottom.DragDelta += ResizeBottom_DragDelta;
 
-            this.MouseEnter += (_, _) => ShowConnectors();
+            this.MouseEnter += (s, e) =>
+            {
+                if (!RotateIcon.IsMouseOver)
+                    ShowConnectors();
+            };
+
             this.MouseLeave += (_, _) => HideConnectors();
+
+            RotateIcon.PreviewMouseLeftButtonDown += RotateIcon_PreviewMouseLeftButtonDown;
+            RotateIcon.PreviewMouseLeftButtonUp += RotateIcon_PreviewMouseLeftButtonUp;
+            RotateIcon.PreviewMouseMove += RotateIcon_PreviewMouseMove;
 
             //this.Tag = "Snappable";
         }
@@ -101,7 +114,7 @@ namespace SketchRoom.Toolkit.Wpf
             ResizeRight.Visibility = Visibility.Visible;
             ResizeTop.Visibility = Visibility.Visible;
             ResizeBottom.Visibility = Visibility.Visible;
-
+            RotateIcon.Visibility = Visibility.Visible;
         }
 
         public void Deselect()
@@ -112,6 +125,7 @@ namespace SketchRoom.Toolkit.Wpf
             ResizeRight.Visibility = Visibility.Collapsed;
             ResizeTop.Visibility = Visibility.Collapsed;
             ResizeBottom.Visibility = Visibility.Collapsed;
+            RotateIcon.Visibility = Visibility.Collapsed;
         }
 
         public void SetPosition(Point position)
@@ -152,6 +166,52 @@ namespace SketchRoom.Toolkit.Wpf
             else if (sender == ConnectorLeft) ConnectionPointClicked?.Invoke(this, "Left");
 
             e.Handled = true;
+        }
+
+        private void RotateIcon_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            var toolManager = ContainerLocator.Container.Resolve<IToolManager>();
+
+            var canvas = VisualTreeHelper.GetParent(this) as Canvas;
+            if (canvas != null && toolManager.GetToolByName("RotateTool") is RotateTool rt)
+            {
+                _isRotating = true;
+                _rotateStart = e.GetPosition(canvas);
+                rt.StartRotation(this, _rotateStart);
+                toolManager.SetActive("RotateTool");
+                e.Handled = true;
+            }
+        }
+
+        private void RotateIcon_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (!_isRotating) return;
+
+            var canvas = VisualTreeHelper.GetParent(this) as Canvas;
+            var toolManager = ContainerLocator.Container.Resolve<IToolManager>();
+            if (canvas != null && toolManager.ActiveTool is RotateTool rt)
+            {
+                Point pos = e.GetPosition(canvas);
+                rt.OnMouseMove(pos);
+            }
+        }
+
+        private void RotateIcon_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            var canvas = VisualTreeHelper.GetParent(this) as Canvas;
+            var toolManager = ContainerLocator.Container.Resolve<IToolManager>();
+            if (canvas != null && _isRotating && toolManager.ActiveTool is RotateTool rt)
+            {
+                rt.OnMouseUp(e.GetPosition(canvas));
+                toolManager.SetActive("BpmnTool");
+                _isRotating = false;
+                e.Handled = true;
+            }
+        }
+
+        public void SetShape(ShapeType shape)
+        {
+            //throw new NotImplementedException();
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SketchRoom.Models.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -40,5 +41,7 @@ namespace WhiteBoard.Core.Services.Interfaces
         void SetPosition(Point position);
 
         bool EnableConnectors { get; set; }
+
+        void SetShape(ShapeType shape);
     }
 }

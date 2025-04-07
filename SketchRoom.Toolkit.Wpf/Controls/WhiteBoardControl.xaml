@@ -9,7 +9,7 @@
     d:DesignWidth="800"
     mc:Ignorable="d">
 
-    <Grid Background="Gray">
+    <Grid Background="#2A2D30">
         <ScrollViewer
             x:Name="ScrollViewer"
             ClipToBounds="True"
@@ -19,7 +19,7 @@
                 x:Name="DrawingRoot"
                 Width="2244"
                 Height="3185"
-                Background="White"
+                Background="Transparent"
                 MouseWheel="Canvas_MouseWheel"
                 PreviewMouseLeftButtonDown="Canvas_PreviewMouseLeftButtonDown"
                 PreviewMouseLeftButtonUp="Canvas_PreviewMouseLeftButtonUp"
@@ -37,15 +37,66 @@
                     x:Name="SnapGridCanvas"
                     Width="2244"
                     Height="3185"
-                    Panel.ZIndex="0"
-                    IsHitTestVisible="False" />
+                    Panel.ZIndex="1"
+                    IsHitTestVisible="False">
+                    <Canvas.Background>
+                        <DrawingBrush
+                            AlignmentX="Left"
+                            AlignmentY="Top"
+                            Opacity="0.3"
+                            Stretch="None"
+                            TileMode="Tile"
+                            Viewbox="0,0,100,100"
+                            ViewboxUnits="Absolute"
+                            Viewport="0,0,100,100"
+                            ViewportUnits="Absolute">
+                            <DrawingBrush.Drawing>
+                                <DrawingGroup>
+                                    <!--  Grilă mică (20x20)  -->
+                                    <GeometryDrawing Brush="Transparent">
+                                        <GeometryDrawing.Pen>
+                                            <Pen Brush="#33FFFFFF" Thickness="0.5" />
+                                        </GeometryDrawing.Pen>
+                                        <GeometryDrawing.Geometry>
+                                            <GeometryGroup>
+                                                <!--  Linii verticale  -->
+                                                <LineGeometry StartPoint="20,0" EndPoint="20,100" />
+                                                <LineGeometry StartPoint="40,0" EndPoint="40,100" />
+                                                <LineGeometry StartPoint="60,0" EndPoint="60,100" />
+                                                <LineGeometry StartPoint="80,0" EndPoint="80,100" />
+                                                <!--  Linii orizontale  -->
+                                                <LineGeometry StartPoint="0,20" EndPoint="100,20" />
+                                                <LineGeometry StartPoint="0,40" EndPoint="100,40" />
+                                                <LineGeometry StartPoint="0,60" EndPoint="100,60" />
+                                                <LineGeometry StartPoint="0,80" EndPoint="100,80" />
+                                            </GeometryGroup>
+                                        </GeometryDrawing.Geometry>
+                                    </GeometryDrawing>
+
+                                    <!--  Grilă mare (100x100)  -->
+                                    <GeometryDrawing Brush="Transparent">
+                                        <GeometryDrawing.Pen>
+                                            <Pen Brush="#66FFFFFF" Thickness="0.8" />
+                                        </GeometryDrawing.Pen>
+                                        <GeometryDrawing.Geometry>
+                                            <GeometryGroup>
+                                                <LineGeometry StartPoint="0,0" EndPoint="100,0" />
+                                                <LineGeometry StartPoint="0,0" EndPoint="0,100" />
+                                            </GeometryGroup>
+                                        </GeometryDrawing.Geometry>
+                                    </GeometryDrawing>
+                                </DrawingGroup>
+                            </DrawingBrush.Drawing>
+                        </DrawingBrush>
+                    </Canvas.Background>
+                </Canvas>
 
                 <Canvas
                     x:Name="DrawingCanvas"
                     Width="2244"
                     Height="3185"
                     AllowDrop="True"
-                    Background="Transparent"
+                    Background="#1A1A1A"
                     DragOver="DrawingCanvas_DragOver"
                     Drop="DrawingCanvas_Drop" />
             </Canvas>

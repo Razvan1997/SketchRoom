@@ -76,7 +76,7 @@
                             <svgc:SvgViewbox
                                 Width="24"
                                 Height="24"
-                                Source="pack://application:,,,/WhiteBoardModule;component/Resources/Shapes.svg"
+                                Source="pack://application:,,,/WhiteBoardModule;component/Resources/text.svg"
                                 Stretch="Uniform" />
                         </Border>
 
@@ -86,6 +86,66 @@
                             Fill="#292828" />
 
                         <Border
+                            Padding="10"
+                            Background="#404040"
+                            ClipToBounds="True"
+                            CornerRadius="9"
+                            Cursor="Hand"
+                            MouseDown="CollapseSvg_MouseDown"
+                            SnapsToDevicePixels="True"
+                            ToolTip="Alt tool">
+                            <svgc:SvgViewbox
+                                Width="24"
+                                Height="24"
+                                Source="pack://application:,,,/WhiteBoardModule;component/Resources/connection.svg"
+                                Stretch="Uniform" />
+                        </Border>
+                        <Rectangle
+                            Height="1"
+                            Margin="8,0"
+                            Fill="#292828" />
+
+                        <Border
+                            Padding="10"
+                            Background="#404040"
+                            ClipToBounds="True"
+                            CornerRadius="9"
+                            Cursor="Hand"
+                            MouseDown="CollapseSvg_MouseDown"
+                            SnapsToDevicePixels="True"
+                            ToolTip="Alt tool">
+                            <svgc:SvgViewbox
+                                Width="24"
+                                Height="24"
+                                Source="pack://application:,,,/WhiteBoardModule;component/Resources/annotation.svg"
+                                Stretch="Uniform" />
+                        </Border>
+                        <Rectangle
+                            Height="1"
+                            Margin="8,0"
+                            Fill="#292828" />
+
+                        <Border
+                            Padding="10"
+                            Background="#404040"
+                            ClipToBounds="True"
+                            CornerRadius="9"
+                            Cursor="Hand"
+                            MouseDown="CollapseSvg_MouseDown"
+                            SnapsToDevicePixels="True"
+                            ToolTip="Alt tool">
+                            <svgc:SvgViewbox
+                                Width="24"
+                                Height="24"
+                                Source="pack://application:,,,/WhiteBoardModule;component/Resources/table.svg"
+                                Stretch="Uniform" />
+                        </Border>
+                        <Rectangle
+                            Height="1"
+                            Margin="8,0"
+                            Fill="#292828" />
+
+                        <!--<Border
                             Padding="10"
                             Background="#404040"
                             ClipToBounds="True"
@@ -139,67 +199,7 @@
                                 Height="24"
                                 Source="pack://application:,,,/WhiteBoardModule;component/Resources/Shapes.svg"
                                 Stretch="Uniform" />
-                        </Border>
-                        <Rectangle
-                            Height="1"
-                            Margin="8,0"
-                            Fill="#292828" />
-
-                        <Border
-                            Padding="10"
-                            Background="#404040"
-                            ClipToBounds="True"
-                            CornerRadius="9"
-                            Cursor="Hand"
-                            MouseDown="CollapseSvg_MouseDown"
-                            SnapsToDevicePixels="True"
-                            ToolTip="Alt tool">
-                            <svgc:SvgViewbox
-                                Width="24"
-                                Height="24"
-                                Source="pack://application:,,,/WhiteBoardModule;component/Resources/Shapes.svg"
-                                Stretch="Uniform" />
-                        </Border>
-                        <Rectangle
-                            Height="1"
-                            Margin="8,0"
-                            Fill="#292828" />
-
-                        <Border
-                            Padding="10"
-                            Background="#404040"
-                            ClipToBounds="True"
-                            CornerRadius="9"
-                            Cursor="Hand"
-                            MouseDown="CollapseSvg_MouseDown"
-                            SnapsToDevicePixels="True"
-                            ToolTip="Alt tool">
-                            <svgc:SvgViewbox
-                                Width="24"
-                                Height="24"
-                                Source="pack://application:,,,/WhiteBoardModule;component/Resources/Shapes.svg"
-                                Stretch="Uniform" />
-                        </Border>
-                        <Rectangle
-                            Height="1"
-                            Margin="8,0"
-                            Fill="#292828" />
-
-                        <Border
-                            Padding="10"
-                            Background="#404040"
-                            ClipToBounds="True"
-                            CornerRadius="9"
-                            Cursor="Hand"
-                            MouseDown="CollapseSvg_MouseDown"
-                            SnapsToDevicePixels="True"
-                            ToolTip="Alt tool">
-                            <svgc:SvgViewbox
-                                Width="24"
-                                Height="24"
-                                Source="pack://application:,,,/WhiteBoardModule;component/Resources/Shapes.svg"
-                                Stretch="Uniform" />
-                        </Border>
+                        </Border>-->
                     </StackPanel>
                 </Border>
             </StackPanel>

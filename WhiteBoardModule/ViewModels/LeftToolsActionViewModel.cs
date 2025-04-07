@@ -1,10 +1,7 @@
-﻿using SketchRoom.Models.Shapes;
-using System;
-using System.Collections.Generic;
+﻿using SketchRoom.Models.Enums;
+using SketchRoom.Models.Shapes;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using WhiteBoardModule.XAML;
 
 namespace WhiteBoardModule.ViewModels
 {
@@ -37,12 +34,34 @@ namespace WhiteBoardModule.ViewModels
                 Name = "Rectangle",
                 SvgUri = new Uri("pack://application:,,,/WhiteBoardModule;component/SVG/rectangle.svg")
             });
+
+            var ellipse = new GenericShapeControl();
+            ellipse.SetShape(ShapeType.Ellipse);
             AllShapes.Add(new BPMNShapeModel
             {
                 Name = "Ellipse",
-                ShapeContent = new WhiteBoardModule.XAML.EllipseShape()
+                Type = ShapeType.Ellipse,
+                ShapeContent = ellipse
             });
-            // Repetă pentru celelalte
+
+            var rectangle = new GenericShapeControl();
+            rectangle.SetShape(ShapeType.Rectangle);
+            AllShapes.Add(new BPMNShapeModel
+            {
+                Name = "Rectangle",
+                Type = ShapeType.Rectangle,
+                ShapeContent = rectangle
+            });
+
+            var triangle = new GenericShapeControl();
+            triangle.SetShape(ShapeType.Triangle);
+            AllShapes.Add(new BPMNShapeModel
+            {
+                Name = "Triangle",
+                Type = ShapeType.Triangle,
+                ShapeContent = triangle
+            });
+
         }
 
         private void FilterShapes()

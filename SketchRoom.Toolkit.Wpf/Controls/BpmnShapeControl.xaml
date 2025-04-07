@@ -162,5 +162,16 @@
             Tag="NoSnap"
             Visibility="Collapsed" />
 
+        <svgc:SvgViewbox
+            x:Name="RotateIcon"
+            Width="20"
+            Height="20"
+            Margin="0,-25,-25,0"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top"
+            Source="pack://application:,,,/SketchRoom.Toolkit.Wpf;component/Resources/rotate.svg"
+            Stretch="Uniform"
+            Visibility="Collapsed" />
+
     </Grid>
 </UserControl>
