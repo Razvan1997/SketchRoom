@@ -57,8 +57,9 @@ namespace WhiteBoard.Core.Tools
             if (_target == null || _ghostShape == null) return;
 
             double angle = ComputeRotationAngle(_startMousePos, position, _target);
-            ApplyRotation(_ghostShape, angle);
-            UpdateOverlay(angle);
+            double snappedAngle = SnapAngle(angle, 15);
+            ApplyRotation(_ghostShape, snappedAngle);
+            UpdateOverlay(snappedAngle);
 
             if (_rotationOverlay != null)
             {
@@ -229,6 +230,11 @@ namespace WhiteBoard.Core.Tools
             var storyboard = new Storyboard();
             storyboard.Children.Add(anim);
             storyboard.Begin();
+        }
+
+        private double SnapAngle(double angle, double step)
+        {
+            return Math.Round(angle / step) * step;
         }
     }
 }

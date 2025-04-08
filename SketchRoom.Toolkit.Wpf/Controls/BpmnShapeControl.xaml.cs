@@ -31,9 +31,11 @@ namespace SketchRoom.Toolkit.Wpf
         public event EventHandler? ConnectionRequested;
         public event EventHandler<string>? ConnectionPointClicked;
         public bool EnableConnectors { get; set; } = false;
+        private readonly ISnapService _snapService;
         public BpmnShapeControl(Uri svgUri)
         {
             InitializeComponent();
+            _snapService = ContainerLocator.Container.Resolve<ISnapService>();
             this.Cursor = Cursors.Hand;
             SvgViewbox.Source = svgUri;
             this.Width = 100;
@@ -68,31 +70,33 @@ namespace SketchRoom.Toolkit.Wpf
         private void ResizeLeft_DragDelta(object sender, DragDeltaEventArgs e)
         {
             double newWidth = Math.Max(this.ActualWidth - e.HorizontalChange, this.MinWidth);
-            double deltaX = this.ActualWidth - newWidth;
+            double snappedWidth = SnapToGrid(newWidth, 20);
+            double deltaX = this.ActualWidth - snappedWidth;
 
-            this.Width = newWidth;
+            this.Width = snappedWidth;
             Canvas.SetLeft(this, Canvas.GetLeft(this) + deltaX);
         }
 
         private void ResizeRight_DragDelta(object sender, DragDeltaEventArgs e)
         {
             double newWidth = Math.Max(this.ActualWidth + e.HorizontalChange, this.MinWidth);
-            this.Width = newWidth;
+            this.Width = SnapToGrid(newWidth, 20);
         }
 
         private void ResizeTop_DragDelta(object sender, DragDeltaEventArgs e)
         {
             double newHeight = Math.Max(this.ActualHeight - e.VerticalChange, this.MinHeight);
-            double deltaY = this.ActualHeight - newHeight;
+            double snappedHeight = SnapToGrid(newHeight, 20);
+            double deltaY = this.ActualHeight - snappedHeight;
 
-            this.Height = newHeight;
+            this.Height = snappedHeight;
             Canvas.SetTop(this, Canvas.GetTop(this) + deltaY);
         }
 
         private void ResizeBottom_DragDelta(object sender, DragDeltaEventArgs e)
         {
             double newHeight = Math.Max(this.ActualHeight + e.VerticalChange, this.MinHeight);
-            this.Height = newHeight;
+            this.Height = SnapToGrid(newHeight, 20);
         }
 
         private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -212,6 +216,11 @@ namespace SketchRoom.Toolkit.Wpf
         public void SetShape(ShapeType shape)
         {
             //throw new NotImplementedException();
+        }
+
+        private double SnapToGrid(double value, double gridSize)
+        {
+            return Math.Round(value / gridSize) * gridSize;
         }
     }
 }

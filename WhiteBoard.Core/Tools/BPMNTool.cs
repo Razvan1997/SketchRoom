@@ -38,8 +38,6 @@ namespace WhiteBoard.Core.Tools
         {
             _draggingShape = null;
 
-            
-
             foreach (var el in _canvas.Children.OfType<FrameworkElement>().Reverse())
             {
                 var bounds = new Rect(
