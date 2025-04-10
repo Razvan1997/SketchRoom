@@ -15,6 +15,8 @@ namespace WhiteBoard.Core.Tools
 
         public IEnumerable<IDrawingTool> Tools => _tools.Values;
 
+        public event Action<IDrawingTool>? ToolChanged;
+
         public void RegisterTool(IDrawingTool tool)
         {
             if (!_tools.ContainsKey(tool.Name))
@@ -24,7 +26,11 @@ namespace WhiteBoard.Core.Tools
         public void SetActive(string toolName)
         {
             if (_tools.TryGetValue(toolName, out var tool))
+            {
                 ActiveTool = tool;
+
+                ToolChanged?.Invoke(tool);
+            }
         }
 
         public IDrawingTool? GetToolByName(string name)

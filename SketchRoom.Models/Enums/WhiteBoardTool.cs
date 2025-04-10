@@ -8,7 +8,10 @@ namespace SketchRoom.Models.Enums
 {
     public enum WhiteBoardTool
     {
+        None,
         Cursor,
-        Drag
+        Drag,
+        CurvedArrow,
+        TextEdit
     }
 }

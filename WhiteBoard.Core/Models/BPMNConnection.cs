@@ -68,6 +68,24 @@ namespace WhiteBoard.Core.Models
             _containerCanvas = new Canvas();
             _containerCanvas.Children.Add(_path);
         }
+        public BPMNConnection(BPMNNode from, BPMNNode? to, PathGeometry bezierGeometry)
+    : this(from, to)
+{
+            _figure.Segments.Clear();
+            _geometry.Figures.Clear();
+
+            foreach (var figure in bezierGeometry.Figures)
+            {
+                var copy = new PathFigure { StartPoint = figure.StartPoint, IsClosed = false, IsFilled = true };
+                foreach (var seg in figure.Segments)
+                    copy.Segments.Add(seg.Clone()); // clone to avoid shared references
+                _geometry.Figures.Add(copy);
+            }
+
+            // adaugă săgeata la capătul curbei
+            if (bezierGeometry.Figures.FirstOrDefault()?.Segments.LastOrDefault() is BezierSegment bezier)
+                AddArrowHead(bezier.Point2, bezier.Point3); // Point2 -> control, Point3 -> final
+        }
 
         public BPMNConnection(BPMNNode from, BPMNNode? to, IEnumerable<Point> pathPoints, bool addArrow = true)
     : this(from, to)
@@ -116,7 +134,18 @@ namespace WhiteBoard.Core.Models
             _containerCanvas.Children.Add(_arrowHead);
         }
 
+
+        public void SetStroke(Brush stroke)
+        {
+            _path.Stroke = stroke;
+
+            if (_arrowHead != null)
+                _arrowHead.Fill = stroke;
+        }
+
         public override UIElement Visual => _containerCanvas;
         public override Rect Bounds => _geometry.Bounds;
     }
+
+
 }

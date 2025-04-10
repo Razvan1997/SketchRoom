@@ -53,7 +53,10 @@
                         <Viewbox>
                             <Grid>
                                 <ContentControl Content="{Binding ShapeContent}" Visibility="{Binding ShapeContent, Converter={StaticResource NullToVisibilityConverter}}" />
-                                <svgc:SvgViewbox Source="{Binding SvgUri}" Visibility="{Binding ShapeContent, Converter={StaticResource InverseNullToVisibilityConverter}}" />
+                                <svgc:SvgViewbox
+                                    Source="{Binding SvgUri}"
+                                    Stretch="Fill"
+                                    Visibility="{Binding ShapeContent, Converter={StaticResource InverseNullToVisibilityConverter}}" />
                             </Grid>
                         </Viewbox>
                     </Border>

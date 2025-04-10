@@ -43,8 +43,7 @@ namespace SketchRoom
             containerRegistry.RegisterSingleton<IZoomPanService, ZoomPanService>();
 
             containerRegistry.RegisterSingleton<ICollaborationService, CollaborationService>();
-
-
+            containerRegistry.RegisterSingleton<SelectedToolService>();
             containerRegistry.RegisterSingleton<IBpmnShapeFactory, BpmnShapeFactory>();
         }
 

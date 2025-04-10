@@ -21,9 +21,11 @@
                 Height="3185"
                 Background="Transparent"
                 MouseWheel="Canvas_MouseWheel"
-                PreviewMouseLeftButtonDown="Canvas_PreviewMouseLeftButtonDown"
-                PreviewMouseLeftButtonUp="Canvas_PreviewMouseLeftButtonUp"
-                PreviewMouseMove="Canvas_PreviewMouseMove">
+                PreviewMouseRightButtonUp="DrawingRoot_PreviewMouseRightButtonUp"
+                PreviewMouseRightButtonDown ="DrawingRoot_PreviewMouseRightButtonDown"
+                PreviewMouseLeftButtonDown="OnCanvasLeftClickStart"
+                PreviewMouseLeftButtonUp="OnCanvasLeftClickEnd"
+                PreviewMouseMove="OnCanvasMouseMove">
 
                 <Canvas.RenderTransform>
                     <TransformGroup>

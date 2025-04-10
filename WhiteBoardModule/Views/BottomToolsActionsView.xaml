@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:coreConverters="clr-namespace:SketchRoom.Toolkit.Wpf.Converters;assembly=SketchRoom.Toolkit.Wpf"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:enums="clr-namespace:SketchRoom.Models.Enums;assembly=SketchRoom.Models"
     xmlns:local="clr-namespace:WhiteBoardModule.Views"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:prism="http://prismlibrary.com/"
@@ -59,8 +60,8 @@
             <!--  Tool 1  -->
             <ToggleButton
                 Command="{Binding SelectToolCommand}"
-                CommandParameter="Cursor"
-                IsChecked="{Binding SelectedTool, Converter={StaticResource EnumEqualityConverter}, ConverterParameter=Cursor}"
+                CommandParameter="{x:Static enums:WhiteBoardTool.Cursor}"
+                IsChecked="{Binding SelectedTool, Mode=TwoWay, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static enums:WhiteBoardTool.Cursor}}"
                 Style="{StaticResource ToolToggleButtonStyle}">
                 <svgc:SvgViewbox
                     Width="24"
@@ -77,13 +78,34 @@
             <!--  Tool 2  -->
             <ToggleButton
                 Command="{Binding SelectToolCommand}"
-                CommandParameter="Drag"
-                IsChecked="{Binding SelectedTool, Converter={StaticResource EnumEqualityConverter}, ConverterParameter=Drag}"
+                CommandParameter="{x:Static enums:WhiteBoardTool.Drag}"
+                IsChecked="{Binding SelectedTool, Mode=TwoWay, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static enums:WhiteBoardTool.Drag}}"
                 Style="{StaticResource ToolToggleButtonStyle}">
                 <svgc:SvgViewbox
                     Width="24"
                     Height="24"
-                    Source="pack://application:,,,/WhiteBoardModule;component/Resources/drag.svg"  />
+                    Source="pack://application:,,,/WhiteBoardModule;component/Resources/drag.svg" />
+            </ToggleButton>
+
+            <ToggleButton
+                Command="{Binding SelectToolCommand}"
+                CommandParameter="{x:Static enums:WhiteBoardTool.CurvedArrow}"
+                IsChecked="{Binding SelectedTool, Mode=TwoWay, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static enums:WhiteBoardTool.CurvedArrow}}"
+                Style="{StaticResource ToolToggleButtonStyle}">
+                <svgc:SvgViewbox
+                    Width="24"
+                    Height="24"
+                    Source="pack://application:,,,/WhiteBoardModule;component/Resources/curved-arrow.svg" />
+            </ToggleButton>
+            <ToggleButton
+                Command="{Binding SelectToolCommand}"
+                CommandParameter="{x:Static enums:WhiteBoardTool.TextEdit}"
+                IsChecked="{Binding SelectedTool, Mode=TwoWay, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static enums:WhiteBoardTool.TextEdit}}"
+                Style="{StaticResource ToolToggleButtonStyle}">
+                <svgc:SvgViewbox
+                    Width="24"
+                    Height="24"
+                    Source="pack://application:,,,/WhiteBoardModule;component/Resources/text-edit.svg" />
             </ToggleButton>
         </StackPanel>
     </Border>

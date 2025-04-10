@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using WhiteBoard.Core.Models;
 
 namespace WhiteBoard.Core.Services.Interfaces
@@ -15,4 +16,6 @@ namespace WhiteBoard.Core.Services.Interfaces
         void OnMouseMove(Point position);
         void OnMouseUp(Point position);
     }
+
+    
 }

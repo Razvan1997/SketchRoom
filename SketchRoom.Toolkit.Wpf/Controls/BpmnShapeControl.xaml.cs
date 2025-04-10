@@ -64,6 +64,11 @@ namespace SketchRoom.Toolkit.Wpf
             RotateIcon.PreviewMouseLeftButtonUp += RotateIcon_PreviewMouseLeftButtonUp;
             RotateIcon.PreviewMouseMove += RotateIcon_PreviewMouseMove;
 
+            ConnectorTop.MouseLeftButtonDown += Connector_MouseLeftButtonDown;
+            ConnectorRight.MouseLeftButtonDown += Connector_MouseLeftButtonDown;
+            ConnectorBottom.MouseLeftButtonDown += Connector_MouseLeftButtonDown;
+            ConnectorLeft.MouseLeftButtonDown += Connector_MouseLeftButtonDown;
+
             //this.Tag = "Snappable";
         }
 

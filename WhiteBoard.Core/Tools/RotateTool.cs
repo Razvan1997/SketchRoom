@@ -9,10 +9,11 @@ using WhiteBoard.Core.Services.Interfaces;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows.Media.Animation;
+using System.Windows.Input;
 
 namespace WhiteBoard.Core.Tools
 {
-    public class RotateTool : IDrawingTool
+    public class RotateTool : IDrawingTool, IToolBehavior
     {
         public string Name => "RotateTool";
 
@@ -25,7 +26,7 @@ namespace WhiteBoard.Core.Tools
         private double _initialAngle;
         private double _overlayBaseY;
         private bool _isOverlayMoved = false;
-
+        private double _lastSnappedAngle;
         public RotateTool(Canvas canvas)
         {
             _canvas = canvas;
@@ -50,16 +51,16 @@ namespace WhiteBoard.Core.Tools
             UpdateOverlay(_initialAngle);
         }
 
-        public void OnMouseDown(Point position) { }
+        public void OnMouseDown(Point position, MouseButtonEventArgs e) { }
 
-        public void OnMouseMove(Point position)
+        public void OnMouseMove(Point position, MouseEventArgs e)
         {
             if (_target == null || _ghostShape == null) return;
 
             double angle = ComputeRotationAngle(_startMousePos, position, _target);
-            double snappedAngle = SnapAngle(angle, 15);
-            ApplyRotation(_ghostShape, snappedAngle);
-            UpdateOverlay(snappedAngle);
+            _lastSnappedAngle = NormalizeAngle(SnapAngle(angle, 15));
+            ApplyRotation(_ghostShape, _lastSnappedAngle);
+            UpdateOverlay(_lastSnappedAngle);
 
             if (_rotationOverlay != null)
             {
@@ -90,12 +91,12 @@ namespace WhiteBoard.Core.Tools
             }
         }
 
-        public void OnMouseUp(Point position)
+        public void OnMouseUp(Point position, MouseButtonEventArgs e)
         {
             if (_target == null || _ghostShape == null) return;
 
             double angle = ComputeRotationAngle(_startMousePos, position, _target);
-            ApplyRotation(_target.Visual, angle);
+            ApplyRotation(_target.Visual, _lastSnappedAngle);
 
             _canvas.Children.Remove(_ghostShape);
             _canvas.Children.Remove(_rotationOverlay);
@@ -175,7 +176,7 @@ namespace WhiteBoard.Core.Tools
             if (_target == null || _rotationOverlay == null) return;
 
             if (_rotationOverlay.Child is TextBlock tb)
-                tb.Text = $"{Math.Round(angle)}°";
+                tb.Text = $"{Math.Round(NormalizeAngle(angle))}°";
 
             // Calculează centrul vizual al shape-ului
             var shape = _target.Visual;
@@ -235,6 +236,28 @@ namespace WhiteBoard.Core.Tools
         private double SnapAngle(double angle, double step)
         {
             return Math.Round(angle / step) * step;
+        }
+
+        public void OnMouseDown(Point position)
+        {
+        }
+
+        public void OnMouseMove(Point position)
+        {
+        }
+
+        public void OnMouseUp(Point position)
+        {
+        }
+
+        private double NormalizeAngle(double angle)
+        {
+            angle %= 360;
+            if (angle > 180)
+                angle -= 360;
+            if (angle < -180)
+                angle += 360;
+            return angle;
         }
     }
 }

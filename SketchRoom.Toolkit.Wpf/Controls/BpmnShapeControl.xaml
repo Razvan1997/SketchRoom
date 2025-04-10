@@ -119,7 +119,6 @@
             VerticalAlignment="Top"
             Cursor="Cross"
             Fill="DodgerBlue"
-            MouseLeftButtonDown="Connector_MouseLeftButtonDown"
             Tag="NoSnap"
             Visibility="Collapsed" />
 
@@ -132,7 +131,6 @@
             VerticalAlignment="Center"
             Cursor="Cross"
             Fill="DodgerBlue"
-            MouseLeftButtonDown="Connector_MouseLeftButtonDown"
             Tag="NoSnap"
             Visibility="Collapsed" />
 
@@ -145,7 +143,6 @@
             VerticalAlignment="Bottom"
             Cursor="Cross"
             Fill="DodgerBlue"
-            MouseLeftButtonDown="Connector_MouseLeftButtonDown"
             Tag="NoSnap"
             Visibility="Collapsed" />
 
@@ -158,7 +155,6 @@
             VerticalAlignment="Center"
             Cursor="Cross"
             Fill="DodgerBlue"
-            MouseLeftButtonDown="Connector_MouseLeftButtonDown"
             Tag="NoSnap"
             Visibility="Collapsed" />
 
