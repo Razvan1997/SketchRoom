@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services.Interfaces;
@@ -23,6 +24,8 @@ namespace WhiteBoard.Core.Tools
         public event Action<List<Point>>? StrokeCompleted;
         public event Action<Point>? PointDrawn;
         public event Action<Point>? PointerMoved;
+        private bool _isDrawing = false;
+        public bool IsDrawing => _isDrawing;
 
         public FreeDrawTool(IDrawingService drawingService, Canvas canvas)
         {
@@ -30,8 +33,9 @@ namespace WhiteBoard.Core.Tools
             _canvas = canvas;
         }
 
-        public void OnMouseDown(Point pos)
+        public void OnMouseDown(Point pos, MouseButtonEventArgs e)
         {
+            _isDrawing = true;
             var color = StrokeColor;
             var thickness = 2.0;
 
@@ -39,7 +43,7 @@ namespace WhiteBoard.Core.Tools
             _canvas.Children.Add(_currentStroke.Visual);
         }
 
-        public void OnMouseMove(Point pos)
+        public void OnMouseMove(Point pos, MouseEventArgs e)
         {
             if (_currentStroke == null)
                 return;
@@ -51,7 +55,7 @@ namespace WhiteBoard.Core.Tools
             PointerMoved?.Invoke(pos); // pentru cursor sincronizat
         }
 
-        public void OnMouseUp(Point pos)
+        public void OnMouseUp(Point pos, MouseButtonEventArgs e)
         {
             if (_currentStroke == null)
                 return;
@@ -61,6 +65,7 @@ namespace WhiteBoard.Core.Tools
 
             StrokeCompleted?.Invoke(_currentStroke.Points.ToList());
             _currentStroke = null;
+            _isDrawing = false;
         }
     }
 }

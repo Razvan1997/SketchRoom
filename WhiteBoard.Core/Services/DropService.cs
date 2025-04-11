@@ -52,10 +52,12 @@ namespace WhiteBoard.Core.Services
             if (shape.SvgUri != null)
             {
                 visualElement = CreateSvgElement(shape, dropPos);
+                visualElement.Tag = "interactive";
             }
             else if (shape.ShapeContent is IInteractiveShape prototype)
             {
                 visualElement = CreateXamlElement(prototype, shape.Type, dropPos);
+                visualElement.Tag = "interactive";
             }
 
             return visualElement;
@@ -104,10 +106,9 @@ namespace WhiteBoard.Core.Services
 
             shape.ShapeClicked += (s, evt) =>
             {
-                _toolManager.SetActive("BpmnTool");
                 if (_toolManager.ActiveTool is BpmnTool bpmnTool)
                 {
-                    bpmnTool.OnMouseDown(evt.GetPosition(_drawingCanvas));
+                    bpmnTool.OnMouseDown(evt.GetPosition(_drawingCanvas), evt);
                 }
                 evt.Handled = true;
             };
@@ -116,12 +117,10 @@ namespace WhiteBoard.Core.Services
             {
                 if (_selectedToolService.CurrentTool == WhiteBoardTool.CurvedArrow)
                 {
-                    _toolManager.SetActive("ConnectorCurved");
                     _connectorCurvedTool?.SetSelected(shape, direction);
                 }
                 else
                 {
-                    _toolManager.SetActive("Connector");
                     _connectorTool?.SetSelected(shape, direction);
                 }
             };

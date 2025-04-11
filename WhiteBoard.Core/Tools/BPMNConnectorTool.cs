@@ -25,7 +25,6 @@ namespace WhiteBoard.Core.Tools
         private List<Point> _pathPoints = new();
         private Polyline? _tempPolyline;
         private BPMNNode? _fromNode;
-        private bool _isDrawing = false;
         private DateTime _lastClickTime = DateTime.MinValue;
 
         private IInteractiveShape? _selectedShape;
@@ -33,6 +32,8 @@ namespace WhiteBoard.Core.Tools
         private readonly ISnapService _snapService;
         private readonly List<Line> _activeSnapLines = new();
         public string Name => "Connector";
+
+        private bool _isDrawing = false;
         public bool IsDrawing => _isDrawing;
 
         public BpmnConnectorTool(Canvas canvas, List<BPMNConnection> connections, Dictionary<FrameworkElement, BPMNNode> nodes, UIElement focusTarget,
@@ -46,8 +47,11 @@ namespace WhiteBoard.Core.Tools
             _snapService = snapService;
         }
 
-        public void OnMouseDown(Point pos)
+        public void OnMouseDown(Point pos, MouseButtonEventArgs e)
         {
+            if (GetConnectionAt(pos) != null)
+                return;
+
             var now = DateTime.Now;
             if (_isDrawing && (now - _lastClickTime).TotalMilliseconds < 400)
             {
@@ -135,12 +139,15 @@ namespace WhiteBoard.Core.Tools
                 };
 
                 _connections.Add(connection);
+                if (connection.Visual is FrameworkElement fe)
+                    fe.Tag = "Connector";
                 _canvas.Children.Add(connection.Visual);
             }
 
             _pathPoints.Clear();
             _isDrawing = false;
             _fromNode = null;
+            _toolManager.SetNone();
         }
 
         private Ellipse CreateConnectionDot(Point pos)
@@ -160,7 +167,7 @@ namespace WhiteBoard.Core.Tools
             return dot;
         }
 
-        public void OnMouseMove(Point pos)
+        public void OnMouseMove(Point pos, MouseEventArgs e)
         {
             if (_isDrawing && _tempPolyline != null && _pathPoints.Count > 0)
             {
@@ -235,12 +242,15 @@ namespace WhiteBoard.Core.Tools
                 };
 
                 _connections.Add(connection);
+                if (connection.Visual is FrameworkElement fe)
+                    fe.Tag = "Connector";
                 _canvas.Children.Add(connection.Visual);
             }
 
             _pathPoints.Clear();
             _isDrawing = false;
             _fromNode = null;
+            _toolManager.SetNone();
         }
 
         private BPMNNode? GetNodeAt(Point pos)
@@ -256,7 +266,7 @@ namespace WhiteBoard.Core.Tools
             return null;
         }
 
-        public void OnMouseUp(Point pos) { }
+        public void OnMouseUp(Point pos, MouseButtonEventArgs e) { }
 
         public void SetSelected(IInteractiveShape fromShape, string direction)
         {
@@ -348,7 +358,6 @@ namespace WhiteBoard.Core.Tools
 
         public void OnConnectionClicked(BPMNConnection conn, bool ctrl)
         {
-            _toolManager.SetActive("Connector");
             _focusTarget.Focus();
 
             if (!ctrl)

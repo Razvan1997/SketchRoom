@@ -119,7 +119,7 @@
             VerticalAlignment="Top"
             Cursor="Cross"
             Fill="DodgerBlue"
-            Tag="NoSnap"
+            Tag="Connector"
             Visibility="Collapsed" />
 
         <!--  Right connector  -->
@@ -131,7 +131,7 @@
             VerticalAlignment="Center"
             Cursor="Cross"
             Fill="DodgerBlue"
-            Tag="NoSnap"
+            Tag="Connector"
             Visibility="Collapsed" />
 
         <!--  Bottom connector  -->
@@ -143,7 +143,7 @@
             VerticalAlignment="Bottom"
             Cursor="Cross"
             Fill="DodgerBlue"
-            Tag="NoSnap"
+            Tag="Connector"
             Visibility="Collapsed" />
 
         <!--  Left connector  -->
@@ -155,7 +155,7 @@
             VerticalAlignment="Center"
             Cursor="Cross"
             Fill="DodgerBlue"
-            Tag="NoSnap"
+            Tag="Connector"
             Visibility="Collapsed" />
 
         <svgc:SvgViewbox
@@ -167,6 +167,7 @@
             VerticalAlignment="Top"
             Source="pack://application:,,,/SketchRoom.Toolkit.Wpf;component/Resources/rotate.svg"
             Stretch="Uniform"
+            Tag="Rotate"
             Visibility="Collapsed" />
 
     </Grid>

@@ -12,9 +12,10 @@ namespace WhiteBoard.Core.Services.Interfaces
     public interface IDrawingTool
     {
         string Name { get; }
-        void OnMouseDown(Point position);
-        void OnMouseMove(Point position);
-        void OnMouseUp(Point position);
+        void OnMouseDown(Point position, MouseButtonEventArgs e);
+        void OnMouseMove(Point position, MouseEventArgs e);
+        void OnMouseUp(Point position, MouseButtonEventArgs e);
+        bool IsDrawing { get; }
     }
 
     

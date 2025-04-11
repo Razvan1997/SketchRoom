@@ -91,7 +91,8 @@
                 Command="{Binding SelectToolCommand}"
                 CommandParameter="{x:Static enums:WhiteBoardTool.CurvedArrow}"
                 IsChecked="{Binding SelectedTool, Mode=TwoWay, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static enums:WhiteBoardTool.CurvedArrow}}"
-                Style="{StaticResource ToolToggleButtonStyle}">
+                Style="{StaticResource ToolToggleButtonStyle}"
+                Tag="ConnectorCurved">
                 <svgc:SvgViewbox
                     Width="24"
                     Height="24"

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services.Interfaces;
 
@@ -18,14 +19,15 @@ namespace WhiteBoard.Core.Tools
         private readonly Canvas _canvas;
 
         private const double HitTestRadius = 8;
-
+        private bool _isDrawing = false;
+        public bool IsDrawing => _isDrawing;
         public EraserTool(IDrawingService drawingService, Canvas canvas)
         {
             _drawingService = drawingService;
             _canvas = canvas;
         }
 
-        public void OnMouseDown(Point position)
+        public void OnMouseDown(Point position, MouseButtonEventArgs e)
         {
             var toRemove = new List<WhiteBoardElement>();
 
@@ -46,7 +48,7 @@ namespace WhiteBoard.Core.Tools
             }
         }
 
-        public void OnMouseMove(Point position) { }
-        public void OnMouseUp(Point position) { }
+        public void OnMouseMove(Point position, MouseEventArgs e) { }
+        public void OnMouseUp(Point position, MouseButtonEventArgs e) { }
     }
 }

@@ -20,17 +20,27 @@ namespace WhiteBoard.Core.Tools
         public void RegisterTool(IDrawingTool tool)
         {
             if (!_tools.ContainsKey(tool.Name))
+            {
                 _tools[tool.Name] = tool;
+            }
         }
 
         public void SetActive(string toolName)
         {
             if (_tools.TryGetValue(toolName, out var tool))
             {
-                ActiveTool = tool;
+                if (ActiveTool == tool)
+                    return;
 
+                ActiveTool = tool;
                 ToolChanged?.Invoke(tool);
             }
+        }
+
+        public void SetNone()
+        {
+            ActiveTool = null;
+            ToolChanged?.Invoke(null!);
         }
 
         public IDrawingTool? GetToolByName(string name)

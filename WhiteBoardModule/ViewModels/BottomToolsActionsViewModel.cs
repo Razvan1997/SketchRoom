@@ -14,7 +14,7 @@ namespace WhiteBoardModule.ViewModels
     public class BottomToolsActionsViewModel : BindableBase
     {
         private readonly SelectedToolService _selectedToolService;
-
+        private readonly ToolInterceptorService _interceptor;
         private WhiteBoardTool _selectedTool;
         public WhiteBoardTool SelectedTool
         {
@@ -27,14 +27,20 @@ namespace WhiteBoardModule.ViewModels
         public BottomToolsActionsViewModel()
         {
             _selectedToolService = ContainerLocator.Container.Resolve<SelectedToolService>();
-
+            var toolManager = ContainerLocator.Container.Resolve<IToolManager>();
+            _interceptor = new ToolInterceptorService(toolManager, _selectedToolService);
             _selectedToolService.PropertyChanged += (s, e) =>
             {
                 if (e.PropertyName == nameof(SelectedToolService.CurrentTool))
+                {
                     SelectedTool = _selectedToolService.CurrentTool;
-            };
 
-            var toolManager = ContainerLocator.Container.Resolve<IToolManager>();
+                    if (SelectedTool == WhiteBoardTool.None)
+                    {
+                        toolManager.SetNone();
+                    }
+                }
+            };
 
             SelectToolCommand = new DelegateCommand<object>(param =>
             {
@@ -50,6 +56,8 @@ namespace WhiteBoardModule.ViewModels
                     {
                         toolManager.SetActive("TextEdit");
                     }
+
+                    _interceptor.InterceptToolSwitch(SelectedTool);
                 }
             });
         }

@@ -12,7 +12,7 @@ using System.Windows.Shapes;
 
 namespace WhiteBoard.Core.Tools
 {
-    public class SelectionTool : IToolBehavior, IDrawingTool
+    public class SelectionTool : IDrawingTool
     {
         private readonly Canvas _canvas;
         private readonly ISelectionService _selectionService;
@@ -21,7 +21,8 @@ namespace WhiteBoard.Core.Tools
         private bool _isSelecting = false;
         private Point _selectionStart;
         private Rectangle? _selectionRectangle;
-
+        private bool _isDrawing = false;
+        public bool IsDrawing => _isDrawing;
         public string Name => "Selection";
 
         public SelectionTool(Canvas canvas, ISelectionService selectionService, IToolManager toolManager)
@@ -53,6 +54,7 @@ namespace WhiteBoard.Core.Tools
                 Canvas.SetLeft(_selectionRectangle, _selectionStart.X);
                 Canvas.SetTop(_selectionRectangle, _selectionStart.Y);
             }
+            _isDrawing = true;
         }
 
         public void OnMouseMove(Point position, MouseEventArgs e)
@@ -83,14 +85,23 @@ namespace WhiteBoard.Core.Tools
 
                 _selectionService.HandleSelection(bounds, _canvas);
             }
-            _toolManager.SetActive("BpmnTool");
+
+            _isDrawing = false;
         }
 
-        // Implementare goală pentru IDrawingTool (nefolosită)
-        void IDrawingTool.OnMouseDown(Point position) { }
+        public void OnMouseDown(Point position)
+        {
+            //throw new NotImplementedException();
+        }
 
-        void IDrawingTool.OnMouseMove(Point position) { }
+        public void OnMouseMove(Point position)
+        {
+            //throw new NotImplementedException();
+        }
 
-        void IDrawingTool.OnMouseUp(Point position) { }
+        public void OnMouseUp(Point position)
+        {
+            //throw new NotImplementedException();
+        }
     }
 }

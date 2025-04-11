@@ -9,6 +9,7 @@ using WhiteBoard.Core.Services.Interfaces;
 using System.Windows.Shapes;
 using System.Windows.Controls.Primitives;
 using Microsoft.VisualBasic;
+using System.Windows.Input;
 
 namespace WhiteBoard.Core.Tools
 {
@@ -25,6 +26,9 @@ namespace WhiteBoard.Core.Tools
         private IInteractiveShape? _draggingShape;
         private Point _lastMousePos;
 
+        private bool _isDrawing = false;
+        public bool IsDrawing => _isDrawing;
+
         public event Action<IInteractiveShape?>? ShapeSelected;
 
         public BpmnTool(Canvas canvas, ISnapService snapService, Canvas snapCanvas)
@@ -34,10 +38,10 @@ namespace WhiteBoard.Core.Tools
             _snapCanvas = snapCanvas;
         }
 
-        public void OnMouseDown(Point pos)
+        public void OnMouseDown(Point pos, MouseButtonEventArgs e)
         {
             _draggingShape = null;
-
+            _isDrawing = true;
             foreach (var el in _canvas.Children.OfType<FrameworkElement>().Reverse())
             {
                 var bounds = new Rect(
@@ -77,7 +81,7 @@ namespace WhiteBoard.Core.Tools
             ShapeSelected?.Invoke(null);
         }
 
-        public void OnMouseMove(Point pos)
+        public void OnMouseMove(Point pos, MouseEventArgs e)
         {
             if (_draggingShape == null) return;
 
@@ -105,10 +109,11 @@ namespace WhiteBoard.Core.Tools
             }
         }
 
-        public void OnMouseUp(Point pos)
+        public void OnMouseUp(Point pos, MouseButtonEventArgs e)
         {
             _draggingShape = null;
             _snapCanvas.Children.Clear();
+            _isDrawing = false;
         }
 
         public void DeselectCurrent()

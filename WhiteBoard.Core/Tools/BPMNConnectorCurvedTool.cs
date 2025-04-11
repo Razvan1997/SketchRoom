@@ -10,6 +10,7 @@ using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services.Interfaces;
 using System.Windows.Shapes;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 
 namespace WhiteBoard.Core.Tools
 {
@@ -45,7 +46,7 @@ namespace WhiteBoard.Core.Tools
             _toolManager = toolManager;
         }
 
-        public void OnMouseDown(Point pos)
+        public void OnMouseDown(Point pos, MouseButtonEventArgs e)
         {
             if (!_isDrawing)
             {
@@ -72,7 +73,7 @@ namespace WhiteBoard.Core.Tools
             }
         }
 
-        public void OnMouseMove(Point pos)
+        public void OnMouseMove(Point pos, MouseEventArgs e)
         {
             if (_isDrawing && _tempPath != null && _startPoint != null)
             {
@@ -80,7 +81,7 @@ namespace WhiteBoard.Core.Tools
             }
         }
 
-        public void OnMouseUp(Point pos) { }
+        public void OnMouseUp(Point pos, MouseButtonEventArgs e) { }
 
         private void FinalizeConnection(Point endPoint)
         {
@@ -115,7 +116,6 @@ namespace WhiteBoard.Core.Tools
             _tempPath = null;
             _fromNode = null;
             _startDirection = null;
-            _toolManager.SetActive("BpmnTool");
         }
 
         public void SetSelected(IInteractiveShape fromShape, string direction)

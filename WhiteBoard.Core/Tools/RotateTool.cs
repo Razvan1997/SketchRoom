@@ -13,7 +13,7 @@ using System.Windows.Input;
 
 namespace WhiteBoard.Core.Tools
 {
-    public class RotateTool : IDrawingTool, IToolBehavior
+    public class RotateTool : IDrawingTool
     {
         public string Name => "RotateTool";
 
@@ -27,6 +27,8 @@ namespace WhiteBoard.Core.Tools
         private double _overlayBaseY;
         private bool _isOverlayMoved = false;
         private double _lastSnappedAngle;
+        private bool _isDrawing = false;
+        public bool IsDrawing => _isDrawing;
         public RotateTool(Canvas canvas)
         {
             _canvas = canvas;
@@ -49,6 +51,7 @@ namespace WhiteBoard.Core.Tools
             _canvas.Children.Add(_rotationOverlay);
 
             UpdateOverlay(_initialAngle);
+            _isDrawing = true;
         }
 
         public void OnMouseDown(Point position, MouseButtonEventArgs e) { }
@@ -104,6 +107,7 @@ namespace WhiteBoard.Core.Tools
             _ghostShape = null;
             _rotationOverlay = null;
             _target = null;
+            _isDrawing = false;
         }
 
         private double ComputeRotationAngle(Point start, Point current, IInteractiveShape shape)

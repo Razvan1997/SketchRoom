@@ -18,7 +18,8 @@ namespace WhiteBoard.Core.Tools
         private readonly TranslateTransform _translate;
         private bool _isPanning;
         private Point _lastPoint;
-
+        private bool _isDrawing = false;
+        public bool IsDrawing => _isDrawing;
         public PanTool(IZoomPanService zoomPanService, TranslateTransform translate)
         {
             _zoomPanService = zoomPanService;

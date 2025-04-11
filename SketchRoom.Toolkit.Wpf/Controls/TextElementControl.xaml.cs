@@ -55,6 +55,16 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             // Optional: text focus
             EditableText.GotFocus += (s, e) => IsTextEditing = true;
             EditableText.LostFocus += (s, e) => IsTextEditing = false;
+
+            EditableText.PreviewMouseDown += (s, e) =>
+            {
+                EditableText.BorderThickness = new Thickness(2);
+                EditableText.BorderBrush = Brushes.White;
+
+                EditableText.Focus();
+                EditableText.SelectAll();
+                RotateIcon.Visibility = Visibility.Visible;
+            };
         }
 
         // ITextInteractiveShape implementation
@@ -79,6 +89,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                 EditableText.FontFamily = new FontFamily("Segoe UI");
                 EditableText.FontSize = 14;
                 EditableText.Foreground = Brushes.Black;
+                EditableText.Tag = "text";
             }
         }
 
@@ -90,13 +101,14 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
         public void Select()
         {
-            RotateIcon.Visibility = Visibility.Visible;
             EditableText.Focus();
             EditableText.SelectAll();
         }
 
         public void Deselect()
         {
+            EditableText.BorderThickness = new Thickness(0);
+            EditableText.BorderBrush = Brushes.Transparent;
             RotateIcon.Visibility = Visibility.Collapsed;
         }
 

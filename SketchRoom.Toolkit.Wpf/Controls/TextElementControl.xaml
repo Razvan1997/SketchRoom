@@ -39,6 +39,7 @@
                 VerticalAlignment="Stretch"
                 VerticalContentAlignment="Center"
                 AcceptsReturn="True"
+                BorderThickness="0"
                 Background="Transparent"
                 FontSize="40"
                 Text="Text"

@@ -18,5 +18,6 @@ namespace WhiteBoard.Core.Services.Interfaces
 
         IDrawingTool? GetToolByName(string name);
         event Action<IDrawingTool>? ToolChanged;
+        void SetNone();
     }
 }

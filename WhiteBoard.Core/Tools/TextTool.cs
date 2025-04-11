@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using WhiteBoard.Core.Factory.Interfaces;
@@ -29,23 +30,27 @@ namespace WhiteBoard.Core.Tools
         public string Name => "TextEdit";
 
         private readonly SelectedToolService _selectedToolService;
+        private readonly List<ITextInteractiveShape> _textShapes = new();
+        private bool _isDrawing = false;
+        public bool IsDrawing => _isDrawing;
 
         public TextTool(Canvas canvas,
                         IToolManager toolManager,
                         IBpmnShapeFactory shapeFactory,
                         ISnapService snapService,
                         IDrawingPreferencesService preferences,
-                        SelectedToolService selectedToolService) 
+                        SelectedToolService selectedToolService, List<ITextInteractiveShape> sharedTextList) 
         {
             _canvas = canvas;
             _toolManager = toolManager;
             _shapeFactory = shapeFactory;
             _snapService = snapService;
             _preferences = preferences;
-            _selectedToolService = selectedToolService; 
+            _selectedToolService = selectedToolService;
+            _textShapes = sharedTextList;
         }
 
-        public void OnMouseDown(Point pos)
+        public void OnMouseDown(Point pos, MouseButtonEventArgs e )
         {
             var hit = VisualTreeHelper.HitTest(_canvas, pos);
 
@@ -85,11 +90,12 @@ namespace WhiteBoard.Core.Tools
                 _draggedShape = textShape;
                 _startPoint = pos;
                 _selectedToolService.CurrentTool = WhiteBoardTool.None;
-                _toolManager.SetActive("BpmnTool");
+                _textShapes.Add(textShape);
             }
+            _isDrawing = true;
         }
 
-        public void OnMouseMove(Point pos)
+        public void OnMouseMove(Point pos, MouseEventArgs e)
         {
             if (_draggedShape != null)
             {
@@ -127,7 +133,7 @@ namespace WhiteBoard.Core.Tools
             }
         }
 
-        public void OnMouseUp(Point pos)
+        public void OnMouseUp(Point pos, MouseButtonEventArgs e)
         {
             _draggedShape = null;
 
@@ -135,6 +141,8 @@ namespace WhiteBoard.Core.Tools
             foreach (var line in _activeSnapLines)
                 _canvas.Children.Remove(line);
             _activeSnapLines.Clear();
+
+            _isDrawing = false;
         }
 
         private ITextInteractiveShape? FindParentTextElement(DependencyObject? element)
