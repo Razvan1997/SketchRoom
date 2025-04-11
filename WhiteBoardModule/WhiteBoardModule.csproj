@@ -37,6 +37,7 @@
 
   <ItemGroup>
     <Resource Include="Resources\annotation.svg" />
+    <Resource Include="Resources\bold.svg" />
     <Resource Include="Resources\connection.svg" />
     <Resource Include="Resources\cursor.svg" />
     <Resource Include="Resources\curved-arrow.svg" />

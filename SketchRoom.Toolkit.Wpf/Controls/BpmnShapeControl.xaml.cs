@@ -25,6 +25,11 @@ namespace SketchRoom.Toolkit.Wpf
     /// </summary>
     public partial class BpmnShapeControl : UserControl, IInteractiveShape
     {
+        public RotateTransform RotateTransform { get; }
+        public TranslateTransform TranslateTransform { get; }
+        public ScaleTransform ScaleTransform { get; }
+        public TransformGroup TransformGroup { get; }
+
         private bool _isRotating = false;
         private Point _rotateStart;
         public event MouseButtonEventHandler? ShapeClicked;
@@ -35,6 +40,19 @@ namespace SketchRoom.Toolkit.Wpf
         public BpmnShapeControl(Uri svgUri)
         {
             InitializeComponent();
+
+            RotateTransform = new RotateTransform();
+            TranslateTransform = new TranslateTransform();
+            ScaleTransform = new ScaleTransform();
+            TransformGroup = new TransformGroup();
+
+            TransformGroup.Children.Add(ScaleTransform);
+            TransformGroup.Children.Add(RotateTransform);
+            TransformGroup.Children.Add(TranslateTransform);
+
+            this.RenderTransform = TransformGroup;
+            this.RenderTransformOrigin = new Point(0.5, 0.5);
+
             _snapService = ContainerLocator.Container.Resolve<ISnapService>();
             this.Cursor = Cursors.Hand;
             SvgViewbox.Source = svgUri;

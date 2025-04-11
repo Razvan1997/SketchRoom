@@ -4,10 +4,40 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:SketchRoom.Toolkit.Wpf.Controls;assembly=SketchRoom.Toolkit.Wpf"
     xmlns:prism="http://prismlibrary.com/"
+    xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
     xmlns:vm="clr-namespace:WhiteBoardModule.ViewModels"
     xmlns:walk="clr-namespace:WalkthroughDemo;assembly=WalkthroughDemo"
     Height="80"
     prism:ViewModelLocator.AutoWireViewModel="True">
+
+    <UserControl.Resources>
+        <Style
+            x:Key="ToolToggleButtonStyle"
+            BasedOn="{StaticResource {x:Type ToggleButton}}"
+            TargetType="ToggleButton">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="Padding" Value="5" />
+            <Setter Property="Margin" Value="5" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="5">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Background" Value="#0078D7" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                            <!--  Eliminat hover trigger  -->
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
     <Border
         Margin="10"
         Padding="10"
@@ -16,36 +46,48 @@
         walk:Walkthrough.HighlightRGBBorder="True"
         walk:Walkthrough.PopupPlacement="Bottom"
         walk:Walkthrough.StepIndex="1"
-        Background="#eeeeee"
-        BorderBrush="#ccc"
+        Background="#404040"
+        BorderBrush="#292828"
         BorderThickness="1"
         CornerRadius="10">
+
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="10" />
+                <!--  FontSize  -->
                 <ColumnDefinition Width="Auto" />
+                <!--  Bold  -->
+                <ColumnDefinition Width="10" />
+                <!--  Separator  -->
+                <ColumnDefinition Width="Auto" />
+                <!--  Color  -->
                 <ColumnDefinition Width="*" />
+                <!--  Action  -->
             </Grid.ColumnDefinitions>
 
-            <controls:ActionButton
+            <!--  Font Size ComboBox  -->
+            <ComboBox
                 Grid.Column="0"
-                Width="150"
-                Height="30"
+                Width="80"
                 Margin="0,0,10,0"
-                HorizontalAlignment="Left"
                 VerticalAlignment="Center"
-                walk:Walkthrough.Description="dasdasda"
-                walk:Walkthrough.HighlightPulse="True"
-                walk:Walkthrough.PopupPlacement="Bottom"
-                walk:Walkthrough.StepIndex="2"
-                ButtonCommand="{Binding TransformToTextCommand}"
-                ButtonText="{Binding A}"
-                IsButtonEnabled="True" />
+                ItemsSource="{Binding FontSizes}"
+                SelectedItem="{Binding SelectedFontSize, Mode=TwoWay}" />
 
-            <!--  Separator Vertical  -->
-            <Border
+            <!--  Bold Button with SVG  -->
+            <ToggleButton
                 Grid.Column="1"
+                IsChecked="{Binding IsBold, Mode=TwoWay}"
+                Style="{StaticResource ToolToggleButtonStyle}">
+                <svgc:SvgViewbox
+                    Width="24"
+                    Height="24"
+                    Source="pack://application:,,,/WhiteBoardModule;component/Resources/bold.svg" />
+            </ToggleButton>
+
+            <!--  Separator  -->
+            <Border
+                Grid.Column="2"
                 Width="1"
                 Margin="10,0"
                 HorizontalAlignment="Center"
@@ -53,7 +95,7 @@
 
             <!--  Color Palette  -->
             <controls:ColorsPalette
-                Grid.Column="2"
+                Grid.Column="3"
                 VerticalAlignment="Center"
                 AvailableColors="{Binding AvailableColors}"
                 SelectColorCommand="{Binding SelectColorCommand}"
@@ -61,7 +103,7 @@
 
             <!--  Action Button  -->
             <controls:ActionButton
-                Grid.Column="3"
+                Grid.Column="4"
                 Width="150"
                 Height="30"
                 Margin="10,0,0,0"

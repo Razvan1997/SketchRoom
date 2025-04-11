@@ -128,22 +128,56 @@ namespace WhiteBoard.Core.Tools
 
         private void ApplyRotation(UIElement element, double angle)
         {
-            var center = new Point(element.RenderSize.Width / 2, element.RenderSize.Height / 2);
-            element.RenderTransform = new RotateTransform(angle, center.X, center.Y);
+            if (element.RenderTransform is TransformGroup tg)
+            {
+                var rt = tg.Children.OfType<RotateTransform>().FirstOrDefault();
+                if (rt != null)
+                {
+                    rt.Angle = angle;
+                }
+            }
+            else
+            {
+                // fallback pentru cazuri unde nu există TransformGroup (ex: ghost clone simplu)
+                var center = new Point(element.RenderSize.Width / 2, element.RenderSize.Height / 2);
+                element.RenderTransformOrigin = new Point(0.5, 0.5);
+                element.RenderTransform = new RotateTransform(angle, center.X, center.Y);
+            }
         }
 
         private FrameworkElement CloneAsGhost(UIElement original)
         {
-            return new Border
+            if (original is FrameworkElement fe)
             {
-                Width = ((FrameworkElement)original).ActualWidth,
-                Height = ((FrameworkElement)original).ActualHeight,
-                BorderBrush = Brushes.DodgerBlue,
-                BorderThickness = new Thickness(2),
-                Background = Brushes.Transparent,
-                Opacity = 0.5,
-                IsHitTestVisible = false
-            };
+                var clone = new Border
+                {
+                    Width = fe.ActualWidth,
+                    Height = fe.ActualHeight,
+                    BorderBrush = Brushes.DodgerBlue,
+                    BorderThickness = new Thickness(2),
+                    Background = Brushes.Transparent,
+                    Opacity = 0.5,
+                    IsHitTestVisible = false,
+                    RenderTransformOrigin = new Point(0.5, 0.5)
+                };
+
+                // Copiem transformul existent (dacă e relevant)
+                if (fe.RenderTransform is TransformGroup originalTransform)
+                {
+                    clone.RenderTransform = new TransformGroup
+                    {
+                        Children = new TransformCollection(originalTransform.Children.Select(t => t.Clone()))
+                    };
+                }
+                else if (fe.RenderTransform != null)
+                {
+                    clone.RenderTransform = fe.RenderTransform.Clone();
+                }
+
+                return clone;
+            }
+
+            throw new InvalidOperationException("Ghost cloning failed: not a FrameworkElement");
         }
 
         private Border CreateRotationOverlay()

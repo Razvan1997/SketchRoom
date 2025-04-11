@@ -27,6 +27,13 @@ namespace WhiteBoardModule.ViewModels
         public BottomToolsActionsViewModel()
         {
             _selectedToolService = ContainerLocator.Container.Resolve<SelectedToolService>();
+
+            _selectedToolService.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(SelectedToolService.CurrentTool))
+                    SelectedTool = _selectedToolService.CurrentTool;
+            };
+
             var toolManager = ContainerLocator.Container.Resolve<IToolManager>();
 
             SelectToolCommand = new DelegateCommand<object>(param =>
@@ -38,6 +45,10 @@ namespace WhiteBoardModule.ViewModels
                     if(SelectedTool == WhiteBoardTool.CurvedArrow)
                     {
                         toolManager.SetActive("ConnectorCurved");
+                    }
+                    if (SelectedTool == WhiteBoardTool.TextEdit)
+                    {
+                        toolManager.SetActive("TextEdit");
                     }
                 }
             });

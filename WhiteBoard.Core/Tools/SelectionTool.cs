@@ -16,6 +16,7 @@ namespace WhiteBoard.Core.Tools
     {
         private readonly Canvas _canvas;
         private readonly ISelectionService _selectionService;
+        private readonly IToolManager _toolManager;
 
         private bool _isSelecting = false;
         private Point _selectionStart;
@@ -23,10 +24,11 @@ namespace WhiteBoard.Core.Tools
 
         public string Name => "Selection";
 
-        public SelectionTool(Canvas canvas, ISelectionService selectionService)
+        public SelectionTool(Canvas canvas, ISelectionService selectionService, IToolManager toolManager)
         {
             _canvas = canvas;
             _selectionService = selectionService;
+            _toolManager = toolManager;
         }
 
         // Implementare IToolBehavior (folosit de ToolStateMachine)
@@ -81,6 +83,7 @@ namespace WhiteBoard.Core.Tools
 
                 _selectionService.HandleSelection(bounds, _canvas);
             }
+            _toolManager.SetActive("BpmnTool");
         }
 
         // Implementare goală pentru IDrawingTool (nefolosită)

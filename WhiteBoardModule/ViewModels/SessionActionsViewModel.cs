@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using WhiteBoard.Core.Services.Interfaces;
@@ -17,13 +18,57 @@ namespace WhiteBoardModule.ViewModels
         private bool _isHost;
         private bool _isSessionActive;
         private string _sessionCode;
-        private Brush _selectedColor;
+
+        private readonly IDrawingPreferencesService _preferences;
 
         public string ActionLabel => _isHost ? "Close sketch room" : "Leave room";
+
         public ICommand ActionCommand { get; }
         public ICommand SelectColorCommand { get; }
-
+        public ICommand ToggleBoldCommand { get; }
         public ICommand TransformToTextCommand { get; }
+
+        public ObservableCollection<Brush> AvailableColors { get; } = new()
+        {
+            Brushes.Black, Brushes.Red, Brushes.Green, Brushes.Blue,
+            Brushes.Yellow, Brushes.Orange, Brushes.Purple, Brushes.Brown,
+            Brushes.Gray, Brushes.Cyan, Brushes.Magenta
+        };
+
+        public ObservableCollection<double> FontSizes { get; } = new()
+        {
+            8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 72
+        };
+
+        public double SelectedFontSize
+        {
+            get => _preferences.FontSize;
+            set
+            {
+                _preferences.FontSize = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        public Brush SelectedColor
+        {
+            get => _preferences.SelectedColor;
+            set
+            {
+                _preferences.SelectedColor = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        public bool IsBold
+        {
+            get => _preferences.FontWeight == FontWeights.Bold;
+            set
+            {
+                _preferences.FontWeight = value ? FontWeights.Bold : FontWeights.Normal;
+                RaisePropertyChanged();
+            }
+        }
 
         public bool IsSessionActive
         {
@@ -31,32 +76,16 @@ namespace WhiteBoardModule.ViewModels
             set => SetProperty(ref _isSessionActive, value);
         }
 
-        public ObservableCollection<Brush> AvailableColors { get; } = new()
-        {
-            Brushes.Black,
-            Brushes.Red,
-            Brushes.Green,
-            Brushes.Blue,
-            Brushes.Yellow,
-            Brushes.Orange,
-            Brushes.Purple,
-            Brushes.Brown,
-            Brushes.Gray,
-            Brushes.Cyan,
-            Brushes.Magenta
-        };
+        private readonly DrawingStateService.DrawingStateService _stateService;
 
-        public Brush SelectedColor
+        public SessionActionsViewModel(
+            IEventAggregator eventAggregator,
+            DrawingStateService.DrawingStateService stateService,
+            IDrawingPreferencesService preferences)
         {
-            get => _selectedColor;
-            set => SetProperty(ref _selectedColor, value);
-        }
-        private DrawingStateService.DrawingStateService _stateService;
-        public SessionActionsViewModel(IEventAggregator eventAggregator, DrawingStateService.DrawingStateService stateService)
-        {
+            _preferences = preferences;
             _stateService = stateService;
             IsSessionActive = true;
-            SelectedColor = Brushes.Black;
 
             ActionCommand = new DelegateCommand(OnAction, CanExecuteActionCommand)
                                 .ObservesProperty(() => IsSessionActive);
@@ -68,9 +97,13 @@ namespace WhiteBoardModule.ViewModels
                 SelectedColor = color;
 
                 var toolManager = ContainerLocator.Container.Resolve<IToolManager>();
-                var freeDraw = toolManager.GetToolByName("FreeDraw") as FreeDrawTool;
-                if (freeDraw != null)
+                if (toolManager.GetToolByName("FreeDraw") is FreeDrawTool freeDraw)
                     freeDraw.StrokeColor = color;
+            });
+
+            ToggleBoldCommand = new DelegateCommand(() =>
+            {
+                IsBold = !IsBold;
             });
 
             eventAggregator.GetEvent<SessionContextEvent>().Subscribe(ctx =>
@@ -81,29 +114,14 @@ namespace WhiteBoardModule.ViewModels
             });
         }
 
-        private bool CanTransformToText()
-        {
-            return true;
-        }
+        private bool CanTransformToText() => true;
 
         private void OnTransformToText()
         {
-            var drawingService = ContainerLocator.Container.Resolve<DrawingStateService.DrawingStateService>();
-
-            if (!drawingService.IsSelectionModeEnabled)
-            {
-                drawingService.IsSelectionModeEnabled = true;
-            }
-            else
-            {
-                drawingService.IsSelectionModeEnabled = false;
-            }
+            _stateService.IsSelectionModeEnabled = !_stateService.IsSelectionModeEnabled;
         }
 
-        private bool CanExecuteActionCommand()
-        {
-            return IsSessionActive;
-        }
+        private bool CanExecuteActionCommand() => IsSessionActive;
 
         private void OnAction()
         {

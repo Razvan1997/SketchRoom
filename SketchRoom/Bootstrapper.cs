@@ -45,6 +45,7 @@ namespace SketchRoom
             containerRegistry.RegisterSingleton<ICollaborationService, CollaborationService>();
             containerRegistry.RegisterSingleton<SelectedToolService>();
             containerRegistry.RegisterSingleton<IBpmnShapeFactory, BpmnShapeFactory>();
+            containerRegistry.RegisterSingleton<IDrawingPreferencesService, DrawingPreferencesService>();
         }
 
         protected override void OnInitialized()

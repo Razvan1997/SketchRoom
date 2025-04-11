@@ -31,6 +31,8 @@ namespace SketchRoom.Toolkit.Wpf.Controls
         private IZoomPanService _zoomPanService;
         private IToolManager _toolManager;
         private ISnapService? _snapService;
+        private SelectedToolService _selectedToolService;
+        private IDrawingPreferencesService? _drawingPreferencesService;
         private readonly IDropService _dropService;
         private Cursor _previousCursor;
         private Point _lastPanPoint;
@@ -53,6 +55,8 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             var canvasRenderer = ContainerLocator.Container.Resolve<ICanvasRenderer>();
             _zoomPanService = ContainerLocator.Container.Resolve<IZoomPanService>();
             _snapService = ContainerLocator.Container.Resolve<ISnapService>();
+            _drawingPreferencesService = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
+            _selectedToolService = ContainerLocator.Container.Resolve<SelectedToolService>();
 
             _host = new WhiteBoardHost(DrawingCanvas, _toolManager, drawingService, canvasRenderer);
 
@@ -70,9 +74,10 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             var rotateTool = new RotateTool(DrawingCanvas);
             _selectionService = new SelectionService(_connectorTool);
             _selectionService.SelectionChanged += OnSelectionChanged;
-            var selectionTool = new SelectionTool(DrawingCanvas, _selectionService);
+            var selectionTool = new SelectionTool(DrawingCanvas, _selectionService,_toolManager);
 
             var panTool = new PanTool(_zoomPanService, ZoomTranslate);
+            var textTool = new TextTool(DrawingCanvas, _toolManager, _factory, _snapService, _drawingPreferencesService, _selectedToolService);
 
             _toolManager.RegisterTool(freeDrawTool);
             _toolManager.RegisterTool(eraserTool);
@@ -82,6 +87,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             _toolManager.RegisterTool(selectionTool);
             _toolManager.RegisterTool(panTool);
             _toolManager.RegisterTool(connectorCurvedTool);
+            _toolManager.RegisterTool(textTool);
 
             _toolStateMachine.RegisterBehavior("Connector", new ConnectorToolBehavior(_connectorTool, _toolManager, _host, DrawingCanvas));
             _toolStateMachine.RegisterBehavior("FreeDraw", new FreeDrawToolBehavior(_host));
@@ -90,6 +96,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             _toolStateMachine.RegisterBehavior("Pan", panTool);
             _toolStateMachine.RegisterBehavior("Selection", selectionTool);
             _toolStateMachine.RegisterBehavior("RotateTool", rotateTool);
+            _toolStateMachine.RegisterBehavior("TextEdit", new TextToolBehavior(textTool));
 
             _toolManager.ToolChanged += tool => _toolStateMachine.SetActive(tool.Name);
 

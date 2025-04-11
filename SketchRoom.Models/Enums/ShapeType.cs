@@ -11,6 +11,6 @@ namespace SketchRoom.Models.Enums
         Ellipse,
         Rectangle,
         Triangle,
-        // Adaugă mai multe dacă vrei (ex: Diamond etc.)
+        TextInput
     }
 }
