@@ -1,50 +1,78 @@
 ﻿using SharpVectors.Converters;
+using SketchRoom.Models.Enums;
 using SketchRoom.Models.Shapes;
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace SketchRoom.Toolkit.Wpf.Controls
 {
-    /// <summary>
-    /// Interaction logic for ShapesControl.xaml
-    /// </summary>
-    public partial class ShapesControl : System.Windows.Controls.UserControl
+    public partial class ShapesControl : UserControl
     {
+        private CollectionViewSource _groupedItemsSource = new();
+        public Func<ShapeType, UIElement>? PreviewFactory { get; set; }
+
+        private Popup? _hoverPreview;
         public ShapesControl()
         {
             InitializeComponent();
+            _groupedItemsSource.GroupDescriptions.Add(new PropertyGroupDescription("Category"));
         }
 
         public static readonly DependencyProperty ItemsSourceProperty =
-            DependencyProperty.Register(nameof(ItemsSource), typeof(IEnumerable), typeof(ShapesControl), new PropertyMetadata(null));
+     DependencyProperty.Register(nameof(ItemsSource), typeof(IEnumerable<ShapeCategoryGroup>), typeof(ShapesControl),
+         new PropertyMetadata(null));
 
-        public static readonly DependencyProperty SearchTextProperty =
-            DependencyProperty.Register(nameof(SearchText), typeof(string), typeof(ShapesControl), new PropertyMetadata(string.Empty));
-
-        public IEnumerable ItemsSource
+        public IEnumerable<ShapeCategoryGroup> ItemsSource
         {
-            get => (IEnumerable)GetValue(ItemsSourceProperty);
+            get => (IEnumerable<ShapeCategoryGroup>)GetValue(ItemsSourceProperty);
             set => SetValue(ItemsSourceProperty, value);
         }
+
+        public static readonly DependencyProperty SearchTextProperty =
+            DependencyProperty.Register(nameof(SearchText), typeof(string), typeof(ShapesControl),
+                new PropertyMetadata(string.Empty, OnSearchTextChanged));
+
 
         public string SearchText
         {
             get => (string)GetValue(SearchTextProperty);
             set => SetValue(SearchTextProperty, value);
+        }
+
+        public ICollectionView GroupedItems => _groupedItemsSource.View;
+
+        private static void OnItemsSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is ShapesControl control && e.NewValue is IEnumerable<BPMNShapeModel> allShapes)
+            {
+                control.ApplySearchFilter(allShapes);
+            }
+        }
+
+        private static void OnSearchTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is ShapesControl control && control.ItemsSource is IEnumerable<BPMNShapeModel> allShapes)
+            {
+                control.ApplySearchFilter(allShapes);
+            }
+        }
+
+        private void ApplySearchFilter(IEnumerable<BPMNShapeModel> allShapes)
+        {
+            var filtered = string.IsNullOrWhiteSpace(SearchText)
+                ? allShapes
+                : allShapes.Where(s => s.Name.Contains(SearchText, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            _groupedItemsSource.Source = filtered;
+            _groupedItemsSource.View?.Refresh();
         }
 
         public event Action<object>? ShapeDragStarted;
@@ -54,14 +82,12 @@ namespace SketchRoom.Toolkit.Wpf.Controls
         private AdornerLayer? _adornerLayer;
         private UIElement? _adornerTarget;
 
-        private MouseEventHandler? _mouseMoveHandler;
-
         private void OnShapeMouseDown(object sender, MouseButtonEventArgs e)
         {
             _isDragging = true;
         }
 
-        private void OnShapeMouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        private void OnShapeMouseMove(object sender, MouseEventArgs e)
         {
             if (!_isDragging || e.LeftButton != MouseButtonState.Pressed)
                 return;
@@ -84,10 +110,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                 {
                     preview = element;
                 }
-                else
-                {
-                    return;
-                }
+                else return;
 
                 _adornerTarget = Window.GetWindow(this)?.Content as UIElement;
 
@@ -103,7 +126,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                     }
                 }
 
-                DragDrop.DoDragDrop(border, shape, System.Windows.DragDropEffects.Copy);
+                DragDrop.DoDragDrop(border, shape, DragDropEffects.Copy);
 
                 if (_adornerLayer != null && _dragAdorner != null)
                 {
@@ -132,6 +155,63 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                 _dragAdorner.UpdatePosition(relative.X, relative.Y);
             }
         }
+
+        private void OnShapeMouseEnter(object sender, MouseEventArgs e)
+        {
+            //if (sender is Border border && border.DataContext is BPMNShapeModel shape)
+            //{
+            //    UIElement content;
+
+            //    if (shape.SvgUri != null)
+            //    {
+            //        content = new SvgViewbox
+            //        {
+            //            Source = shape.SvgUri,
+            //            Width = 100,
+            //            Height = 100,
+            //            Stretch = Stretch.Uniform
+            //        };
+            //    }
+            //    else if (shape.Type.HasValue && PreviewFactory is not null)
+            //    {
+            //        content = PreviewFactory.Invoke(shape.Type.Value);
+            //    }
+            //    else return;
+            //    content.RenderTransform = new ScaleTransform(1.5, 1.5);
+            //    content.RenderTransformOrigin = new Point(0.5, 0.5);
+            //    _hoverPreview = new Popup
+            //    {
+            //        AllowsTransparency = true,
+            //        Placement = PlacementMode.Mouse,
+            //        StaysOpen = false,
+            //        PopupAnimation = PopupAnimation.Fade,
+            //        Child = new Border
+            //        {
+            //            Background = Brushes.White,
+            //            Padding = new Thickness(8),
+            //            CornerRadius = new CornerRadius(6),
+            //            BorderBrush = Brushes.Black,
+            //            BorderThickness = new Thickness(1),
+            //            Child = content,
+            //            Width = 150, // sau orice dimensiune vrei
+            //            Height = 150,
+            //        }
+            //    };
+
+            //    PopupHost.Children.Add(_hoverPreview);
+            //    _hoverPreview.IsOpen = true;
+            //}
+        }
+
+        private void OnShapeMouseLeave(object sender, MouseEventArgs e)
+        {
+            //if (_hoverPreview is not null)
+            //{
+            //    _hoverPreview.IsOpen = false;
+            //    PopupHost.Children.Remove(_hoverPreview);
+            //    _hoverPreview = null;
+            //}
+        }
     }
 
     public class DragAdorner : Adorner
@@ -157,7 +237,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
         public void UpdatePosition(double x, double y)
         {
-            _left = x - 40; // offset to center
+            _left = x - 40;
             _top = y - 40;
             _transform.X = _left;
             _transform.Y = _top;
@@ -175,11 +255,11 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
         public override GeneralTransform GetDesiredTransform(GeneralTransform transform)
         {
-            return _transform; // poziționează corect SVG-ul sub cursor
+            return _transform;
         }
     }
 
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential)]
     public struct POINT
     {
         public int X;
@@ -188,16 +268,14 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
     public static class NativeMethods
     {
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool GetCursorPos(out POINT lpPoint);
-
 
         public static Point GetMouseScreenPosition()
         {
-            NativeMethods.GetCursorPos(out POINT point);
+            GetCursorPos(out POINT point);
             return new Point(point.X, point.Y);
         }
     }
 }
-    

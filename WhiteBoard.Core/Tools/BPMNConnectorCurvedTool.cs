@@ -45,9 +45,21 @@ namespace WhiteBoard.Core.Tools
             _snapService = snapService;
             _toolManager = toolManager;
         }
-
+        private BPMNConnection? GetConnectionAt(Point pos, double threshold = 8)
+        {
+            foreach (var conn in _connections)
+            {
+                var geometry = conn.Geometry.GetWidenedPathGeometry(new Pen(Brushes.Black, threshold));
+                if (geometry.FillContains(pos))
+                    return conn;
+            }
+            return null;
+        }
         public void OnMouseDown(Point pos, MouseButtonEventArgs e)
         {
+            if (GetConnectionAt(pos) != null)
+                return;
+
             if (!_isDrawing)
             {
                 _fromNode = GetNodeAt(pos);

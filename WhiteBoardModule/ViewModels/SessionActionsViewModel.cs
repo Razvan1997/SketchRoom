@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shapes;
 using WhiteBoard.Core.Services.Interfaces;
 using WhiteBoard.Core.Tools;
 using WhiteBoardModule.Events;
@@ -46,6 +47,7 @@ namespace WhiteBoardModule.ViewModels
             set
             {
                 _preferences.FontSize = value;
+                SelectedShape?.UpdateStyle(_preferences.FontWeight, value, _preferences.SelectedColor);
                 RaisePropertyChanged();
             }
         }
@@ -56,6 +58,7 @@ namespace WhiteBoardModule.ViewModels
             set
             {
                 _preferences.SelectedColor = value;
+                SelectedShape?.UpdateStyle(_preferences.FontWeight, _preferences.FontSize, value);
                 RaisePropertyChanged();
             }
         }
@@ -66,6 +69,7 @@ namespace WhiteBoardModule.ViewModels
             set
             {
                 _preferences.FontWeight = value ? FontWeights.Bold : FontWeights.Normal;
+                SelectedShape?.UpdateStyle(_preferences.FontWeight, _preferences.FontSize, _preferences.SelectedColor);
                 RaisePropertyChanged();
             }
         }
@@ -76,6 +80,18 @@ namespace WhiteBoardModule.ViewModels
             set => SetProperty(ref _isSessionActive, value);
         }
 
+        private IUpdateStyle? _selectedShape;
+
+        public IUpdateStyle? SelectedShape
+        {
+            get => _selectedShape;
+            set
+            {
+                _selectedShape = value;
+                RaisePropertyChanged();
+            }
+        }
+
         private readonly DrawingStateService.DrawingStateService _stateService;
 
         public SessionActionsViewModel(
@@ -83,6 +99,9 @@ namespace WhiteBoardModule.ViewModels
             DrawingStateService.DrawingStateService stateService,
             IDrawingPreferencesService preferences)
         {
+
+            WhiteBoard.Core.Events.ShapeSelectionEventBus.Subscribe(OnShapeSelected);
+
             _preferences = preferences;
             _stateService = stateService;
             IsSessionActive = true;
@@ -114,6 +133,11 @@ namespace WhiteBoardModule.ViewModels
             });
         }
 
+        private void OnShapeSelected(IUpdateStyle? style)
+        {
+            SelectedShape = style;
+        }
+
         private bool CanTransformToText() => true;
 
         private void OnTransformToText()
@@ -133,6 +157,11 @@ namespace WhiteBoardModule.ViewModels
             {
                 // Ieși din sesiune
             }
+        }
+
+        public void UpdateSelectedShape(IUpdateStyle? shape)
+        {
+            SelectedShape = shape;
         }
     }
 }

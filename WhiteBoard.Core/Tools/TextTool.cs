@@ -112,7 +112,7 @@ namespace WhiteBoard.Core.Tools
                     .Where(el => el != control && el.Visibility == Visibility.Visible)
                     .ToList();
 
-                Point snapped = _snapService.GetSnappedPoint(pos, others, control, out var snapLines);
+                Point snapped = _snapService.GetSnappedPointCursor(pos, others, control, out var snapLines);
 
                 // Aplică poziție
                 var delta = snapped - _startPoint;

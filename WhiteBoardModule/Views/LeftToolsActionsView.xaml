@@ -20,7 +20,7 @@
         CornerRadius="10">
         <controls:ShapesControl
             x:Name="ShapesControl"
-            ItemsSource="{Binding FilteredShapes}"
+            ItemsSource="{Binding GroupedFilteredShapes}"
             SearchText="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
     </Border>
 </UserControl>

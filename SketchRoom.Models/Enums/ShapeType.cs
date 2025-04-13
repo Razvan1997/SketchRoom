@@ -11,6 +11,12 @@ namespace SketchRoom.Models.Enums
         Ellipse,
         Rectangle,
         Triangle,
-        TextInput
+        TextInput,
+        ShapeText,
+        TableShape,
+        ConnectorShapeLabel,
+        ConnectorDoubleShapeLabel,
+        ContainerHorizontalShape,
+        EntityShape
     }
 }

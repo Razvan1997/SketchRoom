@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace WhiteBoard.Core.Services.Interfaces
 {
@@ -24,5 +26,6 @@ namespace WhiteBoard.Core.Services.Interfaces
         /// </summary>
         TextBox EditableText { get; }
         void SetPreferences();
+
     }
 }

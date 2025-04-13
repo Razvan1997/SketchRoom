@@ -63,7 +63,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             freeDrawTool.PointerMoved += point => MouseMoved?.Invoke(point);
 
             var eraserTool = new EraserTool(drawingService, DrawingCanvas);
-            var bpmnTool = new BpmnTool(DrawingCanvas, _snapService, SnapGridCanvas);
+            var bpmnTool = new BpmnTool(DrawingCanvas, _snapService, SnapGridCanvas, _toolManager);
 
             _connectorTool = new BpmnConnectorTool(DrawingCanvas, _connections, _nodes, this, _toolManager, _snapService);
             var connectorCurvedTool = new BpmnConnectorCurvedTool(DrawingCanvas, _connections, _nodes, this, _toolManager, _snapService);
@@ -169,6 +169,17 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                 _lastPanPoint = _zoomPanService.Pan(current, _lastPanPoint, ZoomTranslate);
                 return;
             }
+            var activeTool = _toolManager.ActiveTool;
+
+            if (activeTool is IDrawingTool drawingTool && drawingTool.IsDrawing)
+            {
+                _toolInterceptorService.IsUserActing = true;
+            }
+            else
+            {
+                _toolInterceptorService.IsUserActing = false;
+            }
+
             _host.HandleMouseMove(logicalPos, e);
         }
 

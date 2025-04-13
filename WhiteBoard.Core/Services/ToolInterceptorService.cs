@@ -16,7 +16,7 @@ namespace WhiteBoard.Core.Services
     {
         private readonly IToolManager _toolManager;
         private readonly SelectedToolService _selectedToolService;
-
+        public bool IsUserActing { get; set; } = false;
         public ToolInterceptorService(IToolManager toolManager, SelectedToolService selectedToolService)
         {
             _toolManager = toolManager;
@@ -46,6 +46,9 @@ namespace WhiteBoard.Core.Services
 
         public void InterceptToolSwitch(MouseButtonEventArgs e)
         {
+            if (IsUserActing)
+                return;
+
             if (e.OriginalSource is DependencyObject source)
             {
                 // Dacă tool-ul activ este în stare de desenare, nu mai comuta

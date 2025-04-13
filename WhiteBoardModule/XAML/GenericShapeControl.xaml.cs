@@ -1,4 +1,6 @@
-﻿using SketchRoom.Models.Enums;
+﻿using SharpVectors.Renderers;
+using SketchRoom.Models.Enums;
+using SketchRoom.Toolkit.Wpf.Converters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,17 +17,20 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using WhiteBoard.Core.Services.Interfaces;
+using WhiteBoardModule.ViewModels;
+using WhiteBoardModule.XAML.StyleUpdater;
 
 namespace WhiteBoardModule.XAML
 {
     /// <summary>
     /// Interaction logic for EllipseShape.xaml
     /// </summary>
-    public partial class GenericShapeControl : UserControl, IInteractiveShape
+    public partial class GenericShapeControl : UserControl, IInteractiveShape, IUpdateStyle
     {
         public event EventHandler<string>? ConnectionPointClicked;
         public event MouseButtonEventHandler? ShapeClicked;
         public bool EnableConnectors { get; set; } = false;
+        private readonly IShapeRendererFactory _rendererFactory = new ShapeRendererFactory();
 
         public GenericShapeControl()
         {
@@ -44,20 +49,13 @@ namespace WhiteBoardModule.XAML
 
         public void SetShape(ShapeType shape)
         {
-            ShapePresenter.Content = shape switch
-            {
-                ShapeType.Ellipse => new Ellipse { Stroke = Brushes.Black, Fill = Brushes.Transparent, StrokeThickness = 2, IsHitTestVisible = false },
-                ShapeType.Rectangle => new Rectangle { Stroke = Brushes.Black, Fill = Brushes.Transparent, StrokeThickness = 2, IsHitTestVisible = false },
-                ShapeType.Triangle => new Polygon
-                {
-                    Points = new PointCollection { new Point(50, 0), new Point(100, 100), new Point(0, 100) },
-                    Stroke = Brushes.Black,
-                    Fill = Brushes.Transparent,
-                    StrokeThickness = 2,
-                    IsHitTestVisible = false
-                },
-                _ => throw new NotImplementedException()
-            };
+            ShapePresenter.Content = _rendererFactory.CreateRenderer(shape, withBindings: false).Render();
+        }
+
+        public void SetShapePreview(ShapeType shape)
+        {
+            var preview = _rendererFactory.CreateRenderPreview(shape);
+            ShapePresenter.Content = preview;
         }
 
         public void SetPosition(Point pos)
@@ -77,6 +75,10 @@ namespace WhiteBoardModule.XAML
         }
 
         public UIElement Visual => this;
+
+        public string Text { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        public TextBox EditableText => throw new NotImplementedException();
 
         private void InitResizeThumbs()
         {
@@ -148,6 +150,14 @@ namespace WhiteBoardModule.XAML
             e.Handled = true;
         }
 
-        
+        public void UpdateStyle(FontWeight fontWeight, double fontSize, Brush foreground)
+        {
+            ShapeStyleUpdater.Apply(ShapePresenter.Content, fontWeight, fontSize, foreground);
+        }
+
+        public void RaiseClick(MouseButtonEventArgs e)
+        {
+            ShapeClicked?.Invoke(this, e);
+        }
     }
 }

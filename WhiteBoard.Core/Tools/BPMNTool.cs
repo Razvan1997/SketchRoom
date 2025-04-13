@@ -21,6 +21,7 @@ namespace WhiteBoard.Core.Tools
         private readonly Canvas _canvas;
         private readonly ISnapService _snapService;
         private readonly Canvas _snapCanvas;
+        private readonly IToolManager _toolManager;
 
         private IInteractiveShape? _selectedShape;
         private IInteractiveShape? _draggingShape;
@@ -28,14 +29,26 @@ namespace WhiteBoard.Core.Tools
 
         private bool _isDrawing = false;
         public bool IsDrawing => _isDrawing;
+        public IInteractiveShape? SelectedShape => _selectedShape;
 
         public event Action<IInteractiveShape?>? ShapeSelected;
 
-        public BpmnTool(Canvas canvas, ISnapService snapService, Canvas snapCanvas)
+
+        public BpmnTool(Canvas canvas, ISnapService snapService, Canvas snapCanvas, IToolManager toolManager)
         {
             _canvas = canvas;
             _snapService = snapService;
             _snapCanvas = snapCanvas;
+            _toolManager = toolManager;
+            _toolManager.ToolChanged += OnToolChanged;
+        }
+
+        private void OnToolChanged(IDrawingTool tool)
+        {
+            if (tool == null)
+            {
+                DeselectCurrent();
+            }
         }
 
         public void OnMouseDown(Point pos, MouseButtonEventArgs e)

@@ -9,6 +9,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using WhiteBoard.Core.Events;
 using WhiteBoard.Core.Factory.Interfaces;
 using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services.Interfaces;
@@ -59,6 +61,19 @@ namespace WhiteBoard.Core.Services
                 visualElement = CreateXamlElement(prototype, shape.Type, dropPos);
                 visualElement.Tag = "interactive";
             }
+            if (visualElement != null && shape.Type == ShapeType.ShapeText)
+            {
+                visualElement.Loaded += (_, _) =>
+                {
+                    // caută TextBox și setează focus
+                    if (visualElement is DependencyObject root)
+                    {
+                        var textBox = FindFirstTextBox(root);
+                        textBox?.Focus();
+                        textBox?.SelectAll();
+                    }
+                };
+            }
 
             return visualElement;
         }
@@ -84,9 +99,11 @@ namespace WhiteBoard.Core.Services
 
             if (type.HasValue)
             {
-                instance.SetShape(type.Value);
+                if (instance is IInteractiveShape bindable)
+                {
+                    bindable.SetShape(type.Value);
+                }
             }
-
             AttachEvents(instance);
 
             var element = new BpmnWhiteBoardElementXaml(instance);
@@ -109,6 +126,10 @@ namespace WhiteBoard.Core.Services
                 if (_toolManager.ActiveTool is BpmnTool bpmnTool)
                 {
                     bpmnTool.OnMouseDown(evt.GetPosition(_drawingCanvas), evt);
+                    if (shape is IUpdateStyle updateable)
+                    {
+                        ShapeSelectionEventBus.Publish(updateable);
+                    }
                 }
                 evt.Handled = true;
             };
@@ -164,6 +185,23 @@ namespace WhiteBoard.Core.Services
             {
                 AttachEvents(shape);
             }
+        }
+
+        private TextBox? FindFirstTextBox(DependencyObject parent)
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+
+                if (child is TextBox tb)
+                    return tb;
+
+                var result = FindFirstTextBox(child);
+                if (result != null)
+                    return result;
+            }
+
+            return null;
         }
     }
 }

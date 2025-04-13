@@ -13,6 +13,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using WhiteBoardModule.ViewModels;
+using WhiteBoardModule.XAML;
 
 namespace WhiteBoardModule.Views
 {
@@ -21,6 +22,7 @@ namespace WhiteBoardModule.Views
     /// </summary>
     public partial class LeftToolsActionsView : UserControl
     {
+        private readonly IShapeRendererFactory _rendererFactory = new ShapeRendererFactory();
         public LeftToolsActionsView()
         {
             InitializeComponent();
@@ -29,6 +31,12 @@ namespace WhiteBoardModule.Views
             {
                 if (DataContext is LeftToolsActionsViewModel vm)
                     vm.OnShapeDragStarted(shape);
+            };
+
+            ShapesControl.PreviewFactory = type =>
+            {
+                var renderer = _rendererFactory.CreateRenderer(type, withBindings: false);
+                return renderer.CreatePreview();
             };
         }
     }
