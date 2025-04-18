@@ -23,12 +23,14 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
 
         public UIElement CreatePreview()
         {
+            var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
+
             var label = new TextBlock
             {
                 Text = "Label",
                 FontSize = 12,
                 FontWeight = FontWeights.Bold,
-                Foreground = Brushes.Black,
+                Foreground = preferences.SelectedColor,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -36,7 +38,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
             var leftLine = new Rectangle
             {
                 Height = 2,
-                Fill = Brushes.Black,
+                Fill = preferences.SelectedColor,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -44,7 +46,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
             var rightLine = new Rectangle
             {
                 Height = 2,
-                Fill = Brushes.Black,
+                Fill = preferences.SelectedColor,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -57,7 +59,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
             new Point(10, 5),
             new Point(0, 10)
         },
-                Fill = Brushes.Black,
+                Fill = preferences.SelectedColor,
                 Width = 10,
                 Height = 10,
                 VerticalAlignment = VerticalAlignment.Center,

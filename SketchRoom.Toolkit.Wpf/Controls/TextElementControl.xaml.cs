@@ -14,6 +14,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using WhiteBoard.Core.Events;
 using WhiteBoard.Core.Services.Interfaces;
 using WhiteBoard.Core.Tools;
 
@@ -71,8 +72,9 @@ namespace SketchRoom.Toolkit.Wpf.Controls
         public UIElement Visual => this;
         public bool EnableConnectors { get; set; } = false;
         public event MouseButtonEventHandler? ShapeClicked;
-        public event EventHandler<string>? ConnectionPointClicked;
+        public event EventHandler<ConnectionPointEventArgs>? ConnectionPointClicked;
         public event EventHandler? ConnectionRequested;
+        public event EventHandler<ConnectionPointEventArgs>? ConnectionPointTargetClicked;
 
         public bool IsTextEditing { get; private set; }
 

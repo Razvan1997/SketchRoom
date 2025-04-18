@@ -4,14 +4,14 @@
     xmlns:local="clr-namespace:SketchRoom.Toolkit.Wpf">
 
     <!--  Stil Bootstrap-like pentru TextBox  -->
-    <Style TargetType="TextBox">
+    <Style x:Key="DarkTextBoxStyle" TargetType="TextBox">
         <Setter Property="FontFamily" Value="Segoe UI" />
         <Setter Property="FontSize" Value="14" />
-        <Setter Property="Foreground" Value="#212529" />
-        <Setter Property="Background" Value="White" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Background" Value="#2b2b2b" />
         <Setter Property="Padding" Value="6,4" />
         <Setter Property="Margin" Value="0,0,0,10" />
-        <Setter Property="BorderBrush" Value="#ced4da" />
+        <Setter Property="BorderBrush" Value="#444" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -30,14 +30,15 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="border" Property="Background" Value="#e9ecef" />
-                            <Setter TargetName="border" Property="BorderBrush" Value="#dee2e6" />
+                            <Setter TargetName="border" Property="Background" Value="#1e1e1e" />
+                            <Setter TargetName="border" Property="BorderBrush" Value="#333" />
+                            <Setter Property="Foreground" Value="#666" />
                         </Trigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="border" Property="BorderBrush" Value="#80bdff" />
+                            <Setter TargetName="border" Property="BorderBrush" Value="#5ea4ff" />
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
-                            <Setter TargetName="border" Property="BorderBrush" Value="#007bff" />
+                            <Setter TargetName="border" Property="BorderBrush" Value="#3b85f6" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -69,77 +70,198 @@
     <Style x:Key="DarkComboBoxStyle" TargetType="ComboBox">
         <Setter Property="Foreground" Value="White" />
         <Setter Property="Background" Value="#2D2D30" />
-        <Setter Property="BorderBrush" Value="Gray" />
-        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="#2D2D30" />
+        <Setter Property="BorderThickness" Value="2" />
         <Setter Property="Padding" Value="4,2" />
         <Setter Property="FontSize" Value="12" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ComboBox">
-                    <Grid>
-                        <!--  Define 2 coloane: conținut și săgeată  -->
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition />
-                            <ColumnDefinition Width="20" />
-                        </Grid.ColumnDefinitions>
+                    <Border
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="4">
 
-                        <!--  Conținutul combo  -->
-                        <ContentPresenter
-                            Name="ContentSite"
-                            Grid.Column="0"
-                            Margin="5,3,5,3"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            Content="{TemplateBinding SelectionBoxItem}"
-                            ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                            ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
-                            IsHitTestVisible="False" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition Width="20" />
+                            </Grid.ColumnDefinitions>
 
-                        <!--  Săgeata  -->
-                        <ToggleButton
-                            Name="ToggleButton"
-                            Grid.Column="1"
-                            Background="{TemplateBinding Background}"
-                            BorderBrush="{TemplateBinding BorderBrush}"
-                            BorderThickness="0"
-                            ClickMode="Press"
-                            Focusable="false"
-                            IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
-                            <Path
-                                HorizontalAlignment="Center"
+                            <!--  Conținutul  -->
+                            <ContentPresenter
+                                Name="ContentSite"
+                                Grid.Column="0"
+                                Margin="5,3,5,3"
+                                HorizontalAlignment="Left"
                                 VerticalAlignment="Center"
-                                Data="M 0 0 L 4 4 L 8 0 Z"
-                                Fill="White" />
-                        </ToggleButton>
+                                Content="{TemplateBinding SelectionBoxItem}"
+                                ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                IsHitTestVisible="False" />
 
-                        <!--  Lista drop-down  -->
-                        <Popup
-                            Name="Popup"
-                            AllowsTransparency="True"
+                            <!--  Săgeata  -->
+                            <ToggleButton
+                                Name="ToggleButton"
+                                Grid.Column="1"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="0"
+                                ClickMode="Press"
+                                Focusable="false"
+                                IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                <Path
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Data="M 0 0 L 4 4 L 8 0 Z"
+                                    Fill="White" />
+                            </ToggleButton>
+
+                            <!--  Lista drop-down  -->
+                            <Popup
+                                Name="Popup"
+                                AllowsTransparency="True"
+                                Focusable="False"
+                                IsOpen="{TemplateBinding IsDropDownOpen}"
+                                Placement="Bottom"
+                                PopupAnimation="Slide">
+                                <Grid
+                                    Name="DropDown"
+                                    MinWidth="{TemplateBinding ActualWidth}"
+                                    MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                                    Background="#2D2D30"
+                                    SnapsToDevicePixels="True">
+                                    <ScrollViewer Margin="4,6,4,6" SnapsToDevicePixels="True">
+                                        <StackPanel IsItemsHost="True" />
+                                    </ScrollViewer>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="EmptyRepeatButtonStyle" TargetType="RepeatButton">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="RepeatButton">
+                    <Rectangle Fill="Transparent" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="HueSliderStyle" TargetType="Slider">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Slider">
+                    <Grid>
+                        <!--  Gradientul colorat  -->
+                        <Rectangle
+                            Height="8"
+                            Margin="10,0"
+                            VerticalAlignment="Center"
+                            IsHitTestVisible="False"
+                            RadiusX="4"
+                            RadiusY="4">
+                            <Rectangle.Fill>
+                                <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                    <GradientStop Offset="0.0" Color="#FFFF0000" />
+                                    <GradientStop Offset="0.17" Color="#FFFFFF00" />
+                                    <GradientStop Offset="0.33" Color="#FF00FF00" />
+                                    <GradientStop Offset="0.50" Color="#FF00FFFF" />
+                                    <GradientStop Offset="0.66" Color="#FF0000FF" />
+                                    <GradientStop Offset="0.83" Color="#FFFF00FF" />
+                                    <GradientStop Offset="1.0" Color="#FFFF0000" />
+                                </LinearGradientBrush>
+                            </Rectangle.Fill>
+                        </Rectangle>
+
+                        <!--  Track-ul cu repeat buttons și thumb  -->
+                        <Track
+                            x:Name="PART_Track"
+                            Margin="10,0"
                             Focusable="False"
-                            IsOpen="{TemplateBinding IsDropDownOpen}"
-                            Placement="Bottom"
-                            PopupAnimation="Slide">
-                            <Grid
-                                Name="DropDown"
-                                MinWidth="{TemplateBinding ActualWidth}"
-                                MaxHeight="{TemplateBinding MaxDropDownHeight}"
-                                Background="#2D2D30"
-                                SnapsToDevicePixels="True">
-                                <ScrollViewer Margin="4,6,4,6" SnapsToDevicePixels="True">
-                                    <StackPanel IsItemsHost="True" />
-                                </ScrollViewer>
-                            </Grid>
-                        </Popup>
-                    </Grid>
+                            IsDirectionReversed="False"
+                            SnapsToDevicePixels="True">
 
-                    <!--  Triggers  -->
+                            <!--  🟧 Adăugăm fundal negru în spate  -->
+                            <Track.DecreaseRepeatButton>
+                                <RepeatButton IsEnabled="False" Style="{StaticResource EmptyRepeatButtonStyle}" />
+                            </Track.DecreaseRepeatButton>
+                            <Track.IncreaseRepeatButton>
+                                <RepeatButton IsEnabled="False" Style="{StaticResource EmptyRepeatButtonStyle}" />
+                            </Track.IncreaseRepeatButton>
+
+                            <!--  Thumb cu cerc transparent  -->
+                            <Track.Thumb>
+                                <Thumb
+                                    Width="20"
+                                    Height="20"
+                                    Cursor="Hand">
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb">
+                                            <Ellipse
+                                                Width="20"
+                                                Height="20"
+                                                Stroke="White"
+                                                StrokeThickness="2">
+                                                <Ellipse.Fill>
+                                                    <SolidColorBrush x:Name="ThumbFill" Color="Transparent" />
+                                                </Ellipse.Fill>
+                                            </Ellipse>
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="DarkFlatButtonStyle" TargetType="Button">
+        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="Margin" Value="4,0,0,0" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Background" Value="#333" />
+        <Setter Property="BorderBrush" Value="#555" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="4">
+                        <ContentPresenter
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            RecognizesAccessKey="True" />
+                    </Border>
                     <ControlTemplate.Triggers>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter TargetName="ToggleButton" Property="Foreground" Value="Gray" />
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="#444" />
+                            <Setter Property="BorderBrush" Value="#66C" />
                         </Trigger>
-                        <Trigger Property="IsEditable" Value="True">
-                            <Setter Property="IsTabStop" Value="False" />
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter Property="Background" Value="#222" />
+                            <Setter Property="BorderBrush" Value="#4AA" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Background" Value="#2A2A2A" />
+                            <Setter Property="Foreground" Value="#777" />
+                            <Setter Property="BorderBrush" Value="#444" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -147,12 +269,4 @@
         </Setter>
     </Style>
 
-    <Style x:Key="DarkTextBoxStyle" TargetType="TextBox">
-        <Setter Property="Foreground" Value="White" />
-        <Setter Property="Background" Value="#2D2D30" />
-        <Setter Property="BorderBrush" Value="Gray" />
-        <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="FontSize" Value="12" />
-        <Setter Property="Padding" Value="4,2" />
-    </Style>
 </ResourceDictionary>

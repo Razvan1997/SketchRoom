@@ -65,7 +65,8 @@ namespace WhiteBoardModule.XAML.Shapes.General
             }
             else
             {
-                triangle.Stroke = Brushes.Black;
+                var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
+                triangle.Stroke = preferences.SelectedColor;
             }
 
             return new Viewbox

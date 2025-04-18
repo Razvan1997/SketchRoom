@@ -8,6 +8,8 @@ using System.Windows.Media;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Shapes;
+using WhiteBoard.Core.Events;
+using WhiteBoard.Core.Services.Interfaces;
 
 namespace WhiteBoardModule.XAML.Shapes.Entity
 {
@@ -16,6 +18,8 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
         private readonly bool _withBindings;
         private static readonly List<string> _sqlTypes = new() { "INT", "VARCHAR", "DATE", "BOOLEAN", "DECIMAL" };
 
+        public event EventHandler<ConnectionPointEventArgs>? ConnectionPointClicked;
+        public event EventHandler<ConnectionPointEventArgs>? ConnectionPointTargetClicked;
         public EntityShapeRenderer(bool withBindings = false)
         {
             _withBindings = withBindings;
@@ -97,7 +101,7 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
                 grid.Children.Add(addButton);
             }
 
-            return new Border
+            var border = new Border
             {
                 BorderBrush = Brushes.DeepSkyBlue,
                 BorderThickness = new Thickness(1.5),
@@ -105,6 +109,14 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
                 CornerRadius = new CornerRadius(6),
                 Child = grid
             };
+
+            border.MouseLeftButtonDown += (s, e) =>
+            {
+                ConnectionPointTargetClicked?.Invoke(this, new ConnectionPointEventArgs("Auto", border, e));
+                e.Handled = true;
+            };
+
+            return border;
         }
 
         private void AddStyledDataRow(Grid grid, int rowIndex, string columnName, string columnType, bool isPreview)
@@ -135,6 +147,13 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
                 Cursor = Cursors.Cross,
                 Tag = "Connector"
             };
+
+            leftConnector.MouseLeftButtonDown += (s, e) =>
+            {
+                ConnectionPointClicked?.Invoke(this, new ConnectionPointEventArgs("Left", leftConnector, e));
+                e.Handled = true;
+            };
+
             Grid.SetColumn(leftConnector, 0);
             rowGrid.Children.Add(leftConnector);
 
@@ -167,6 +186,7 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
                 Content = "PK",
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center,
+                Foreground = Brushes.White,
                 IsEnabled = !isPreview
             };
             Grid.SetColumn(pkCheck, 3);
@@ -176,6 +196,7 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
             var nullableCheck = new CheckBox
             {
                 Content = "NULL",
+                Foreground = Brushes.White,
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 IsEnabled = !isPreview
@@ -195,6 +216,13 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
                 Cursor = Cursors.Cross,
                 Tag = "Connector"
             };
+
+            rightConnector.MouseLeftButtonDown += (s, e) =>
+            {
+                ConnectionPointClicked?.Invoke(this, new ConnectionPointEventArgs("Right", rightConnector, e));
+                e.Handled = true;
+            };
+
             Grid.SetColumn(rightConnector, 5);
             rowGrid.Children.Add(rightConnector);
 

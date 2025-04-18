@@ -134,16 +134,24 @@ namespace WhiteBoard.Core.Services
                 evt.Handled = true;
             };
 
-            shape.ConnectionPointClicked += (s, direction) =>
+            shape.ConnectionPointClicked += (s, args) =>
             {
+                if (args.SourceElement is not FrameworkElement fe || fe.Tag?.ToString() != "Connector")
+                    return;
+
+                var direction = args.Direction;
+                var mousePos = args.MouseArgs.GetPosition(_drawingCanvas);
+
                 if (_selectedToolService.CurrentTool == WhiteBoardTool.CurvedArrow)
                 {
-                    _connectorCurvedTool?.SetSelected(shape, direction);
+                    _connectorCurvedTool?.SetSelected(shape, direction, args.SourceElement, mousePos);
                 }
                 else
                 {
                     _connectorTool?.SetSelected(shape, direction);
                 }
+
+                args.MouseArgs.Handled = true;
             };
         }
 

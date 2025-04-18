@@ -101,7 +101,6 @@ namespace WhiteBoardModule.ViewModels
         {
 
             WhiteBoard.Core.Events.ShapeSelectionEventBus.Subscribe(OnShapeSelected);
-
             _preferences = preferences;
             _stateService = stateService;
             IsSessionActive = true;

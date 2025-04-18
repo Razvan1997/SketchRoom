@@ -46,7 +46,7 @@
                 </Grid.ColumnDefinitions>
 
                 <!--  Users interactions region  -->
-                <Border Grid.Row="0" Width="200">
+                <Border Grid.Row="0" Width="300">
                     <ContentControl
                         prism:RegionManager.RegionName="UsersInteractionsRegion"
                         walk:Walkthrough.Description="dsadasd asd asda sda"

@@ -16,8 +16,10 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using WhiteBoard.Core.Events;
 using WhiteBoard.Core.Services.Interfaces;
 using WhiteBoardModule.ViewModels;
+using WhiteBoardModule.XAML.Shapes.Entity;
 using WhiteBoardModule.XAML.StyleUpdater;
 
 namespace WhiteBoardModule.XAML
@@ -27,8 +29,9 @@ namespace WhiteBoardModule.XAML
     /// </summary>
     public partial class GenericShapeControl : UserControl, IInteractiveShape, IUpdateStyle
     {
-        public event EventHandler<string>? ConnectionPointClicked;
+        public event EventHandler<ConnectionPointEventArgs>? ConnectionPointClicked;
         public event MouseButtonEventHandler? ShapeClicked;
+        public event EventHandler<ConnectionPointEventArgs>? ConnectionPointTargetClicked;
         public bool EnableConnectors { get; set; } = false;
         private readonly IShapeRendererFactory _rendererFactory = new ShapeRendererFactory();
 
@@ -49,7 +52,22 @@ namespace WhiteBoardModule.XAML
 
         public void SetShape(ShapeType shape)
         {
-            ShapePresenter.Content = _rendererFactory.CreateRenderer(shape, withBindings: false).Render();
+            var renderer = _rendererFactory.CreateRenderer(shape, withBindings: false);
+
+            if (renderer is EntityShapeRenderer entityRenderer)
+            {
+                entityRenderer.ConnectionPointClicked += (s, args) =>
+                {
+                    ConnectionPointClicked?.Invoke(this, args);
+                };
+
+                entityRenderer.ConnectionPointTargetClicked += (s, args) =>
+                {
+                    ConnectionPointTargetClicked?.Invoke(this, args);
+                };
+            }
+
+            ShapePresenter.Content = renderer.Render();
         }
 
         public void SetShapePreview(ShapeType shape)
@@ -146,8 +164,13 @@ namespace WhiteBoardModule.XAML
 
         private void RaiseConnector(string position, MouseButtonEventArgs e)
         {
-            ConnectionPointClicked?.Invoke(this, position);
-            e.Handled = true;
+            if (!EnableConnectors) return;
+
+            if (e.OriginalSource is Rectangle rect && rect.Tag?.ToString() == "Connector")
+            {
+                ConnectionPointClicked?.Invoke(this, new ConnectionPointEventArgs(position, rect, e));
+                e.Handled = true;
+            }
         }
 
         public void UpdateStyle(FontWeight fontWeight, double fontSize, Brush foreground)

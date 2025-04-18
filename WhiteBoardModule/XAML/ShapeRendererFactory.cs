@@ -11,6 +11,7 @@ using WhiteBoardModule.XAML.Shapes.Connectors;
 using WhiteBoardModule.XAML.Shapes.Containers;
 using System.Windows;
 using WhiteBoardModule.XAML.Shapes.Entity;
+using WhiteBoard.Core.Services.Interfaces;
 
 namespace WhiteBoardModule.XAML
 {

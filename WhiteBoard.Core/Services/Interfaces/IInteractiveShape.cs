@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using WhiteBoard.Core.Events;
 
 namespace WhiteBoard.Core.Services.Interfaces
 {
@@ -19,7 +20,7 @@ namespace WhiteBoard.Core.Services.Interfaces
         /// <summary>
         /// Eveniment declanșat când se face click pe un punct de conexiune (ex: Top, Right, Bottom, Left).
         /// </summary>
-        event EventHandler<string>? ConnectionPointClicked;
+        event EventHandler<ConnectionPointEventArgs>? ConnectionPointClicked;
         /// <summary>
         /// Returnează UIElement-ul vizual pentru a fi adăugat pe Canvas.
         /// </summary>
@@ -43,5 +44,10 @@ namespace WhiteBoard.Core.Services.Interfaces
         bool EnableConnectors { get; set; }
 
         void SetShape(ShapeType shape);
+
+        /// <summary>
+        /// Eveniment declanșat la click pentru a finaliza o conexiune într-o zonă generală (ex: Border).
+        /// </summary>
+        event EventHandler<ConnectionPointEventArgs>? ConnectionPointTargetClicked;
     }
 }

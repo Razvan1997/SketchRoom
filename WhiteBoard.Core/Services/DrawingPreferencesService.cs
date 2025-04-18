@@ -13,7 +13,7 @@ namespace WhiteBoard.Core.Services
 {
     public class DrawingPreferencesService : IDrawingPreferencesService, INotifyPropertyChanged
     {
-        private Brush _selectedColor = Brushes.Black;
+        private Brush _selectedColor = Brushes.White;
         private double _fontSize = 12;
         private FontWeight _fontWeight = FontWeights.Normal;
 

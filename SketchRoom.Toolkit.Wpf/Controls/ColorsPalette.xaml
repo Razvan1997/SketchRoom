@@ -3,43 +3,22 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="clr-namespace:SketchRoom.Toolkit.Wpf.Controls"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     x:Name="Root"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
+    d:DesignHeight="50"
+    d:DesignWidth="50"
     mc:Ignorable="d">
-    <WrapPanel x:Name="ColorWrapPanel">
-        <ItemsControl ItemsSource="{Binding AvailableColors, ElementName=Root}">
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <WrapPanel />
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <Ellipse
-                        Width="20"
-                        Height="20"
-                        Margin="4"
-                        Fill="{Binding}"
-                        RenderTransformOrigin="0.5,0.5"
-                        Stroke="Gray"
-                        StrokeThickness="1"
-                        Tag="{Binding}">
-                        <Ellipse.RenderTransform>
-                            <!--  Creează o instanță nouă la fiecare  -->
-                            <ScaleTransform ScaleX="1" ScaleY="1" />
-                        </Ellipse.RenderTransform>
-                        <Ellipse.InputBindings>
-                            <MouseBinding
-                                Command="{Binding DataContext.SelectColorCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                CommandParameter="{Binding}"
-                                MouseAction="LeftClick" />
-                        </Ellipse.InputBindings>
-                    </Ellipse>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
-    </WrapPanel>
+
+    <Grid>
+        <!--  Bulina colorată  -->
+        <Ellipse
+            x:Name="ColorButton"
+            Width="24"
+            Height="24"
+            Cursor="Hand"
+            Fill="{Binding SelectedColor, ElementName=Root}"
+            MouseLeftButtonDown="ColorButton_Click"
+            Stroke="Black"
+            StrokeThickness="1" />
+    </Grid>
 </UserControl>

@@ -22,6 +22,8 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
 
         public UIElement CreatePreview()
         {
+            var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
+
             var previewLabel = new TextBlock
             {
                 Text = "Container",
@@ -43,7 +45,7 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
 
             var previewBorder = new Border
             {
-                BorderBrush = Brushes.Black,
+                BorderBrush = preferences.SelectedColor,
                 BorderThickness = new Thickness(1),
                 Background = Brushes.Transparent
             };
@@ -136,6 +138,10 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
             {
                 labelBox.SetBinding(TextBox.FontWeightProperty, new Binding(nameof(preferences.FontWeight)) { Source = preferences });
                 labelBox.SetBinding(TextBox.FontSizeProperty, new Binding(nameof(preferences.FontSize)) { Source = preferences });
+            }
+            else
+            {
+                containerBorder.BorderBrush = preferences.SelectedColor;
             }
 
             // Tag pentru stilizare

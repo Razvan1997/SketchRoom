@@ -102,7 +102,7 @@
             VerticalAlignment="Top"
             Cursor="Cross"
             Fill="DodgerBlue"
-            Tag="NoSnap"
+            Tag="Connector"
             Visibility="Collapsed" />
 
         <!--  Right connector  -->
@@ -114,7 +114,7 @@
             VerticalAlignment="Center"
             Cursor="Cross"
             Fill="DodgerBlue"
-            Tag="NoSnap"
+            Tag="Connector"
             Visibility="Collapsed" />
 
         <!--  Bottom connector  -->
@@ -126,7 +126,7 @@
             VerticalAlignment="Bottom"
             Cursor="Cross"
             Fill="DodgerBlue"
-            Tag="NoSnap"
+            Tag="Connector"
             Visibility="Collapsed" />
 
         <!--  Left connector  -->
@@ -138,7 +138,7 @@
             VerticalAlignment="Center"
             Cursor="Cross"
             Fill="DodgerBlue"
-            Tag="NoSnap"
+            Tag="Connector"
             Visibility="Collapsed" />
     </Grid>
 </UserControl>

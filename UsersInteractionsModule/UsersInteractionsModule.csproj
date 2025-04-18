@@ -15,6 +15,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SketchRoom.Database\SketchRoom.Database.csproj" />
+    <ProjectReference Include="..\SketchRoom.Toolkit.Wpf\SketchRoom.Toolkit.Wpf.csproj" />
+    <ProjectReference Include="..\WhiteBoardModule\WhiteBoardModule.csproj" />
   </ItemGroup>
 
 </Project>

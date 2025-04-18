@@ -15,6 +15,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using WhiteBoard.Core.Events;
 using WhiteBoard.Core.Services.Interfaces;
 using WhiteBoard.Core.Tools;
 
@@ -34,7 +35,9 @@ namespace SketchRoom.Toolkit.Wpf
         private Point _rotateStart;
         public event MouseButtonEventHandler? ShapeClicked;
         public event EventHandler? ConnectionRequested;
-        public event EventHandler<string>? ConnectionPointClicked;
+        public event EventHandler<ConnectionPointEventArgs>? ConnectionPointClicked;
+        public event EventHandler<ConnectionPointEventArgs>? ConnectionPointTargetClicked;
+
         public bool EnableConnectors { get; set; } = false;
         private readonly ISnapService _snapService;
         public BpmnShapeControl(Uri svgUri)
@@ -187,12 +190,19 @@ namespace SketchRoom.Toolkit.Wpf
 
         private void Connector_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (sender == ConnectorTop) ConnectionPointClicked?.Invoke(this, "Top");
-            else if (sender == ConnectorRight) ConnectionPointClicked?.Invoke(this, "Right");
-            else if (sender == ConnectorBottom) ConnectionPointClicked?.Invoke(this, "Bottom");
-            else if (sender == ConnectorLeft) ConnectionPointClicked?.Invoke(this, "Left");
+            if (sender is UIElement element)
+            {
+                string direction = element == ConnectorTop ? "Top" :
+                                   element == ConnectorRight ? "Right" :
+                                   element == ConnectorBottom ? "Bottom" :
+                                   element == ConnectorLeft ? "Left" : "";
 
-            e.Handled = true;
+                if (!string.IsNullOrEmpty(direction))
+                {
+                    ConnectionPointClicked?.Invoke(this, new ConnectionPointEventArgs(direction, element, e));
+                    e.Handled = true;
+                }
+            }
         }
 
         private void RotateIcon_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)

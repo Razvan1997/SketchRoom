@@ -7,7 +7,7 @@
     xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
     xmlns:vm="clr-namespace:WhiteBoardModule.ViewModels"
     xmlns:walk="clr-namespace:WalkthroughDemo;assembly=WalkthroughDemo"
-    Height="80"
+    Height="60"
     prism:ViewModelLocator.AutoWireViewModel="True">
 
     <UserControl.Resources>
@@ -39,7 +39,6 @@
     </UserControl.Resources>
 
     <Border
-        Margin="10"
         Padding="10"
         walk:Walkthrough.Description="dasdasda"
         walk:Walkthrough.HighlightPulse="False"
@@ -48,62 +47,169 @@
         walk:Walkthrough.StepIndex="1"
         Background="#404040"
         BorderBrush="#292828"
-        BorderThickness="1"
-        CornerRadius="10">
+        BorderThickness="1">
 
         <Grid>
             <Grid.ColumnDefinitions>
+
+                <ColumnDefinition Width="Auto" />
+
+                <ColumnDefinition Width="10" />
+
                 <ColumnDefinition Width="Auto" />
                 <!--  FontSize  -->
+
+                <ColumnDefinition Width="10" />
+                <!--  Separator  -->
+
                 <ColumnDefinition Width="Auto" />
+
                 <!--  Bold  -->
                 <ColumnDefinition Width="10" />
                 <!--  Separator  -->
                 <ColumnDefinition Width="Auto" />
+
+                <ColumnDefinition Width="10" />
+
+                <ColumnDefinition Width="Auto" />
+
+                <ColumnDefinition Width="10" />
+
+                <ColumnDefinition Width="Auto" />
+
                 <!--  Color  -->
                 <ColumnDefinition Width="*" />
                 <!--  Action  -->
             </Grid.ColumnDefinitions>
 
             <!--  Font Size ComboBox  -->
-            <ComboBox
-                Grid.Column="0"
-                Width="80"
-                Margin="0,0,10,0"
-                VerticalAlignment="Center"
-                ItemsSource="{Binding FontSizes}"
-                SelectedItem="{Binding SelectedFontSize, Mode=TwoWay}" />
 
-            <!--  Bold Button with SVG  -->
-            <ToggleButton
-                Grid.Column="1"
-                IsChecked="{Binding IsBold, Mode=TwoWay}"
-                Style="{StaticResource ToolToggleButtonStyle}">
+            <StackPanel Grid.Column="0" Orientation="Horizontal">
                 <svgc:SvgViewbox
                     Width="24"
                     Height="24"
-                    Source="pack://application:,,,/WhiteBoardModule;component/Resources/bold.svg" />
-            </ToggleButton>
+                    Margin="0,0,10,0"
+                    Source="pack://application:,,,/WhiteBoardModule;component/Resources/undo-left.svg" />
+
+                <svgc:SvgViewbox
+                    Width="24"
+                    Height="24"
+                    Margin="10,0,10,0"
+                    Source="pack://application:,,,/WhiteBoardModule;component/Resources/undo-right.svg" />
+            </StackPanel>
+
+            <Border
+                Grid.Column="1"
+                Width="1"
+                Height="30"
+                HorizontalAlignment="Center"
+                Background="#2D2D30" />
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Foreground="White"
+                    Text="Font size" />
+                <ComboBox
+                    Width="80"
+                    Margin="10,0,10,0"
+                    VerticalAlignment="Center"
+                    ItemsSource="{Binding FontSizes}"
+                    SelectedItem="{Binding SelectedFontSize, Mode=TwoWay}"
+                    Style="{StaticResource DarkComboBoxStyle}" />
+            </StackPanel>
+
+            <Border
+                Grid.Column="3"
+                Width="1"
+                Height="30"
+                HorizontalAlignment="Center"
+                Background="#2D2D30" />
+
+            <!--  Bold Button with SVG  -->
+
+            <StackPanel Grid.Column="4" Orientation="Horizontal">
+
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Foreground="White"
+                    Text="Bold type" />
+                <ToggleButton IsChecked="{Binding IsBold, Mode=TwoWay}" Style="{StaticResource ToolToggleButtonStyle}">
+                    <svgc:SvgViewbox
+                        Width="24"
+                        Height="24"
+                        Source="pack://application:,,,/WhiteBoardModule;component/Resources/bold.svg" />
+                </ToggleButton>
+            </StackPanel>
 
             <!--  Separator  -->
             <Border
-                Grid.Column="2"
+                Grid.Column="5"
                 Width="1"
-                Margin="10,0"
+                Height="30"
                 HorizontalAlignment="Center"
-                Background="Gray" />
+                Background="#2D2D30" />
 
             <!--  Color Palette  -->
-            <controls:ColorsPalette
-                Grid.Column="3"
-                VerticalAlignment="Center"
-                AvailableColors="{Binding AvailableColors}"
-                SelectColorCommand="{Binding SelectColorCommand}"
-                SelectedColor="{Binding SelectedColor}" />
+
+            <StackPanel Grid.Column="6" Orientation="Horizontal">
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Foreground="White"
+                    Text="Color" />
+                <controls:ColorsPalette
+                    Margin="10,0,0,0"
+                    VerticalAlignment="Center"
+                    SelectColorCommand="{Binding SelectColorCommand}"
+                    SelectedColor="{Binding SelectedColor}" />
+            </StackPanel>
+
+            <Border
+                Grid.Column="7"
+                Width="1"
+                Height="30"
+                HorizontalAlignment="Center"
+                Background="#2D2D30" />
+
+            <StackPanel Grid.Column="8" Orientation="Horizontal">
+                <TextBlock
+                    Margin="0,0,10,0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Foreground="White"
+                    Text="Remove" />
+                <svgc:SvgViewbox
+                    Width="24"
+                    Height="24"
+                    Source="pack://application:,,,/WhiteBoardModule;component/Resources/delete.svg" />
+            </StackPanel>
+
+            <Border
+                Grid.Column="9"
+                Width="1"
+                Height="30"
+                HorizontalAlignment="Center"
+                Background="#2D2D30" />
+
+            <StackPanel Grid.Column="10" Orientation="Horizontal">
+                <TextBlock
+                    Margin="0,0,10,0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Foreground="White"
+                    Text="Z-Index" />
+                <svgc:SvgViewbox
+                    Width="24"
+                    Height="24"
+                    Source="pack://application:,,,/WhiteBoardModule;component/Resources/forward-item.svg" />
+            </StackPanel>
 
             <!--  Action Button  -->
-            <controls:ActionButton
-                Grid.Column="4"
+            <!--<controls:ActionButton
+                Grid.Column="5"
                 Width="150"
                 Height="30"
                 Margin="10,0,0,0"
@@ -111,7 +217,7 @@
                 VerticalAlignment="Center"
                 ButtonCommand="{Binding ActionCommand}"
                 ButtonText="{Binding ActionLabel}"
-                IsButtonEnabled="{Binding IsSessionActive}" />
+                IsButtonEnabled="{Binding IsSessionActive}" />-->
         </Grid>
     </Border>
 </UserControl>

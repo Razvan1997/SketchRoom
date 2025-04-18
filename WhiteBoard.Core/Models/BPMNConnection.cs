@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Shapes;
 
 namespace WhiteBoard.Core.Models
@@ -65,6 +66,23 @@ namespace WhiteBoard.Core.Models
                 e.Handled = true;
             };
 
+            _path.MouseEnter += (s, e) =>
+            {
+                var neon = new DropShadowEffect
+                {
+                    Color = Colors.DeepSkyBlue,
+                    BlurRadius = 25,
+                    ShadowDepth = 0,
+                    Opacity = 1
+                };
+                _path.Effect = neon;
+            };
+
+            _path.MouseLeave += (s, e) =>
+            {
+                _path.Effect = null;
+            };
+
             _containerCanvas = new Canvas();
             _containerCanvas.Children.Add(_path);
         }
@@ -84,7 +102,7 @@ namespace WhiteBoard.Core.Models
 
             // adaugă săgeata la capătul curbei
             if (bezierGeometry.Figures.FirstOrDefault()?.Segments.LastOrDefault() is BezierSegment bezier)
-                AddArrowHead(bezier.Point2, bezier.Point3); // Point2 -> control, Point3 -> final
+                SetArrowFromTo(bezier.Point2, bezier.Point3); // Point2 -> control, Point3 -> final
         }
 
         public BPMNConnection(BPMNNode from, BPMNNode? to, IEnumerable<Point> pathPoints, bool addArrow = true)
@@ -106,10 +124,21 @@ namespace WhiteBoard.Core.Models
                 _figure.Segments.Add(new LineSegment(pointList[i], true));
 
             if (addArrow)
-                AddArrowHead(pointList[pointList.Count - 2], pointList[pointList.Count - 1]);
+                SetArrowFromTo(pointList[^2], pointList[^1]);
         }
 
-        private void AddArrowHead(Point from, Point to)
+        public void SetStroke(Brush stroke)
+        {
+            _path.Stroke = stroke;
+
+            if (_arrowHead != null)
+                _arrowHead.Fill = stroke;
+        }
+
+        public override UIElement Visual => _containerCanvas;
+        public override Rect Bounds => _geometry.Bounds;
+
+        public void SetArrowFromTo(Point from, Point to)
         {
             if (_arrowHead != null)
                 _containerCanvas.Children.Remove(_arrowHead);
@@ -133,18 +162,6 @@ namespace WhiteBoard.Core.Models
 
             _containerCanvas.Children.Add(_arrowHead);
         }
-
-
-        public void SetStroke(Brush stroke)
-        {
-            _path.Stroke = stroke;
-
-            if (_arrowHead != null)
-                _arrowHead.Fill = stroke;
-        }
-
-        public override UIElement Visual => _containerCanvas;
-        public override Rect Bounds => _geometry.Bounds;
     }
 
 

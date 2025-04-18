@@ -53,16 +53,31 @@
     <Grid x:Name="RootLayout">
         <StackPanel>
             <!--  Search  -->
-            <TextBox
+            <Grid
                 Height="30"
                 Margin="0,0,0,10"
-                Padding="8,4"
                 Background="#404040"
-                BorderBrush="#555"
-                BorderThickness="1"
-                FontSize="14"
-                Foreground="White"
-                Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                ClipToBounds="True">
+
+                <TextBox
+                    Padding="8,4,30,4"
+                    VerticalContentAlignment="Center"
+                    Background="Transparent"
+                    BorderBrush="#555"
+                    BorderThickness="1"
+                    FontSize="14"
+                    Foreground="White"
+                    Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <!--  Icon de căutare în partea dreaptă  -->
+                <svgc:SvgViewbox
+                    Width="16"
+                    Height="16"
+                    Margin="0,0,10,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Source="pack://application:,,,/SketchRoom.Toolkit.Wpf;component/Resources/search.svg" />
+            </Grid>
 
             <ItemsControl ItemsSource="{Binding GroupedFilteredShapes}">
                 <ItemsControl.ItemTemplate>

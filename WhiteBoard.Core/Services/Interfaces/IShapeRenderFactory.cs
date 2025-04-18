@@ -5,9 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using WhiteBoardModule.XAML.Shapes;
 
-namespace WhiteBoardModule.XAML
+namespace WhiteBoard.Core.Services.Interfaces
 {
     public interface IShapeRendererFactory
     {

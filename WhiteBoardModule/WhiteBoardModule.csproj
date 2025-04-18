@@ -12,7 +12,9 @@
     <None Remove="Resources\connection.svg" />
     <None Remove="Resources\cursor.svg" />
     <None Remove="Resources\curved-arrow.svg" />
+    <None Remove="Resources\delete.svg" />
     <None Remove="Resources\drag.svg" />
+    <None Remove="Resources\forward-item.svg" />
     <None Remove="Resources\shapes.svg" />
     <None Remove="Resources\text-edit.svg" />
     <None Remove="Resources\text.svg" />
@@ -41,11 +43,15 @@
     <Resource Include="Resources\connection.svg" />
     <Resource Include="Resources\cursor.svg" />
     <Resource Include="Resources\curved-arrow.svg" />
+    <Resource Include="Resources\delete.svg" />
     <Resource Include="Resources\drag.svg" />
+    <Resource Include="Resources\forward-item.svg" />
     <Resource Include="Resources\shapes.svg" />
     <Resource Include="Resources\table.svg" />
     <Resource Include="Resources\text-edit.svg" />
     <Resource Include="Resources\text.svg" />
+    <Resource Include="Resources\undo-left.svg" />
+    <Resource Include="Resources\undo-right.svg" />
     <Resource Include="SVG\rectangle.svg" />
   </ItemGroup>
 

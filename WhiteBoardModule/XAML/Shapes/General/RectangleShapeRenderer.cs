@@ -61,7 +61,8 @@ namespace WhiteBoardModule.XAML.Shapes.General
             }
             else
             {
-                rect.Stroke = Brushes.Black;
+                var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
+                rect.Stroke = preferences.SelectedColor;
             }
 
             return rect;

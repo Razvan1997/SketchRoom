@@ -25,13 +25,14 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
         public UIElement CreatePreview()
         {
             // Simulare simplificată a formei cu două etichete și săgeată
+            var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
 
             var sourceLabel = new TextBlock
             {
                 Text = "Source",
                 FontSize = 12,
                 FontWeight = FontWeights.Bold,
-                Foreground = Brushes.Black,
+                Foreground = preferences.SelectedColor,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 TextAlignment = TextAlignment.Center,
                 Margin = new Thickness(0, 0, 20, 1)
@@ -42,7 +43,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 Text = "Label",
                 FontSize = 10,
                 FontWeight = FontWeights.Normal,
-                Foreground = Brushes.Black,
+                Foreground = preferences.SelectedColor,
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center
             };
@@ -50,7 +51,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
             var leftLine = new Rectangle
             {
                 Height = 2,
-                Fill = Brushes.Black,
+                Fill = preferences.SelectedColor,
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Stretch
             };
@@ -58,7 +59,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
             var rightLine = new Rectangle
             {
                 Height = 2,
-                Fill = Brushes.Black,
+                Fill = preferences.SelectedColor,
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Stretch
             };
@@ -71,7 +72,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
             new Point(10, 5),
             new Point(0, 10)
         },
-                Fill = Brushes.Black,
+                Fill = preferences.SelectedColor,
                 Width = 10,
                 Height = 10,
                 VerticalAlignment = VerticalAlignment.Center,

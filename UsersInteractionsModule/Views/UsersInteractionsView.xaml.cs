@@ -2,6 +2,8 @@
 using System.Windows.Controls;
 using System.Windows.Media.Animation;
 using UsersInteractionsModule.ViewModels;
+using WhiteBoard.Core.Services.Interfaces;
+using WhiteBoardModule.XAML;
 
 namespace UsersInteractionsModule.Views
 {
@@ -10,13 +12,22 @@ namespace UsersInteractionsModule.Views
     /// </summary>
     public partial class UsersInteractionsView : UserControl
     {
+        private readonly IShapeRendererFactory _rendererFactory = new ShapeRendererFactory();
         public UsersInteractionsView()
         {
             InitializeComponent();
-            if (DataContext is UsersInteractionsViewModel vm)
+            ShapesControl.ShapeDragStarted += shape =>
             {
-                //vm.MenuBehavior = MenuBehavior;
-            }
+                if (DataContext is UsersInteractionsViewModel vm)
+                    vm.OnShapeDragStarted(shape);
+            };
+
+            ShapesControl.PreviewFactory = type =>
+            {
+                var renderer = _rendererFactory.CreateRenderer(type, withBindings: false);
+                return renderer.CreatePreview();
+            };
+
         }
     }
 }
