@@ -12,6 +12,8 @@ using WhiteBoardModule.XAML.Shapes.Containers;
 using System.Windows;
 using WhiteBoardModule.XAML.Shapes.Entity;
 using WhiteBoard.Core.Services.Interfaces;
+using WhiteBoardModule.XAML.Shapes.States;
+using WhiteBoardModule.XAML.Shapes.Nodes;
 
 namespace WhiteBoardModule.XAML
 {
@@ -29,7 +31,16 @@ namespace WhiteBoardModule.XAML
                 ShapeType.ConnectorShapeLabel => new ConnectorLabelShapeRenderer(withBindings),
                 ShapeType.ConnectorDoubleShapeLabel => new ConnectorDoubleLabelShapeRenderer(withBindings),
                 ShapeType.ContainerHorizontalShape => new HorizontalContainerShapeRenderer(withBindings),
+                ShapeType.ContainerHorizontalPoolLineOneShape => new HorizontalPoolLaneOneRenderer(withBindings),
+                ShapeType.ContainerHorizontalPoolLineTwoShape => new HorizontalPoolLineTwoRender(withBindings),
                 ShapeType.EntityShape => new EntityShapeRenderer(withBindings),
+                ShapeType.ListContainerShape => new ListContainerRenderer(withBindings),
+                ShapeType.BraceToRightShape => new BraceToRightShapeRender(withBindings),
+                ShapeType.StraightBraceRightShape => new StraightBraceRightShapeRenderer(withBindings),
+                ShapeType.ObjectTypeShape => new ObjectTypeShapeRenderer(withBindings),
+                ShapeType.UmlClassTypeShape => new UmlClassShapeRenderer(withBindings),
+                ShapeType.StateMachineShape => new StateMachineShapeRenderer(withBindings),
+                ShapeType.AdvancedTreeShapeRenderer => new AdvancedTreeShapeRenderer(withBindings),
                 _ => throw new NotImplementedException($"Renderer for {type} not implemented.")
             };
         }

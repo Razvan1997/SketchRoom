@@ -169,7 +169,8 @@ namespace SketchRoom.Toolkit.Wpf.Controls
         private void RotateIcon_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             var canvas = VisualTreeHelper.GetParent(this) as Canvas;
-            var toolManager = ContainerLocator.Container.Resolve<IToolManager>();
+            var tabService = ContainerLocator.Container.Resolve<IWhiteBoardTabService>();
+            var toolManager = tabService.GetCurrentToolManager();
 
             if (canvas != null && toolManager.GetToolByName("RotateTool") is RotateTool rt)
             {
@@ -188,7 +189,8 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             if (!_isRotating) return;
 
             var canvas = VisualTreeHelper.GetParent(this) as Canvas;
-            var toolManager = ContainerLocator.Container.Resolve<IToolManager>();
+            var tabService = ContainerLocator.Container.Resolve<IWhiteBoardTabService>();
+            var toolManager = tabService.GetCurrentToolManager();
 
             if (canvas != null && toolManager.ActiveTool is RotateTool rt)
             {
@@ -200,7 +202,8 @@ namespace SketchRoom.Toolkit.Wpf.Controls
         private void RotateIcon_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             var canvas = VisualTreeHelper.GetParent(this) as Canvas;
-            var toolManager = ContainerLocator.Container.Resolve<IToolManager>();
+            var tabService = ContainerLocator.Container.Resolve<IWhiteBoardTabService>();
+            var toolManager = tabService.GetCurrentToolManager();
 
             if (canvas != null && _isRotating && toolManager.ActiveTool is RotateTool rt)
             {

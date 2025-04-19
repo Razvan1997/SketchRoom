@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\hamburger.svg" />
+    <None Remove="Resources\plus.svg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Prism.Core" Version="9.0.537" />
+    <PackageReference Include="Prism.Wpf" Version="9.0.537" />
+    <PackageReference Include="SharpVectors.Wpf" Version="1.8.4.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SketchRoom.Toolkit.Wpf\SketchRoom.Toolkit.Wpf.csproj" />
+    <ProjectReference Include="..\WhiteBoard.Core\WhiteBoard.Core.csproj" />
+    <ProjectReference Include="..\WhiteBoardModule\WhiteBoardModule.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\hamburger.svg" />
+    <Resource Include="Resources\plus.svg" />
+  </ItemGroup>
+
+</Project>

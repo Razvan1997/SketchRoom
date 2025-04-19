@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DrawingStateService\DrawingStateService.csproj" />
+    <ProjectReference Include="..\FooterModule\FooterModule.csproj" />
     <ProjectReference Include="..\LobbyHostingModule\LobbyHostingModule.csproj" />
     <ProjectReference Include="..\ParticipationModule\ParticipationModule.csproj" />
     <ProjectReference Include="..\SketchRoom.AI.Predictions\SketchRoom.AI.Predictions.csproj" />

@@ -145,6 +145,36 @@ namespace UsersInteractionsModule.ViewModels
                 Category = "Containers"
             });
 
+            var horizontalPoolLineOne = new GenericShapeControl();
+            horizontalPoolLineOne.SetShapePreview(ShapeType.ContainerHorizontalPoolLineOneShape);
+            AllShapes.Add(new BPMNShapeModel
+            {
+                Name = "HorizontalPoolLineOne",
+                Type = ShapeType.ContainerHorizontalPoolLineOneShape,
+                ShapeContent = horizontalPoolLineOne,
+                Category = "Containers"
+            });
+
+            var horizontalPoolLineTwo = new GenericShapeControl();
+            horizontalPoolLineTwo.SetShapePreview(ShapeType.ContainerHorizontalPoolLineTwoShape);
+            AllShapes.Add(new BPMNShapeModel
+            {
+                Name = "HorizontalPoolLineTwo",
+                Type = ShapeType.ContainerHorizontalPoolLineTwoShape,
+                ShapeContent = horizontalPoolLineTwo,
+                Category = "Containers"
+            });
+
+            var listContainer = new GenericShapeControl();
+            listContainer.SetShapePreview(ShapeType.ListContainerShape);
+            AllShapes.Add(new BPMNShapeModel
+            {
+                Name = "ListContainerShape",
+                Type = ShapeType.ListContainerShape,
+                ShapeContent = listContainer,
+                Category = "Containers"
+            });
+
             var entityShape = new GenericShapeControl();
             entityShape.SetShapePreview(ShapeType.EntityShape);
             AllShapes.Add(new BPMNShapeModel
@@ -155,6 +185,65 @@ namespace UsersInteractionsModule.ViewModels
                 Category = "Entity"
             });
 
+            //var braceToRight = new GenericShapeControl();
+            //braceToRight.SetShapePreview(ShapeType.BraceToRightShape);
+            //AllShapes.Add(new BPMNShapeModel
+            //{
+            //    Name = "BraceToRight",
+            //    Type = ShapeType.BraceToRightShape,
+            //    ShapeContent = braceToRight,
+            //    Category = "General"
+            //});
+
+            var straightBraceRightShape = new GenericShapeControl();
+            straightBraceRightShape.SetShapePreview(ShapeType.StraightBraceRightShape);
+            AllShapes.Add(new BPMNShapeModel
+            {
+                Name = "StraightBraceRightShape",
+                Type = ShapeType.StraightBraceRightShape,
+                ShapeContent = straightBraceRightShape,
+                Category = "General"
+            });
+
+            var objectTypeShape = new GenericShapeControl();
+            objectTypeShape.SetShapePreview(ShapeType.ObjectTypeShape);
+            AllShapes.Add(new BPMNShapeModel
+            {
+                Name = "ObjectTypeShape",
+                Type = ShapeType.ObjectTypeShape,
+                ShapeContent = objectTypeShape,
+                Category = "Entity"
+            });
+
+            var umlClassTypeShape = new GenericShapeControl();
+            umlClassTypeShape.SetShapePreview(ShapeType.UmlClassTypeShape);
+            AllShapes.Add(new BPMNShapeModel
+            {
+                Name = "UmlClassTypeShape",
+                Type = ShapeType.UmlClassTypeShape,
+                ShapeContent = umlClassTypeShape,
+                Category = "Entity"
+            });
+
+            var stateMachineShapeRender = new GenericShapeControl();
+            stateMachineShapeRender.SetShapePreview(ShapeType.StateMachineShape);
+            AllShapes.Add(new BPMNShapeModel
+            {
+                Name = "StateMachineShapeRender",
+                Type = ShapeType.StateMachineShape,
+                ShapeContent = stateMachineShapeRender,
+                Category = "States"
+            });
+
+            //var advancedTreeShapeRenderer = new GenericShapeControl();
+            //advancedTreeShapeRenderer.SetShapePreview(ShapeType.AdvancedTreeShapeRenderer);
+            //AllShapes.Add(new BPMNShapeModel
+            //{
+            //    Name = "AdvancedTreeShapeRenderer",
+            //    Type = ShapeType.AdvancedTreeShapeRenderer,
+            //    ShapeContent = advancedTreeShapeRenderer,
+            //    Category = "Trees"
+            //});
         }
 
         private void FilterShapes()

@@ -19,10 +19,7 @@ namespace WhiteBoard.Core.Tools
 
         public void RegisterTool(IDrawingTool tool)
         {
-            if (!_tools.ContainsKey(tool.Name))
-            {
-                _tools[tool.Name] = tool;
-            }
+            _tools[tool.Name] = tool;
         }
 
         public void SetActive(string toolName)

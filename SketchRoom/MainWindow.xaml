@@ -20,10 +20,17 @@
         <Grid x:Name="MainContent" Background="Transparent">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
+                <!--  Top bar  -->
                 <RowDefinition Height="*" />
+                <!--  Side + Content  -->
+                <RowDefinition Height="Auto" />
+                <!--  Footer  -->
             </Grid.RowDefinitions>
-            <!--  Top area  -->
-            <Border Height="40" Margin="0,0,0,0">
+            <!--  Top bar  -->
+            <Border
+                Grid.Row="0"
+                Height="40"
+                Margin="0">
                 <Border.Effect>
                     <DropShadowEffect
                         BlurRadius="4"
@@ -39,14 +46,14 @@
                     walk:Walkthrough.StepIndex="1" />
             </Border>
 
+            <!--  Main content  -->
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <!--  Users interactions region  -->
-                <Border Grid.Row="0" Width="300">
+                <Border Grid.Column="0" Width="300">
                     <ContentControl
                         prism:RegionManager.RegionName="UsersInteractionsRegion"
                         walk:Walkthrough.Description="dsadasd asd asda sda"
@@ -57,13 +64,15 @@
                         walk:Walkthrough.StepIndex="0" />
                 </Border>
 
-                <!--<Border Grid.Column="1">
-                    <ContentControl prism:RegionManager.RegionName="WhiteBoardRegion" />
-                </Border>-->
                 <Border Grid.Column="1">
                     <ContentControl prism:RegionManager.RegionName="ContentRegion" />
                 </Border>
             </Grid>
+
+            <!--  Footer  -->
+            <Border Grid.Row="2">
+                <ContentControl prism:RegionManager.RegionName="FooterRegion" />
+            </Border>
         </Grid>
     </Grid>
 </Window>

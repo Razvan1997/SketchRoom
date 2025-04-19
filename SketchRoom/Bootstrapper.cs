@@ -1,4 +1,5 @@
 ﻿using DrawingStateService.States;
+using FooterModule.Factory;
 using Prism.Ioc;
 using SketchRoom.Dialogs;
 using SketchRoom.Services;
@@ -33,7 +34,7 @@ namespace SketchRoom
 
             containerRegistry.RegisterSingleton<WhiteboardHubClient>();
 
-            containerRegistry.RegisterSingleton<IToolManager, ToolManager>();
+            //containerRegistry.RegisterSingleton<IToolManager, ToolManager>();
             containerRegistry.RegisterSingleton<IDrawingService, WhiteBoard.Core.Services.DrawingService>();
             containerRegistry.RegisterSingleton<ICanvasRenderer, CanvasRenderer>();
             containerRegistry.RegisterSingleton<ICommandManager, WhiteBoard.Core.Services.CommandManager>();
@@ -46,6 +47,8 @@ namespace SketchRoom
             containerRegistry.RegisterSingleton<SelectedToolService>();
             containerRegistry.RegisterSingleton<IBpmnShapeFactory, BpmnShapeFactory>();
             containerRegistry.RegisterSingleton<IDrawingPreferencesService, DrawingPreferencesService>();
+            //containerRegistry.RegisterSingleton<IWhiteBoardFactory, WhiteBoardFactory>();
+            containerRegistry.RegisterSingleton<IWhiteBoardTabService, WhiteBoardTabService>();
         }
 
         protected override void OnInitialized()
@@ -62,6 +65,7 @@ namespace SketchRoom
             moduleCatalog.AddModule<WhiteBoardModule.Modules.WhiteBoardModule>();
             moduleCatalog.AddModule<LobbyHostingModule.Modules.LobbyHostingModule>();
             moduleCatalog.AddModule<ParticipationModule.Modules.ParticipationModule>();
+            moduleCatalog.AddModule<FooterModule.Modules.FooterModule>();
         }
     }
 }

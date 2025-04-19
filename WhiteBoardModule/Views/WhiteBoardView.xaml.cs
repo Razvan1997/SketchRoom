@@ -13,6 +13,7 @@ namespace WhiteBoardModule.Views
     {
         private bool _isLeftToolsVisible = false;
         private TranslateTransform _leftToolsTransform;
+        public ContentControl WhiteboardHostControl => WhiteboardHost;
         public WhiteBoardView()
         {
             InitializeComponent();
@@ -25,14 +26,14 @@ namespace WhiteBoardModule.Views
 
         private void WhiteBoardView_Loaded(object sender, RoutedEventArgs e)
         {
-            if (DataContext is not WhiteBoardViewModel vm)
-                return;
+            //if (DataContext is not WhiteBoardViewModel vm)
+            //    return;
 
-            vm.SetControlAdapter(Whiteboard);
+            //vm.SetControlAdapter(Whiteboard);
 
-            Whiteboard.LineDrawn += vm.OnLineDrawn;
-            Whiteboard.MouseMoved += vm.OnMouseMoved;
-            Whiteboard.LivePointDrawn += vm.OnDrawPointLive;
+            //Whiteboard.LineDrawn += vm.OnLineDrawn;
+            //Whiteboard.MouseMoved += vm.OnMouseMoved;
+            //Whiteboard.LivePointDrawn += vm.OnDrawPointLive;
         }
 
         private void CollapseSvg_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)

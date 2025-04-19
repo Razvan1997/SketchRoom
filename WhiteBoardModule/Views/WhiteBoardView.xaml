@@ -26,8 +26,14 @@
             </Grid.RowDefinitions>
 
             <!--  Whiteboard ocupă toată zona  -->
-            <controls:WhiteBoardControl
+            <!--<controls:WhiteBoardControl
                 x:Name="Whiteboard"
+                Grid.Row="1"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch" />-->
+
+            <ContentControl
+                x:Name="WhiteboardHost"
                 Grid.Row="1"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch" />

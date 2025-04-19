@@ -1,0 +1,87 @@
+﻿<UserControl
+    x:Class="FooterModule.Views.FooterView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="clr-namespace:FooterModule.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:FooterModule.Views"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:prism="http://prismlibrary.com/"
+    xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <converters:BoolToBrushConverter
+            x:Key="BoolToBrushConverter"
+            FalseBrush="Transparent"
+            TrueBrush="RoyalBlue" />
+    </UserControl.Resources>
+
+    <DockPanel VerticalAlignment="Bottom" Background="#1e1e1e">
+        <!--  Button "+"  -->
+        <Border
+            Width="30"
+            Height="30"
+            Margin="4,0"
+            Background="#404040"
+            Cursor="Hand"
+            MouseDown="AddTab_MouseDown"
+            ToolTip="Adaugă pagină">
+            <svgc:SvgViewbox
+                Width="16"
+                Height="16"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Source="pack://application:,,,/FooterModule;component/Resources/plus.svg"
+                Stretch="Uniform" />
+        </Border>
+
+        <!--  ItemsControl for Tabs  -->
+        <ItemsControl
+            AlternationCount="1000"
+            Background="#404040"
+            DockPanel.Dock="Right"
+            ItemsSource="{Binding Tabs}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border
+                        Margin="2,0"
+                        Padding="8,4"
+                        Background="{Binding IsSelected, Converter={StaticResource BoolToBrushConverter}}"
+                        CornerRadius="4">
+                        <TextBlock
+                            AllowDrop="True"
+                            Drop="Tab_Drop"
+                            Foreground="White"
+                            MouseLeftButtonDown="Tab_Click"
+                            MouseRightButtonDown="Tab_RightClick"
+                            PreviewMouseLeftButtonDown="Tab_MouseLeftButtonDown"
+                            PreviewMouseMove="Tab_PreviewMouseMove"
+                            Text="{Binding Name}" />
+                        <Border.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem
+                                    Command="{Binding DataContext.RenameTabCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}"
+                                    Header="Rename" />
+                                <MenuItem
+                                    Command="{Binding DataContext.DeleteTabCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}"
+                                    Header="Delete" />
+                            </ContextMenu>
+                        </Border.ContextMenu>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </DockPanel>
+</UserControl>

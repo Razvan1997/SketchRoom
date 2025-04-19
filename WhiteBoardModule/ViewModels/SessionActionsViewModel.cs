@@ -114,7 +114,8 @@ namespace WhiteBoardModule.ViewModels
             {
                 SelectedColor = color;
 
-                var toolManager = ContainerLocator.Container.Resolve<IToolManager>();
+                var tabService = ContainerLocator.Container.Resolve<IWhiteBoardTabService>();
+                var toolManager = tabService.GetCurrentToolManager();
                 if (toolManager.GetToolByName("FreeDraw") is FreeDrawTool freeDraw)
                     freeDraw.StrokeColor = color;
             });

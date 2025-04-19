@@ -13,7 +13,7 @@
         <ScrollViewer
             x:Name="ScrollViewer"
             ClipToBounds="True"
-            HorizontalScrollBarVisibility="Auto"
+            HorizontalScrollBarVisibility="Hidden"
             VerticalScrollBarVisibility="Auto">
             <Canvas
                 x:Name="DrawingRoot"

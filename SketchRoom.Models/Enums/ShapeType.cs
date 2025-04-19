@@ -17,6 +17,15 @@ namespace SketchRoom.Models.Enums
         ConnectorShapeLabel,
         ConnectorDoubleShapeLabel,
         ContainerHorizontalShape,
-        EntityShape
+        ContainerHorizontalPoolLineOneShape,
+        ContainerHorizontalPoolLineTwoShape,
+        ListContainerShape,
+        EntityShape,
+        BraceToRightShape,
+        StraightBraceRightShape,
+        ObjectTypeShape,
+        UmlClassTypeShape,
+        StateMachineShape,
+        AdvancedTreeShapeRenderer
     }
 }

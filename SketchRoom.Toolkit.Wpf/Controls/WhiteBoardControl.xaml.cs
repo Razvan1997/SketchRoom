@@ -47,7 +47,8 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             InitializeComponent();
             _factory = ContainerLocator.Container.Resolve<IBpmnShapeFactory>();
 
-            _toolManager = ContainerLocator.Container.Resolve<IToolManager>();
+            var tabService = ContainerLocator.Container.Resolve<IWhiteBoardTabService>();
+            _toolManager = tabService.GetCurrentToolManager();
             var drawingService = ContainerLocator.Container.Resolve<IDrawingService>();
             var canvasRenderer = ContainerLocator.Container.Resolve<ICanvasRenderer>();
             _zoomPanService = ContainerLocator.Container.Resolve<IZoomPanService>();
@@ -147,7 +148,11 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
             var afterInterceptTool = _toolManager.ActiveTool?.Name;
 
-            if (currentTool == afterInterceptTool && Keyboard.Modifiers == ModifierKeys.Control)
+            //if (currentTool == afterInterceptTool && Keyboard.Modifiers == ModifierKeys.Control)
+            //{
+            //    _toolManager.SetActive("Pan");
+            //}
+            if ( Keyboard.Modifiers == ModifierKeys.Control)
             {
                 _toolManager.SetActive("Pan");
             }
