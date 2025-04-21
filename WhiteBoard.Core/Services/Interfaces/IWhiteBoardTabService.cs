@@ -20,5 +20,6 @@ namespace WhiteBoard.Core.Services.Interfaces
 
         IToolManager? GetCurrentToolManager();
         void AssociateToolManager(Guid tabId, IToolManager toolManager);
+        event Action<FooterTabModel>? TabChanged;
     }
 }

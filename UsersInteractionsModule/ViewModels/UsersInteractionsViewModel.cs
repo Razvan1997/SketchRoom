@@ -235,15 +235,25 @@ namespace UsersInteractionsModule.ViewModels
                 Category = "States"
             });
 
-            //var advancedTreeShapeRenderer = new GenericShapeControl();
-            //advancedTreeShapeRenderer.SetShapePreview(ShapeType.AdvancedTreeShapeRenderer);
-            //AllShapes.Add(new BPMNShapeModel
-            //{
-            //    Name = "AdvancedTreeShapeRenderer",
-            //    Type = ShapeType.AdvancedTreeShapeRenderer,
-            //    ShapeContent = advancedTreeShapeRenderer,
-            //    Category = "Trees"
-            //});
+            var advancedTreeShapeRenderer = new GenericShapeControl();
+            advancedTreeShapeRenderer.SetShapePreview(ShapeType.AdvancedTreeShapeRenderer);
+            AllShapes.Add(new BPMNShapeModel
+            {
+                Name = "AdvancedTreeShapeRenderer",
+                Type = ShapeType.AdvancedTreeShapeRenderer,
+                ShapeContent = advancedTreeShapeRenderer,
+                Category = "Trees"
+            });
+
+            var borderTextBox = new GenericShapeControl();
+            borderTextBox.SetShapePreview(ShapeType.BorderTextBox);
+            AllShapes.Add(new BPMNShapeModel
+            {
+                Name = "BorderTextBox",
+                Type = ShapeType.BorderTextBox,
+                ShapeContent = borderTextBox,
+                Category = "General"
+            });
         }
 
         private void FilterShapes()

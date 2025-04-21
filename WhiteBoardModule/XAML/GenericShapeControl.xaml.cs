@@ -14,12 +14,15 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Media.Media3D;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using WhiteBoard.Core.Events;
 using WhiteBoard.Core.Services.Interfaces;
+using WhiteBoardModule.Events;
 using WhiteBoardModule.ViewModels;
 using WhiteBoardModule.XAML.Shapes.Entity;
+using WhiteBoardModule.XAML.Shapes.Tables;
 using WhiteBoardModule.XAML.StyleUpdater;
 
 namespace WhiteBoardModule.XAML
@@ -34,10 +37,16 @@ namespace WhiteBoardModule.XAML
         public event EventHandler<ConnectionPointEventArgs>? ConnectionPointTargetClicked;
         public bool EnableConnectors { get; set; } = false;
         private readonly IShapeRendererFactory _rendererFactory = new ShapeRendererFactory();
-
+        private IShapeRenderer? _renderer;
+        private readonly IEventAggregator _eventAggregator;
+        public bool IsPreview { get; set; }
+        public Guid? SourceTableId { get; set; }
         public GenericShapeControl()
         {
             InitializeComponent();
+
+            _eventAggregator = ContainerLocator.Container.Resolve<IEventAggregator>();
+            _eventAggregator.GetEvent<TableResizedEvent>().Subscribe(OnTableResize);
 
             this.MouseLeftButtonDown += OnMouseLeftButtonDown;
             this.MouseMove += ForwardMouseMove;
@@ -50,11 +59,32 @@ namespace WhiteBoardModule.XAML
             Loaded += (_, _) => InitResizeThumbs();
         }
 
+        private void OnTableResize(TableResizeInfo info)
+        {
+            if (IsPreview) return;
+
+            if (SourceTableId != info.SourceId)
+                return; // evenimentul nu e pentru mine
+
+            this.Width = info.NewSize.Width;
+            this.Height = info.NewSize.Height;
+        }
+
+        public void SetInitialSize(double width, double height)
+        {
+            this.Width = width;
+            this.Height = height;
+            _renderer?.SetInitialSize(width, height);
+        }
+
         public void SetShape(ShapeType shape)
         {
-            var renderer = _rendererFactory.CreateRenderer(shape, withBindings: false);
+            _renderer = _rendererFactory.CreateRenderer(shape, withBindings: false);
 
-            if (renderer is EntityShapeRenderer entityRenderer)
+            this.Width = 100;
+            this.Height = 100;
+
+            if (_renderer is EntityShapeRenderer entityRenderer)
             {
                 entityRenderer.ConnectionPointClicked += (s, args) =>
                 {
@@ -67,11 +97,25 @@ namespace WhiteBoardModule.XAML
                 };
             }
 
-            ShapePresenter.Content = renderer.Render();
+            if (_renderer is TableShapeRenderer tableRenderer)
+            {
+                var rendered = tableRenderer.Render();
+
+                if (rendered is EditableTableControl table)
+                {
+                    SourceTableId = table.Id;
+                    ShapePresenter.Content = table;
+                }
+            }
+            else
+            {
+                ShapePresenter.Content = _renderer.Render();
+            }
         }
 
         public void SetShapePreview(ShapeType shape)
         {
+            IsPreview = true;
             var preview = _rendererFactory.CreateRenderPreview(shape);
             ShapePresenter.Content = preview;
         }

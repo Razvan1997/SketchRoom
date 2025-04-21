@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using WhiteBoardModule.ViewModels;
 
 namespace WhiteBoardModule.Views
 {
@@ -23,6 +24,14 @@ namespace WhiteBoardModule.Views
         public BottomToolsActionsView()
         {
             InitializeComponent();
+        }
+
+        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is BottomToolsActionsViewModel vm)
+            {
+                vm.InitializeAfterLoad();
+            }
         }
     }
 }

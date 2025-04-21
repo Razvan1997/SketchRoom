@@ -7,42 +7,54 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows;
 using WhiteBoard.Core.Services.Interfaces;
+using Microsoft.ML.Transforms;
+using System.Windows.Input;
+using System.Windows.Shapes;
 
 namespace WhiteBoardModule.XAML.Shapes.Tables
 {
     public class TableShapeRenderer : IShapeRenderer
     {
+        private Brush _headerBackground = Brushes.Black;
+        private Brush _headerForeground = Brushes.White;
+        private Brush _cellBackground = Brushes.White;
+        private Brush _cellForeground = Brushes.Black;
+
+        private int _rows = 3;
+        private int _columns = 3;
+        private string[,] _cellValues;
+        private Grid _grid;
+        private double _initialWidth;
+        private double _initialHeight;
+
+        public TableShapeRenderer()
+        {
+        }
+
+        public void SetInitialSize(double width, double height)
+        {
+            _initialWidth = width;
+            _initialHeight = height;
+        }
+
         public UIElement CreatePreview()
         {
             var previewGrid = new Grid
             {
                 Width = 60,
                 Height = 60,
-                Background = Brushes.Transparent,
-                ShowGridLines = false
+                Background = Brushes.White
             };
 
-            for (int i = 0; i < 3; i++)
-            {
+            for (int i = 0; i < _columns; i++)
                 previewGrid.ColumnDefinitions.Add(new ColumnDefinition());
+
+            for (int i = 0; i < _rows; i++)
                 previewGrid.RowDefinitions.Add(new RowDefinition());
-            }
 
-            for (int row = 0; row < 3; row++)
-            {
-                for (int col = 0; col < 3; col++)
-                {
-                    var cell = new Border
-                    {
-                        BorderBrush = Brushes.Black,
-                        BorderThickness = new Thickness(0.5)
-                    };
-
-                    Grid.SetRow(cell, row);
-                    Grid.SetColumn(cell, col);
-                    previewGrid.Children.Add(cell);
-                }
-            }
+            for (int row = 0; row < _rows; row++)
+                for (int col = 0; col < _columns; col++)
+                    AddCell(previewGrid, row, col, isPreview: true);
 
             return new Viewbox
             {
@@ -55,50 +67,76 @@ namespace WhiteBoardModule.XAML.Shapes.Tables
 
         public UIElement Render()
         {
-            var grid = new Grid
-            {
-                Background = Brushes.Transparent,
-                ShowGridLines = true,
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                VerticalAlignment = VerticalAlignment.Stretch
-            };
-
-            for (int i = 0; i < 3; i++)
-            {
-                grid.ColumnDefinitions.Add(new ColumnDefinition());
-                grid.RowDefinitions.Add(new RowDefinition());
-            }
-
-            for (int row = 0; row < 3; row++)
-            {
-                for (int col = 0; col < 3; col++)
-                {
-                    var cell = new Border
-                    {
-                        BorderBrush = Brushes.Black,
-                        BorderThickness = new Thickness(0.5),
-                        Child = new TextBlock
-                        {
-                            Text = $"R{row + 1}C{col + 1}",
-                            FontSize = 14,
-                            Foreground = Brushes.Black,
-                            HorizontalAlignment = HorizontalAlignment.Center,
-                            VerticalAlignment = VerticalAlignment.Center,
-                            TextWrapping = TextWrapping.Wrap
-                        }
-                    };
-
-                    Grid.SetRow(cell, row);
-                    Grid.SetColumn(cell, col);
-                    grid.Children.Add(cell);
-                }
-            }
-
-            return new Viewbox
-            {
-                Stretch = Stretch.Uniform,
-                Child = grid
-            };
+            return new EditableTableControl();
         }
+
+        private void AddCell(Grid grid, int row, int col, bool isPreview = false)
+        {
+            var isHeader = row == 0;
+            UIElement content;
+
+            if (isPreview)
+            {
+                content = new TextBlock
+                {
+                    Text = "sample",
+                    FontSize = 10,
+                    Foreground = isHeader ? _headerForeground : _cellForeground,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    TextWrapping = TextWrapping.Wrap
+                };
+            }
+            else
+            {
+                var textBox = new TextBox
+                {
+                    Text = _cellValues[row, col],
+                    FontSize = 14,
+                    MinWidth = 30,
+                    MinHeight = 20,
+                    Padding = new Thickness(4),
+                    Foreground = isHeader ? _headerForeground : _cellForeground,
+                    Background = isHeader ? _headerBackground : _cellBackground,
+                    BorderThickness = new Thickness(0),
+                    HorizontalContentAlignment = HorizontalAlignment.Center,
+                    VerticalContentAlignment = VerticalAlignment.Center
+                };
+
+                int rIndex = row, cIndex = col;
+
+                var contextMenu = new ContextMenu();
+                contextMenu.Items.Add(new MenuItem { Header = "Copy", Command = ApplicationCommands.Copy });
+                contextMenu.Items.Add(new MenuItem { Header = "Paste", Command = ApplicationCommands.Paste });
+                contextMenu.Items.Add(new Separator());
+                contextMenu.Items.Add(new MenuItem
+                {
+                    Header = "Add Row Below",
+                   
+                });
+                contextMenu.Items.Add(new MenuItem
+                {
+                    Header = "Add Column Right",
+                });
+
+                textBox.ContextMenu = contextMenu;
+                textBox.TextChanged += (s, e) => _cellValues[rIndex, cIndex] = textBox.Text;
+
+                content = textBox;
+            }
+
+            var border = new Border
+            {
+                BorderBrush = Brushes.Black,
+                BorderThickness = new Thickness(0.5),
+                Background = isHeader ? _headerBackground : _cellBackground,
+                Child = content
+            };
+
+            Grid.SetRow(border, row);
+            Grid.SetColumn(border, col);
+            grid.Children.Add(border);
+        }
+
     }
 }

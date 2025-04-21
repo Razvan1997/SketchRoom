@@ -49,6 +49,7 @@ namespace SketchRoom
             containerRegistry.RegisterSingleton<IDrawingPreferencesService, DrawingPreferencesService>();
             //containerRegistry.RegisterSingleton<IWhiteBoardFactory, WhiteBoardFactory>();
             containerRegistry.RegisterSingleton<IWhiteBoardTabService, WhiteBoardTabService>();
+            containerRegistry.RegisterSingleton<IShapeSelectionService, ShapeSelectionService>();
         }
 
         protected override void OnInitialized()

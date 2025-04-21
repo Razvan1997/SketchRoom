@@ -12,5 +12,9 @@ namespace WhiteBoard.Core.Services.Interfaces
         UIElement Render();
 
         UIElement CreatePreview();
+        void SetInitialSize(double width, double height)
+        {
+            // implementare implicită: nu face nimic
+        }
     }
 }

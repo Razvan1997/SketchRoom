@@ -242,9 +242,9 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
         private void DrawingRoot_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
-            var logicalPos = GetLogicalPosition(e);
-            _toolManager.SetActive("Selection"); // ← activăm tool-ul
-            _host.HandleMouseDown(logicalPos,e);
+            //var logicalPos = GetLogicalPosition(e);
+            //_toolManager.SetActive("Selection"); // ← activăm tool-ul
+            //_host.HandleMouseDown(logicalPos,e);
         }
 
         private void DrawingRoot_PreviewMouseRightButtonUp(object sender, MouseButtonEventArgs e)

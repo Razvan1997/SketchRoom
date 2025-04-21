@@ -19,6 +19,7 @@
     <None Remove="Resources\text-edit.svg" />
     <None Remove="Resources\text.svg" />
     <None Remove="SVG\BraceToLeft.svg" />
+    <None Remove="SVG\folder.svg" />
     <None Remove="SVG\rectangle.svg" />
   </ItemGroup>
 
@@ -54,6 +55,7 @@
     <Resource Include="Resources\undo-left.svg" />
     <Resource Include="Resources\undo-right.svg" />
     <Resource Include="SVG\BraceToLeft.svg" />
+    <Resource Include="SVG\folder.svg" />
     <Resource Include="SVG\rectangle.svg" />
   </ItemGroup>
 

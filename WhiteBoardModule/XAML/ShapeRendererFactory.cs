@@ -1,19 +1,13 @@
 ﻿using SketchRoom.Models.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using WhiteBoardModule.XAML.Shapes.General;
-using WhiteBoardModule.XAML.Shapes.Tables;
-using WhiteBoardModule.XAML.Shapes;
+using System.Windows;
+using WhiteBoard.Core.Services.Interfaces;
 using WhiteBoardModule.XAML.Shapes.Connectors;
 using WhiteBoardModule.XAML.Shapes.Containers;
-using System.Windows;
 using WhiteBoardModule.XAML.Shapes.Entity;
-using WhiteBoard.Core.Services.Interfaces;
-using WhiteBoardModule.XAML.Shapes.States;
+using WhiteBoardModule.XAML.Shapes.General;
 using WhiteBoardModule.XAML.Shapes.Nodes;
+using WhiteBoardModule.XAML.Shapes.States;
+using WhiteBoardModule.XAML.Shapes.Tables;
 
 namespace WhiteBoardModule.XAML
 {
@@ -41,6 +35,7 @@ namespace WhiteBoardModule.XAML
                 ShapeType.UmlClassTypeShape => new UmlClassShapeRenderer(withBindings),
                 ShapeType.StateMachineShape => new StateMachineShapeRenderer(withBindings),
                 ShapeType.AdvancedTreeShapeRenderer => new AdvancedTreeShapeRenderer(withBindings),
+                ShapeType.BorderTextBox => new TextBoxBorderShapeRenderer(withBindings),
                 _ => throw new NotImplementedException($"Renderer for {type} not implemented.")
             };
         }

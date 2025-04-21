@@ -67,7 +67,7 @@ namespace WhiteBoard.Core.Services
                             _toolManager.SetActive("BpmnTool");
                             return;
                         case "Connector":
-                            if(_selectedToolService.CurrentTool == WhiteBoardTool.CurvedArrow)
+                            if (_selectedToolService.CurrentTool == WhiteBoardTool.CurvedArrow)
                             {
                                 _toolManager.SetActive("ConnectorCurved");
                             }

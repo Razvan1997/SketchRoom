@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shapes;
 using WhiteBoard.Core.Events;
 using WhiteBoard.Core.Factory.Interfaces;
 using WhiteBoard.Core.Models;
@@ -99,10 +100,7 @@ namespace WhiteBoard.Core.Services
 
             if (type.HasValue)
             {
-                if (instance is IInteractiveShape bindable)
-                {
-                    bindable.SetShape(type.Value);
-                }
+                instance.SetShape(type.Value);
             }
             AttachEvents(instance);
 

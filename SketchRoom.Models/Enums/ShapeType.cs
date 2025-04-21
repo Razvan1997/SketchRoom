@@ -26,6 +26,8 @@ namespace SketchRoom.Models.Enums
         ObjectTypeShape,
         UmlClassTypeShape,
         StateMachineShape,
-        AdvancedTreeShapeRenderer
+        AdvancedTreeShapeRenderer,
+        TreeNodeShape,
+        BorderTextBox
     }
 }

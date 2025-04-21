@@ -15,7 +15,7 @@ namespace WhiteBoard.Core.Services
         private readonly Dictionary<Guid, object> _whiteBoards = new();
         private readonly Dictionary<Guid, IToolManager> _toolManagers = new();
         private readonly List<FooterTabModel> _tabs = new();
-
+        public event Action<FooterTabModel>? TabChanged;
         public FooterTabModel? CurrentTab { get; private set; }
 
         public FooterTabModel CreateNewTab(int index)
@@ -67,6 +67,7 @@ namespace WhiteBoard.Core.Services
         public void SetCurrent(FooterTabModel tab)
         {
             CurrentTab = tab;
+            TabChanged?.Invoke(tab);
         }
     }
 }
