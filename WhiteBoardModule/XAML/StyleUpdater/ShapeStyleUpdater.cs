@@ -12,12 +12,12 @@ namespace WhiteBoardModule.XAML.StyleUpdater
 {
     public static class ShapeStyleUpdater
     {
-        public static void Apply(object? content, FontWeight weight, double size, Brush brush)
+        public static void Apply(object? content, FontWeight weight, double size, Brush brush, bool applyBackground)
         {
             switch (content)
             {
                 case Border { Child: StackPanel stack }:
-                    ApplyToTextBoxes(stack.Children.OfType<TextBox>(), weight, size, brush);
+                    ApplyToTextBoxes(stack.Children.OfType<TextBox>(), weight, size, brush, applyBackground);
                     break;
 
                 case Viewbox { Child: Canvas canvas }:
@@ -38,15 +38,18 @@ namespace WhiteBoardModule.XAML.StyleUpdater
             }
         }
 
-        private static void ApplyToTextBoxes(IEnumerable<TextBox> boxes, FontWeight weight, double size, Brush brush)
+        private static void ApplyToTextBoxes(IEnumerable<TextBox> boxes, FontWeight weight, double size, Brush brush, bool applyBackground)
         {
             foreach (var tb in boxes)
             {
                 tb.FontWeight = weight;
                 tb.FontSize = size;
 
-                if (tb.IsFocused)
+                if (!applyBackground)
                     tb.Foreground = brush;
+
+                if (applyBackground)
+                    tb.Background = brush;
             }
         }
 

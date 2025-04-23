@@ -16,6 +16,7 @@ using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Factory.Interfaces;
 using System.Windows.Controls.Primitives;
 using WhiteBoard.Core.Services;
+using System.Windows.Documents;
 
 namespace SketchRoom.Toolkit.Wpf.Controls
 {
@@ -42,6 +43,8 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
         private readonly IBpmnShapeFactory _factory;
         private readonly WhiteBoard.Core.Services.Interfaces.ISelectionService _selectionService;
+        private bool _isRightMouseHeld = false;
+
         public WhiteBoardControl()
         {
             InitializeComponent();
@@ -168,6 +171,12 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             if (e.OriginalSource is Thumb)
                 return;
 
+            if (_isRightMouseHeld)
+            {
+                _host.HandleMouseMove(logicalPos, e);
+                return;
+            }
+
             if (_isPanning)
             {
                 var current = e.GetPosition(this);
@@ -242,15 +251,33 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
         private void DrawingRoot_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
-            //var logicalPos = GetLogicalPosition(e);
-            //_toolManager.SetActive("Selection"); // ← activăm tool-ul
-            //_host.HandleMouseDown(logicalPos,e);
+            if (IsClickOnSelectableShape(e.OriginalSource))
+            {
+                _isRightMouseHeld = false;
+                return; // NU activăm selecția
+            }
+
+            _isRightMouseHeld = true;
+            var logicalPos = GetLogicalPosition(e);
+            _toolManager.SetActive("Selection");
+            _host.HandleMouseDown(logicalPos, e);
         }
 
         private void DrawingRoot_PreviewMouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
+            _isRightMouseHeld = false;
             var logicalPos = GetLogicalPosition(e);
             _host.HandleMouseUp(logicalPos, e);
+        }
+
+        private bool IsClickOnSelectableShape(object source)
+        {
+            // Poți adăuga aici orice tip vrei să excluzi
+            return source is FrameworkElement fe &&
+                   fe != DrawingCanvas &&
+                   !(fe is Canvas) &&
+                   !(fe is Adorner) &&
+                   !(fe is WhiteBoardControl);
         }
     }
 }

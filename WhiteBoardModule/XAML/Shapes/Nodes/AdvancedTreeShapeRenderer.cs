@@ -26,18 +26,13 @@ namespace WhiteBoardModule.XAML.Shapes.Nodes
 
         public UIElement CreatePreview()
         {
+            var tree = Render();
+
             return new Viewbox
             {
-                Width = 80,
-                Height = 80,
-                Child = new TextBlock
-                {
-                    Text = "Tree",
-                    Foreground = Brushes.White,
-                    FontWeight = FontWeights.Bold,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center
-                }
+                Width = 120,
+                Height = 120,
+                Child = tree
             };
         }
 

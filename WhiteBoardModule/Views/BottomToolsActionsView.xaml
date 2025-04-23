@@ -8,12 +8,11 @@
     xmlns:local="clr-namespace:WhiteBoardModule.Views"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:prism="http://prismlibrary.com/"
-    
     xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
     d:DesignHeight="450"
     d:DesignWidth="800"
-    Loaded="UserControl_Loaded"
     prism:ViewModelLocator.AutoWireViewModel="True"
+    Loaded="UserControl_Loaded"
     mc:Ignorable="d">
     <UserControl.Resources>
 
@@ -80,8 +79,8 @@
             <!--  Tool 2  -->
             <ToggleButton
                 Command="{Binding SelectToolCommand}"
-                CommandParameter="{x:Static enums:WhiteBoardTool.Drag}"
-                IsChecked="{Binding SelectedTool, Mode=TwoWay, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static enums:WhiteBoardTool.Drag}}"
+                CommandParameter="{x:Static enums:WhiteBoardTool.Pan}"
+                IsChecked="{Binding SelectedTool, Mode=TwoWay, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static enums:WhiteBoardTool.Pan}}"
                 Style="{StaticResource ToolToggleButtonStyle}">
                 <svgc:SvgViewbox
                     Width="24"
@@ -109,6 +108,17 @@
                     Width="24"
                     Height="24"
                     Source="pack://application:,,,/WhiteBoardModule;component/Resources/text-edit.svg" />
+            </ToggleButton>
+
+            <ToggleButton
+                Command="{Binding SelectToolCommand}"
+                CommandParameter="{x:Static enums:WhiteBoardTool.TextSelection}"
+                IsChecked="{Binding SelectedTool, Mode=TwoWay, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static enums:WhiteBoardTool.TextSelection}}"
+                Style="{StaticResource ToolToggleButtonStyle}">
+                <svgc:SvgViewbox
+                    Width="24"
+                    Height="24"
+                    Source="pack://application:,,,/WhiteBoardModule;component/Resources/text-selection.svg" />
             </ToggleButton>
         </StackPanel>
     </Border>

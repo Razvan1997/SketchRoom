@@ -169,5 +169,10 @@ namespace WhiteBoard.Core.Tools
             }
             return false;
         }
+
+        public void OnMouseDown(Point position)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -10,6 +10,6 @@ namespace WhiteBoard.Core.Services.Interfaces
 {
     public interface IUpdateStyle
     {
-        void UpdateStyle(FontWeight fontWeight, double fontSize, Brush foreground);
+        void UpdateStyle(FontWeight fontWeight, double fontSize, Brush foreground, bool applyBackground);
     }
 }

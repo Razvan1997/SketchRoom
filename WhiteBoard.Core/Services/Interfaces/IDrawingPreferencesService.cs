@@ -14,5 +14,6 @@ namespace WhiteBoard.Core.Services.Interfaces
         Brush SelectedColor { get; set; }
         double FontSize { get; set; }
         FontWeight FontWeight { get; set; }
+        bool IsApplyBackgroundColor { get; set; }
     }
 }

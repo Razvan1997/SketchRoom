@@ -50,5 +50,10 @@ namespace WhiteBoard.Core.Tools
 
         public void OnMouseMove(Point position, MouseEventArgs e) { }
         public void OnMouseUp(Point position, MouseButtonEventArgs e) { }
+
+        public void OnMouseDown(Point position)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

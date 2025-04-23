@@ -10,6 +10,7 @@ using System.Windows;
 using WhiteBoard.Core.Services.Interfaces;
 using System.ComponentModel;
 using WhiteBoard.Core.Models;
+using System.Windows.Documents;
 
 namespace WhiteBoard.Core.Services
 {
@@ -21,6 +22,9 @@ namespace WhiteBoard.Core.Services
 
         private Border _selectedBorder;
         private TextBox _selectedTextBox;
+        private int _selectionStart = -1;
+        private int _selectionLength = 0;
+        private RichTextBox? _selectedRichTextBox;
         public ShapePart Current { get; private set; } = ShapePart.None;
 
         public ShapeSelectionService(
@@ -61,9 +65,9 @@ namespace WhiteBoard.Core.Services
 
         private void OnToolChanged(IDrawingTool tool)
         {
-            if(_currentToolManager.ActiveTool == null)
+            if (_currentToolManager.ActiveTool == null)
             {
-                if(_selectedBorder != null)
+                if (_selectedBorder != null)
                 {
                     _selectedBorder.BorderThickness = new Thickness(2);
                 }
@@ -74,7 +78,17 @@ namespace WhiteBoard.Core.Services
         private void OnPreferencesChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(_preferences.SelectedColor))
+            {
                 ApplyCurrentColor();
+            }
+            if (e.PropertyName == nameof(_preferences.FontSize))
+            {
+                ApplyFontSize();
+            }
+            if (e.PropertyName == nameof(_preferences.FontWeight))
+            {
+                ApplyFontWeight();
+            }
         }
 
         public void Select(ShapePart part, Border border, TextBox textBox)
@@ -82,6 +96,21 @@ namespace WhiteBoard.Core.Services
             Current = part;
             _selectedBorder = border;
             _selectedTextBox = textBox;
+            _selectedRichTextBox = null;
+
+            if (part == ShapePart.Text)
+            {
+                _selectionStart = textBox.SelectionStart;
+                _selectionLength = textBox.SelectionLength;
+            }
+        }
+
+        public void SelectRich(ShapePart part, Border border, RichTextBox richTextBox)
+        {
+            Current = part;
+            _selectedBorder = border;
+            _selectedRichTextBox = richTextBox;
+            _selectedTextBox = null;
         }
 
         public void ApplyVisual(Border border, TextBox textBox)
@@ -91,24 +120,89 @@ namespace WhiteBoard.Core.Services
             textBox.Foreground = Brushes.Black;
         }
 
+        public void ApplyVisual(Border border, RichTextBox richTextBox)
+        {
+            border.BorderBrush = Brushes.Black;
+            border.BorderThickness = new Thickness(2);
+        }
+
         private void ApplyCurrentColor()
         {
-            if (_selectedBorder == null || _selectedTextBox == null)
-                return;
-
             var color = _preferences.SelectedColor;
 
             switch (Current)
             {
-                case ShapePart.Margin:
-                    _selectedBorder.BorderBrush = color;
-                    _selectedBorder.BorderThickness = new Thickness(4);
-                    break;
-                case ShapePart.Border:
-                    _selectedBorder.Background = color;
-                    break;
                 case ShapePart.Text:
-                    _selectedTextBox.Foreground = color;
+
+                    if (_selectedRichTextBox != null)
+                    {
+                        if (!_selectedRichTextBox.Selection.IsEmpty)
+                        {
+                            _selectedRichTextBox.Selection.ApplyPropertyValue(TextElement.ForegroundProperty, color);
+                        }
+
+                        if (_preferences.IsApplyBackgroundColor)
+                        {
+                            _selectedRichTextBox.Background = _preferences.SelectedColor;
+                        }
+                    }
+
+                    if (_selectedTextBox != null)
+                    {
+                        _selectedTextBox.Foreground = _preferences.SelectedColor;
+                    }
+
+                    break;
+
+                case ShapePart.Border:
+
+                    if (_selectedBorder != null)
+                    {
+                        _selectedBorder.Background = color;
+                    }
+
+                    break;
+
+                case ShapePart.Margin:
+
+                    if (_selectedBorder != null)
+                    {
+                        _selectedBorder.BorderBrush = color;
+                        _selectedBorder.BorderThickness = new Thickness(4);
+                    }
+
+                    break;
+            }
+        }
+
+        private void ApplyFontSize()
+        {
+            if (_selectedRichTextBox == null)
+                return;
+
+            switch (Current)
+            {
+                case ShapePart.Text:
+                    if (!_selectedRichTextBox.Selection.IsEmpty)
+                    {
+                        _selectedRichTextBox.Selection.ApplyPropertyValue(TextElement.FontSizeProperty, _preferences.FontSize);
+                    }
+                    break;
+            }
+        }
+
+        private void ApplyFontWeight()
+        {
+            if (_selectedRichTextBox == null)
+                return;
+
+            switch (Current)
+            {
+                case ShapePart.Text:
+                    if (!_selectedRichTextBox.Selection.IsEmpty)
+                    {
+                        _selectedRichTextBox.Selection.ApplyPropertyValue(TextElement.FontWeightProperty, _preferences.FontWeight);
+                    }
                     break;
             }
         }

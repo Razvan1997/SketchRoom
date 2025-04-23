@@ -16,6 +16,7 @@ namespace WhiteBoard.Core.Services
         private Brush _selectedColor = Brushes.White;
         private double _fontSize = 12;
         private FontWeight _fontWeight = FontWeights.Normal;
+        private bool _isApplyBackgroundColor = false;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -58,6 +59,19 @@ namespace WhiteBoard.Core.Services
                 if (_fontWeight != value)
                 {
                     _fontWeight = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public bool IsApplyBackgroundColor
+        {
+            get => _isApplyBackgroundColor;
+            set
+            {
+                if (_isApplyBackgroundColor != value)
+                {
+                    _isApplyBackgroundColor = value;
                     RaisePropertyChanged();
                 }
             }

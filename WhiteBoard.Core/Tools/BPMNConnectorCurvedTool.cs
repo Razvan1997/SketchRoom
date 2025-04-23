@@ -365,5 +365,10 @@ namespace WhiteBoard.Core.Tools
         {
             FinalizeConnection(endPoint, direction);
         }
+
+        public void OnMouseDown(Point position)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

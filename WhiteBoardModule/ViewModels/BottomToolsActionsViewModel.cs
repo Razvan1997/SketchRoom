@@ -50,6 +50,9 @@ namespace WhiteBoardModule.ViewModels
                     case WhiteBoardTool.Cursor:
                         _toolManager.SetActive("Cursor");
                         break;
+                    case WhiteBoardTool.Pan:
+                        _toolManager.SetActive("Pan");
+                        break;
                     case WhiteBoardTool.None:
                         _toolManager.SetNone();
                         break;

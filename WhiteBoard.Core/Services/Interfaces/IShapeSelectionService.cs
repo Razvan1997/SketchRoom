@@ -13,7 +13,10 @@ namespace WhiteBoard.Core.Services.Interfaces
         ShapePart Current { get; }
 
         void Select(ShapePart part, Border border, TextBox textBox);
-
         void ApplyVisual(Border border, TextBox textBox);
+
+        // Pentru RichTextBox
+        void SelectRich(ShapePart part, Border border, RichTextBox richTextBox);
+        void ApplyVisual(Border border, RichTextBox richTextBox);
     }
 }

@@ -29,6 +29,7 @@ namespace WhiteBoard.Core
             CanvasRenderer = canvasRenderer;
         }
 
+        public void HandleMouseDown(Point position) => ToolManager.ActiveTool?.OnMouseDown(position);
         public void HandleMouseDown(Point position, MouseButtonEventArgs e) => ToolManager.ActiveTool?.OnMouseDown(position, e);
         public void HandleMouseMove(Point position, MouseEventArgs e) => ToolManager.ActiveTool?.OnMouseMove(position, e);
         public void HandleMouseUp(Point position, MouseButtonEventArgs e) => ToolManager.ActiveTool?.OnMouseUp(position, e);

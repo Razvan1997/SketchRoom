@@ -28,7 +28,7 @@ namespace WhiteBoard.Core.Tools
 
         public void OnMouseDown(Point position, MouseButtonEventArgs e)
         {
-            if (Keyboard.Modifiers == ModifierKeys.Control && e.LeftButton == MouseButtonState.Pressed)
+            if (e.LeftButton == MouseButtonState.Pressed)
             {
                 _isPanning = true;
                 _lastPoint = e.GetPosition(null); // e.g., canvas

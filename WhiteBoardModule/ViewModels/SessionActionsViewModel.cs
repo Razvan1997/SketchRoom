@@ -21,6 +21,7 @@ namespace WhiteBoardModule.ViewModels
         private string _sessionCode;
 
         private readonly IDrawingPreferencesService _preferences;
+        private ITextSelectableShape? TextShape => SelectedShape as ITextSelectableShape;
 
         public string ActionLabel => _isHost ? "Close sketch room" : "Leave room";
 
@@ -47,7 +48,7 @@ namespace WhiteBoardModule.ViewModels
             set
             {
                 _preferences.FontSize = value;
-                SelectedShape?.UpdateStyle(_preferences.FontWeight, value, _preferences.SelectedColor);
+                //SelectedShape?.UpdateStyle(_preferences.FontWeight, value, _preferences.SelectedColor, _preferences.IsApplyBackgroundColor);
                 RaisePropertyChanged();
             }
         }
@@ -58,7 +59,7 @@ namespace WhiteBoardModule.ViewModels
             set
             {
                 _preferences.SelectedColor = value;
-                SelectedShape?.UpdateStyle(_preferences.FontWeight, _preferences.FontSize, value);
+                //SelectedShape?.UpdateStyle(_preferences.FontWeight, _preferences.FontSize, value, _preferences.IsApplyBackgroundColor);
                 RaisePropertyChanged();
             }
         }
@@ -69,7 +70,17 @@ namespace WhiteBoardModule.ViewModels
             set
             {
                 _preferences.FontWeight = value ? FontWeights.Bold : FontWeights.Normal;
-                SelectedShape?.UpdateStyle(_preferences.FontWeight, _preferences.FontSize, _preferences.SelectedColor);
+                //SelectedShape?.UpdateStyle(_preferences.FontWeight, _preferences.FontSize, _preferences.SelectedColor, _preferences.IsApplyBackgroundColor);
+                RaisePropertyChanged();
+            }
+        }
+
+        public bool IsApplyBackgroundColor
+        {
+            get => _preferences.IsApplyBackgroundColor;
+            set
+            {
+                _preferences.IsApplyBackgroundColor = value;
                 RaisePropertyChanged();
             }
         }

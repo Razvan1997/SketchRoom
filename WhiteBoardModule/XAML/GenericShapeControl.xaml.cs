@@ -217,9 +217,9 @@ namespace WhiteBoardModule.XAML
             }
         }
 
-        public void UpdateStyle(FontWeight fontWeight, double fontSize, Brush foreground)
+        public void UpdateStyle(FontWeight fontWeight, double fontSize, Brush foreground, bool applyBackground)
         {
-            ShapeStyleUpdater.Apply(ShapePresenter.Content, fontWeight, fontSize, foreground);
+            ShapeStyleUpdater.Apply(ShapePresenter.Content, fontWeight, fontSize, foreground, applyBackground);
         }
 
         public void RaiseClick(MouseButtonEventArgs e)

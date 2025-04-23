@@ -149,5 +149,10 @@ namespace WhiteBoard.Core.Tools
             // exclude orice altceva ce nu este shape vizibil principal
             return !(element is Line or Ellipse or Path or Border or TextBlock);
         }
+
+        public void OnMouseDown(Point position)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

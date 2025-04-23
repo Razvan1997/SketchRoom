@@ -11,12 +11,5 @@
     <Grid>
         <!--  Grid-ul cu tabelul efectiv  -->
         <Grid x:Name="RootGrid" Background="Transparent" />
-
-        <!--  Canvas-ul de resize  -->
-        <Canvas
-            x:Name="ResizeCanvas"
-            Panel.ZIndex="100"
-            Background="Transparent"
-            IsHitTestVisible="True" />
     </Grid>
 </UserControl>

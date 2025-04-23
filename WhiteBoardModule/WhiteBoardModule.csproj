@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <None Remove="Resources\annotation.svg" />
+    <None Remove="Resources\apply-background.svg" />
     <None Remove="Resources\connection.svg" />
     <None Remove="Resources\cursor.svg" />
     <None Remove="Resources\curved-arrow.svg" />
@@ -17,6 +18,7 @@
     <None Remove="Resources\forward-item.svg" />
     <None Remove="Resources\shapes.svg" />
     <None Remove="Resources\text-edit.svg" />
+    <None Remove="Resources\text-selection.svg" />
     <None Remove="Resources\text.svg" />
     <None Remove="SVG\BraceToLeft.svg" />
     <None Remove="SVG\folder.svg" />
@@ -41,6 +43,7 @@
 
   <ItemGroup>
     <Resource Include="Resources\annotation.svg" />
+    <Resource Include="Resources\apply-background.svg" />
     <Resource Include="Resources\bold.svg" />
     <Resource Include="Resources\connection.svg" />
     <Resource Include="Resources\cursor.svg" />
@@ -51,6 +54,7 @@
     <Resource Include="Resources\shapes.svg" />
     <Resource Include="Resources\table.svg" />
     <Resource Include="Resources\text-edit.svg" />
+    <Resource Include="Resources\text-selection.svg" />
     <Resource Include="Resources\text.svg" />
     <Resource Include="Resources\undo-left.svg" />
     <Resource Include="Resources\undo-right.svg" />

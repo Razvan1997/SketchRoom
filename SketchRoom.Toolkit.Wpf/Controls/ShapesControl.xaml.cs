@@ -126,18 +126,22 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                     }
                 }
 
-                DragDrop.DoDragDrop(border, shape, DragDropEffects.Copy);
-
-                if (_adornerLayer != null && _dragAdorner != null)
+                Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    _adornerLayer.Remove(_dragAdorner);
-                }
+                    DragDrop.DoDragDrop(border, shape, DragDropEffects.Copy);
 
-                CompositionTarget.Rendering -= OnRendering;
-                _dragAdorner = null;
-                _adornerLayer = null;
+                    if (_adornerLayer != null && _dragAdorner != null)
+                    {
+                        _adornerLayer.Remove(_dragAdorner);
+                    }
 
-                ShapeDragStarted?.Invoke(shape);
+                    CompositionTarget.Rendering -= OnRendering;
+                    _dragAdorner = null;
+                    _adornerLayer = null;
+
+                    ShapeDragStarted?.Invoke(shape);
+
+                }), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
             }
         }
 

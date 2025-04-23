@@ -10,8 +10,9 @@ namespace SketchRoom.Models.Enums
     {
         None,
         Cursor,
-        Drag,
+        Pan,
         CurvedArrow,
-        TextEdit
+        TextEdit,
+        TextSelection
     }
 }

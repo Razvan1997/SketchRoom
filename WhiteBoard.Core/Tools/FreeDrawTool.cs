@@ -67,5 +67,10 @@ namespace WhiteBoard.Core.Tools
             _currentStroke = null;
             _isDrawing = false;
         }
+
+        public void OnMouseDown(Point position)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

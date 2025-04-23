@@ -1,5 +1,6 @@
 ﻿using Prism.Events;
 using Prism.Ioc;
+using SketchRoom.Models.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,6 +16,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using WhiteBoard.Core.Services.Interfaces;
 using WhiteBoardModule.Events;
 
 namespace WhiteBoardModule.XAML.Shapes.Tables
@@ -29,44 +31,57 @@ namespace WhiteBoardModule.XAML.Shapes.Tables
         private string[,] _cellValues;
         private readonly IEventAggregator _eventAggregator;
         public Guid Id { get; } = Guid.NewGuid();
+        private readonly IShapeSelectionService _selectionService;
         public EditableTableControl()
         {
             InitializeComponent();
 
             _eventAggregator = ContainerLocator.Container.Resolve<IEventAggregator>();
+            _selectionService = ContainerLocator.Container.Resolve<IShapeSelectionService>();
+
             _cellValues = new string[_rows, _columns];
-            ResizeCanvas.IsHitTestVisible = true;
-            this.MouseMove += OnMouseMoveShowThumbs;
             InitCells();
             RenderTable();
+            AddGridSplitters();
 
-            this.LayoutUpdated += (_, _) => UpdateThumbPositions();
         }
 
-        private void OnMouseMoveShowThumbs(object sender, MouseEventArgs e)
+        private void AddGridSplitters()
         {
-            var pos = e.GetPosition(ResizeCanvas);
-            double margin = 4;
-
-            foreach (var thumb in ResizeCanvas.Children.OfType<Thumb>())
+            // Coloane
+            for (int i = 1; i < _columns; i++)
             {
-                double left = Canvas.GetLeft(thumb);
-                double top = Canvas.GetTop(thumb);
-                double width = thumb.Width > 0 ? thumb.Width : RootGrid.ActualWidth;
-                double height = thumb.Height > 0 ? thumb.Height : RootGrid.ActualHeight;
+                var splitter = new GridSplitter
+                {
+                    Width = 5,
+                    HorizontalAlignment = HorizontalAlignment.Left,
+                    VerticalAlignment = VerticalAlignment.Stretch,
+                    Background = Brushes.Transparent,
+                };
+                Grid.SetColumn(splitter, i);
+                Grid.SetRowSpan(splitter, _rows);
+                splitter.DragDelta += (_, _) => PublishSizeChanged();
+                RootGrid.Children.Add(splitter);
+            }
 
-                Rect sensitiveArea = new(
-                    left - margin,
-                    top - margin,
-                    width + 2 * margin,
-                    height + 2 * margin
-                );
-
-                thumb.Visibility = sensitiveArea.Contains(pos)
-                    ? Visibility.Visible
-                    : Visibility.Collapsed;
+            // Rânduri
+            for (int i = 1; i < _rows; i++)
+            {
+                var splitter = new GridSplitter
+                {
+                    Height = 5,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    VerticalAlignment = VerticalAlignment.Top,
+                    Background = Brushes.Transparent,
+                };
+                Grid.SetRow(splitter, i);
+                Grid.SetColumnSpan(splitter, _columns);
+                splitter.DragDelta += (_, _) => PublishSizeChanged();
+                RootGrid.Children.Add(splitter);
             }
         }
+
+
 
         private void InitCells()
         {
@@ -77,7 +92,6 @@ namespace WhiteBoardModule.XAML.Shapes.Tables
 
         private void RenderTable()
         {
-            ResizeCanvas.Children.Clear();
             RootGrid.Children.Clear();
             RootGrid.RowDefinitions.Clear();
             RootGrid.ColumnDefinitions.Clear();
@@ -95,14 +109,13 @@ namespace WhiteBoardModule.XAML.Shapes.Tables
                     var tb = new TextBox
                     {
                         Text = _cellValues[row, col],
-                        BorderThickness = new Thickness(0.5),
-                        BorderBrush = Brushes.Black,
-                        Background = row == 0 ? Brushes.Black : Brushes.White,
+                        BorderThickness = new Thickness(0),
+                        Background = Brushes.Transparent,
                         Foreground = row == 0 ? Brushes.White : Brushes.Black,
                         FontSize = 14,
                         HorizontalContentAlignment = HorizontalAlignment.Center,
-                        IsReadOnly = false,
                         VerticalContentAlignment = VerticalAlignment.Center,
+                        IsReadOnly = false,
                         ContextMenu = null
                     };
 
@@ -119,13 +132,37 @@ namespace WhiteBoardModule.XAML.Shapes.Tables
 
                     tb.TextChanged += (_, _) => _cellValues[rIndex, cIndex] = tb.Text;
 
-                    Grid.SetRow(tb, row);
-                    Grid.SetColumn(tb, col);
-                    RootGrid.Children.Add(tb);
+                    var border = new Border
+                    {
+                        BorderThickness = new Thickness(0.5),
+                        BorderBrush = Brushes.Black,
+                        Background = row == 0 ? Brushes.Black : Brushes.White,
+                        Child = tb,
+                        Margin = new Thickness(1)
+                    };
+
+                    // click normal pe text – selectează text
+                    tb.PreviewMouseLeftButtonDown += (s, e) =>
+                    {
+                        _selectionService.Select(ShapePart.Text, border, tb);
+                        e.Handled = false;
+                    };
+
+                    // dublu click pe text – selectează border/fundal
+                    tb.MouseDoubleClick += (s, e) =>
+                    {
+                        _selectionService.Select(ShapePart.Border, border, tb);
+                        e.Handled = true;
+                    };
+
+                    Grid.SetRow(border, row);
+                    Grid.SetColumn(border, col);
+                    RootGrid.Children.Add(border);
                 }
             }
 
-            AddResizeThumbs();
+            AddGridSplitters();
+            PublishSizeChanged();
         }
 
         private ContextMenu CreateContextMenu(int row, int col)
@@ -279,60 +316,6 @@ namespace WhiteBoardModule.XAML.Shapes.Tables
             _cellValues = newValues;
         }
 
-        private void AddResizeThumbs()
-        {
-            ResizeCanvas.Children.Clear();
-
-            for (int i = 1; i < _columns; i++)
-            {
-                var thumb = new Thumb
-                {
-                    Width = 6,
-                    Height = 0, // va fi setat din UpdateThumbPositions
-                    Background = Brushes.Transparent,
-                    Cursor = Cursors.SizeWE,
-                    Opacity = 0.001,
-                    Tag = $"col:{i - 1}"
-                };
-                thumb.IsHitTestVisible = true;
-                thumb.DragDelta += (s, e) =>
-                {
-                    var colIndex = int.Parse(((Thumb)s).Tag.ToString().Split(':')[1]);
-                    var colDef = RootGrid.ColumnDefinitions[colIndex];
-                    double newWidth = Math.Max(30, colDef.Width.Value + e.HorizontalChange);
-                    colDef.Width = new GridLength(newWidth);
-
-                    PublishSizeChanged();
-                };
-
-                ResizeCanvas.Children.Add(thumb);
-            }
-
-            for (int i = 1; i < _rows; i++)
-            {
-                var thumb = new Thumb
-                {
-                    Height = 6,
-                    Width = 0, // va fi setat din UpdateThumbPositions
-                    Background = Brushes.Transparent,
-                    Cursor = Cursors.SizeNS,
-                    Opacity = 0.001,
-                    Tag = $"row:{i - 1}"
-                };
-                thumb.IsHitTestVisible = true;
-                thumb.DragDelta += (s, e) =>
-                {
-                    var rowIndex = int.Parse(((Thumb)s).Tag.ToString().Split(':')[1]);
-                    var rowDef = RootGrid.RowDefinitions[rowIndex];
-                    double newHeight = Math.Max(20, rowDef.Height.Value + e.VerticalChange);
-                    rowDef.Height = new GridLength(newHeight);
-
-                    PublishSizeChanged();
-                };
-                ResizeCanvas.Children.Add(thumb);
-            }
-        }
-
         private void PublishSizeChanged()
         {
             double totalWidth = RootGrid.ColumnDefinitions.Sum(cd => cd.Width.IsAbsolute ? cd.Width.Value : 0);
@@ -347,60 +330,27 @@ namespace WhiteBoardModule.XAML.Shapes.Tables
             _eventAggregator.GetEvent<TableResizedEvent>().Publish(info);
         }
 
-        private void UpdateThumbPositions()
+        private bool IsClickOnMargin(FrameworkElement element, Point mousePos)
         {
-            if (ResizeCanvas.Children.Count == 0 || RootGrid.ActualWidth == 0 || RootGrid.ActualHeight == 0)
-                return;
+            const double marginWidth = 6;
 
-            GeneralTransform transform = RootGrid.TransformToVisual(ResizeCanvas);
-            Rect bounds = transform.TransformBounds(new Rect(0, 0, RootGrid.ActualWidth, RootGrid.ActualHeight));
-
-            double x = 0;
-            int thumbIndex = 0;
-
-            // THUMB-URI VERTICALE (coloane)
-            for (int i = 1; i < _columns; i++)
-            {
-                x += RootGrid.ColumnDefinitions[i - 1].ActualWidth;
-
-                var thumb = (Thumb)ResizeCanvas.Children[thumbIndex++];
-                thumb.Height = bounds.Height;
-                Canvas.SetLeft(thumb, bounds.Left + x - thumb.Width / 2);
-                Canvas.SetTop(thumb, bounds.Top);
-            }
-
-            double y = 0;
-
-            // THUMB-URI ORIZONTALE (rânduri)
-            for (int i = 1; i < _rows; i++)
-            {
-                y += RootGrid.RowDefinitions[i - 1].ActualHeight;
-
-                var thumb = (Thumb)ResizeCanvas.Children[thumbIndex++];
-                thumb.Width = bounds.Width;
-                Canvas.SetLeft(thumb, bounds.Left);
-                Canvas.SetTop(thumb, bounds.Top + y - thumb.Height / 2);
-            }
+            return mousePos.X < marginWidth ||
+                   mousePos.X > element.ActualWidth - marginWidth ||
+                   mousePos.Y < marginWidth ||
+                   mousePos.Y > element.ActualHeight - marginWidth;
         }
 
-        private void AttachResizeAdorner()
+        // Dacă nu ai un Border real, creezi unul fals doar pentru selecție logică
+        private Border CreateFakeBorder(TextBox tb)
         {
-            var adornerLayer = AdornerLayer.GetAdornerLayer(RootGrid);
-            if (adornerLayer == null)
+            return new Border
             {
-                this.Loaded += (_, _) =>
-                {
-                    var layer = AdornerLayer.GetAdornerLayer(RootGrid);
-                    if (layer != null)
-                    {
-                        layer.Add(new ResizeAdorner(RootGrid));
-                    }
-                };
-            }
-            else
-            {
-                adornerLayer.Add(new ResizeAdorner(RootGrid));
-            }
+                Width = tb.ActualWidth,
+                Height = tb.ActualHeight,
+                Background = tb.Background,
+                BorderThickness = tb.BorderThickness,
+                BorderBrush = tb.BorderBrush
+            };
         }
     }
 
