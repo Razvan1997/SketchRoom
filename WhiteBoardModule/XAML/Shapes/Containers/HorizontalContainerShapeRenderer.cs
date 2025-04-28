@@ -8,16 +8,18 @@ using System.Windows.Media;
 using System.Windows;
 using WhiteBoard.Core.Services.Interfaces;
 using System.Windows.Data;
+using SketchRoom.Models.Enums;
 
 namespace WhiteBoardModule.XAML.Shapes.Containers
 {
     public class HorizontalContainerShapeRenderer : IShapeRenderer
     {
         private readonly bool _withBindings;
-
+        private readonly IShapeSelectionService _selectionService;
         public HorizontalContainerShapeRenderer(bool withBindings = false)
         {
             _withBindings = withBindings;
+            _selectionService = ContainerLocator.Container.Resolve<IShapeSelectionService>();
         }
 
         public UIElement CreatePreview()
@@ -96,6 +98,11 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 Padding = new Thickness(0),
             };
 
+            labelBox.PreviewMouseLeftButtonDown += (s, e) =>
+            {
+                _selectionService.Select(ShapePart.Text, labelBox);
+            };
+
             labelBox.LayoutTransform = new RotateTransform(-90);
 
             // Container pentru etichetă (lățimea contează vizual, nu a TextBox-ului)
@@ -144,14 +151,34 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 containerBorder.BorderBrush = preferences.SelectedColor;
             }
 
+            containerBorder.PreviewMouseLeftButtonDown += (s, e) =>
+            {
+                var pos = e.GetPosition(mainGrid);
+
+                if (IsMouseOverMargin(mainGrid, pos))
+                    _selectionService.Select(ShapePart.Margin, containerBorder);
+                else
+                    _selectionService.Select(ShapePart.Border, containerBorder);
+            };
+
             // Tag pentru stilizare
             mainGrid.Tag = new Dictionary<string, object>
-        {
-            { "SideLabel", labelBox },
-            { "ContainerBorder", containerBorder }
-        };
+            {
+                { "SideLabel", labelBox },
+                { "ContainerBorder", containerBorder }
+            };
 
             return mainGrid;
+        }
+
+        private bool IsMouseOverMargin(Grid grid, Point mousePos)
+        {
+            const double marginWidth = 6;
+
+            return mousePos.X < marginWidth ||
+                   mousePos.X > grid.ActualWidth - marginWidth ||
+                   mousePos.Y < marginWidth ||
+                   mousePos.Y > grid.ActualHeight - marginWidth;
         }
     }
 }

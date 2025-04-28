@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SketchRoom.Models.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,10 +14,11 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
     public class HorizontalPoolLineTwoRender : IShapeRenderer
     {
         private readonly bool _withBindings;
-
+        private readonly IShapeSelectionService _selectionService;
         public HorizontalPoolLineTwoRender(bool withBindings = false)
         {
             _withBindings = withBindings;
+            _selectionService = ContainerLocator.Container.Resolve<IShapeSelectionService>();
         }
 
         public UIElement CreatePreview()
@@ -53,7 +55,7 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
             {
                 Background = Brushes.Black,
                 BorderBrush = Brushes.White,
-                BorderThickness = new Thickness(1),
+                BorderThickness = new Thickness(2),
                 Width = 10,
                 Child = poolLabel
             };
@@ -79,7 +81,7 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 {
                     Background = Brushes.Black,
                     BorderBrush = Brushes.White,
-                    BorderThickness = new Thickness(1),
+                    BorderThickness = new Thickness(2),
                     Width = 10,
                     Child = laneLabel
                 };
@@ -91,7 +93,7 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 var contentBorder = new Border
                 {
                     BorderBrush = Brushes.White,
-                    BorderThickness = new Thickness(1),
+                    BorderThickness = new Thickness(2),
                     Background = Brushes.Transparent
                 };
 
@@ -145,11 +147,16 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 IsReadOnly = false
             };
 
+            poolBox.PreviewMouseLeftButtonDown += (s, e) =>
+            {
+                _selectionService.Select(ShapePart.Text, poolBox);
+            };
+
             var poolBorder = new Border
             {
                 Background = Brushes.Black,
                 BorderBrush = Brushes.White,
-                BorderThickness = new Thickness(1),
+                BorderThickness = new Thickness(2),
                 Width = 30,
                 Child = poolBox
             };
@@ -175,11 +182,16 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                     IsReadOnly = false
                 };
 
+                laneBox.PreviewMouseLeftButtonDown += (s, e) =>
+                {
+                    _selectionService.Select(ShapePart.Text, laneBox);
+                };
+
                 var laneBorder = new Border
                 {
                     Background = Brushes.Black,
                     BorderBrush = Brushes.White,
-                    BorderThickness = new Thickness(1),
+                    BorderThickness = new Thickness(2),
                     Width = 30,
                     Child = laneBox
                 };
@@ -191,8 +203,19 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 var contentBorder = new Border
                 {
                     BorderBrush = Brushes.White,
-                    BorderThickness = new Thickness(1),
+                    BorderThickness = new Thickness(2),
                     Background = Brushes.Transparent
+                };
+
+                contentBorder.PreviewMouseLeftButtonDown += (s, e) =>
+                {
+                    var border = (Border)s;
+                    var pos = e.GetPosition(border);
+
+                    if (IsMouseOverMargin(border, pos))
+                        _selectionService.Select(ShapePart.Margin, border);
+                    else
+                        _selectionService.Select(ShapePart.Border, border);
                 };
 
                 Grid.SetRow(contentBorder, i);
@@ -201,6 +224,16 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
             }
 
             return grid;
+        }
+
+        private bool IsMouseOverMargin(Border border, Point mousePos)
+        {
+            const double marginWidth = 6;
+
+            return mousePos.X < marginWidth ||
+                   mousePos.X > border.ActualWidth - marginWidth ||
+                   mousePos.Y < marginWidth ||
+                   mousePos.Y > border.ActualHeight - marginWidth;
         }
     }
 }

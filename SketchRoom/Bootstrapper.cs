@@ -4,6 +4,7 @@ using Prism.Ioc;
 using SketchRoom.Dialogs;
 using SketchRoom.Services;
 using SketchRoom.Toolkit.Wpf.Factory;
+using SketchRoom.Toolkit.Wpf.Services;
 using SketchRoom.ViewModels;
 using System.Windows;
 using System.Windows.Input;
@@ -50,6 +51,9 @@ namespace SketchRoom
             //containerRegistry.RegisterSingleton<IWhiteBoardFactory, WhiteBoardFactory>();
             containerRegistry.RegisterSingleton<IWhiteBoardTabService, WhiteBoardTabService>();
             containerRegistry.RegisterSingleton<IShapeSelectionService, ShapeSelectionService>();
+            containerRegistry.RegisterSingleton<UndoRedoService>();
+            containerRegistry.RegisterSingleton<IZOrderService, ZOrderService>();
+            containerRegistry.RegisterSingleton<IContextMenuService, ContextMenuService>();
         }
 
         protected override void OnInitialized()

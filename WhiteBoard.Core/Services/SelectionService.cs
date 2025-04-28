@@ -164,5 +164,23 @@ namespace WhiteBoard.Core.Services
             return _connectorTool.GetAllConnections()
                 .FirstOrDefault(c => c.Visual == visual);
         }
+
+        public void DeselectAll(Canvas canvas)
+        {
+            foreach (var marker in _selectionMarkers.Values)
+            {
+                if (marker is Shape shape)
+                    shape.BeginAnimation(Shape.StrokeDashOffsetProperty, null);
+
+                canvas.Children.Remove(marker);
+            }
+
+            _selectionMarkers.Clear();
+            _selected.Clear();
+
+            _connectorTool.DeselectAllConnections();
+
+            SelectionChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 }

@@ -28,6 +28,8 @@ namespace SketchRoom.Models.Enums
         StateMachineShape,
         AdvancedTreeShapeRenderer,
         TreeNodeShape,
-        BorderTextBox
+        BorderTextBox,
+        ConnectorDescriptionShape,
+        SimpleContainer
     }
 }

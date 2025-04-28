@@ -36,6 +36,8 @@ namespace WhiteBoardModule.XAML
                 ShapeType.StateMachineShape => new StateMachineShapeRenderer(withBindings),
                 ShapeType.AdvancedTreeShapeRenderer => new AdvancedTreeShapeRenderer(withBindings),
                 ShapeType.BorderTextBox => new TextBoxBorderShapeRenderer(withBindings),
+                ShapeType.ConnectorDescriptionShape => new DescriptionShapeConnectorRenderer(withBindings),
+                ShapeType.SimpleContainer => new SimpleLinesRenderer(withBindings),
                 _ => throw new NotImplementedException($"Renderer for {type} not implemented.")
             };
         }

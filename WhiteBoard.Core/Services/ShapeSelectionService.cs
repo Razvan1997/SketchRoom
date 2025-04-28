@@ -11,200 +11,181 @@ using WhiteBoard.Core.Services.Interfaces;
 using System.ComponentModel;
 using WhiteBoard.Core.Models;
 using System.Windows.Documents;
+using System.Diagnostics.Metrics;
+using WhiteBoard.Core.UndoRedo;
+using System.Windows.Shapes;
+using System.ComponentModel.Design;
 
 namespace WhiteBoard.Core.Services
 {
     public class ShapeSelectionService : IShapeSelectionService
     {
         private readonly IDrawingPreferencesService _preferences;
-        private readonly IWhiteBoardTabService _tabService;
-        private IToolManager _currentToolManager;
-
-        private Border _selectedBorder;
-        private TextBox _selectedTextBox;
-        private int _selectionStart = -1;
-        private int _selectionLength = 0;
-        private RichTextBox? _selectedRichTextBox;
+        private readonly UndoRedoService _undoRedoService;
+        private DependencyObject _selectedElement;
         public ShapePart Current { get; private set; } = ShapePart.None;
 
-        public ShapeSelectionService(
-            IDrawingPreferencesService preferences,
-            IWhiteBoardTabService tabService)
+        public ShapeSelectionService(IDrawingPreferencesService preferences, UndoRedoService undoRedoService)
         {
             _preferences = preferences;
-            _tabService = tabService;
+            _undoRedoService = undoRedoService;
 
             if (_preferences is INotifyPropertyChanged notifier)
                 notifier.PropertyChanged += OnPreferencesChanged;
-
-            // Ascultăm schimbarea tab-ului
-            _tabService.TabChanged += OnTabChanged;
-
-            // Abonare inițială dacă există deja un tab
-            SubscribeToToolManager(_tabService.GetCurrentToolManager());
-        }
-
-        private void OnTabChanged(FooterTabModel tab)
-        {
-            // Se schimbă ToolManager-ul activ
-            SubscribeToToolManager(_tabService.GetCurrentToolManager());
-        }
-
-        private void SubscribeToToolManager(IToolManager? newToolManager)
-        {
-            // Dezabonare de la vechiul ToolManager
-            if (_currentToolManager != null)
-                _currentToolManager.ToolChanged -= OnToolChanged;
-
-            // Reabonare la noul ToolManager
-            _currentToolManager = newToolManager;
-
-            if (_currentToolManager != null)
-                _currentToolManager.ToolChanged += OnToolChanged;
-        }
-
-        private void OnToolChanged(IDrawingTool tool)
-        {
-            if (_currentToolManager.ActiveTool == null)
-            {
-                if (_selectedBorder != null)
-                {
-                    _selectedBorder.BorderThickness = new Thickness(2);
-                }
-            }
-            //ClearSelection();
         }
 
         private void OnPreferencesChanged(object sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(_preferences.SelectedColor))
-            {
+            if (e.PropertyName == nameof(_preferences.SelectedColor) && !_preferences.IsApplyBackgroundColor)
                 ApplyCurrentColor();
-            }
-            if (e.PropertyName == nameof(_preferences.FontSize))
-            {
-                ApplyFontSize();
-            }
             if (e.PropertyName == nameof(_preferences.FontWeight))
-            {
                 ApplyFontWeight();
-            }
+            if(e.PropertyName == nameof(_preferences.FontSize))
+                ApplyFontSize();
+            if (e.PropertyName == nameof(_preferences.IsApplyBackgroundColor))
+                ApplyBackgroundText();
+
+            //_selectedElement = null;
         }
 
-        public void Select(ShapePart part, Border border, TextBox textBox)
+        public void Select(ShapePart part, DependencyObject shapeRoot)
         {
             Current = part;
-            _selectedBorder = border;
-            _selectedTextBox = textBox;
-            _selectedRichTextBox = null;
+            _selectedElement = shapeRoot;
 
-            if (part == ShapePart.Text)
+            if (shapeRoot is Shape shape)
             {
-                _selectionStart = textBox.SelectionStart;
-                _selectionLength = textBox.SelectionLength;
+                if (shape.Tag == null || shape.Tag?.ToString() != "Bracket")
+                {
+                    shape.StrokeThickness = (part == ShapePart.Margin) ? 4 : 2;
+                }
+
+            }
+            else if (shapeRoot is Border border)
+            {
+                border.BorderThickness = (part == ShapePart.Margin) ? new Thickness(4) : new Thickness(2);
             }
         }
 
-        public void SelectRich(ShapePart part, Border border, RichTextBox richTextBox)
+        public void ApplyVisual(DependencyObject shapeRoot)
         {
-            Current = part;
-            _selectedBorder = border;
-            _selectedRichTextBox = richTextBox;
-            _selectedTextBox = null;
-        }
-
-        public void ApplyVisual(Border border, TextBox textBox)
-        {
-            border.BorderBrush = Brushes.Black;
-            border.BorderThickness = new Thickness(2);
-            textBox.Foreground = Brushes.Black;
-        }
-
-        public void ApplyVisual(Border border, RichTextBox richTextBox)
-        {
-            border.BorderBrush = Brushes.Black;
-            border.BorderThickness = new Thickness(2);
+            if (shapeRoot is Shape shape)
+            {
+                shape.Stroke = Brushes.Black;
+                shape.StrokeThickness = 2;
+            }
+            else if (shapeRoot is Border border)
+            {
+                border.BorderBrush = Brushes.Black;
+                border.BorderThickness = new Thickness(2);
+            }
         }
 
         private void ApplyCurrentColor()
         {
+            if (_selectedElement == null)
+                return;
+
             var color = _preferences.SelectedColor;
 
-            switch (Current)
+            if (_selectedElement is Shape shape)
             {
-                case ShapePart.Text:
+                if (Current == ShapePart.Margin)
+                    shape.Stroke = color;
+                else
+                    shape.Fill = color;
+            }
+            else if (_selectedElement is Border border)
+            {
+                if (Current == ShapePart.Margin)
+                    border.BorderBrush = color;
+                else
+                    border.Background = color;
+            }
+            else if (_selectedElement is TextBox textBox)
+            {
+                textBox.Foreground = color;
+            }
+            else if (_selectedElement is RichTextBox richTextBox)
+            {
+                var selection = richTextBox.Selection;
+                if (!selection.IsEmpty)
+                {
+                    selection.ApplyPropertyValue(TextElement.ForegroundProperty, color);
+                }
+            }
+            //else if (_selectedElement is Grid grid)
+            //{
+            //    if (Current == ShapePart.Margin)
+            //        grid.BorderBrush = color;
+            //    else
+            //        grid.Background = color;
+            //}
+        }
 
-                    if (_selectedRichTextBox != null)
-                    {
-                        if (!_selectedRichTextBox.Selection.IsEmpty)
-                        {
-                            _selectedRichTextBox.Selection.ApplyPropertyValue(TextElement.ForegroundProperty, color);
-                        }
+        private void ApplyFontWeight()
+        {
+            if (_selectedElement == null)
+                return;
 
-                        if (_preferences.IsApplyBackgroundColor)
-                        {
-                            _selectedRichTextBox.Background = _preferences.SelectedColor;
-                        }
-                    }
+            var fontWeight = _preferences.FontWeight;
 
-                    if (_selectedTextBox != null)
-                    {
-                        _selectedTextBox.Foreground = _preferences.SelectedColor;
-                    }
-
-                    break;
-
-                case ShapePart.Border:
-
-                    if (_selectedBorder != null)
-                    {
-                        _selectedBorder.Background = color;
-                    }
-
-                    break;
-
-                case ShapePart.Margin:
-
-                    if (_selectedBorder != null)
-                    {
-                        _selectedBorder.BorderBrush = color;
-                        _selectedBorder.BorderThickness = new Thickness(4);
-                    }
-
-                    break;
+            if (_selectedElement is TextBox textBox)
+            {
+                textBox.FontWeight = fontWeight;
+            }
+            else if (_selectedElement is RichTextBox richTextBox)
+            {
+                var selection = richTextBox.Selection;
+                if (!selection.IsEmpty)
+                {
+                    selection.ApplyPropertyValue(TextElement.FontWeightProperty, fontWeight);
+                }
             }
         }
 
         private void ApplyFontSize()
         {
-            if (_selectedRichTextBox == null)
+            if (_selectedElement == null)
                 return;
 
-            switch (Current)
+            var fontSize = _preferences.FontSize;
+
+            if (_selectedElement is TextBox textBox)
             {
-                case ShapePart.Text:
-                    if (!_selectedRichTextBox.Selection.IsEmpty)
-                    {
-                        _selectedRichTextBox.Selection.ApplyPropertyValue(TextElement.FontSizeProperty, _preferences.FontSize);
-                    }
-                    break;
+                textBox.FontSize = fontSize;
+            }
+            else if (_selectedElement is RichTextBox richTextBox)
+            {
+                var selection = richTextBox.Selection;
+                if (!selection.IsEmpty)
+                {
+                    selection.ApplyPropertyValue(TextElement.FontSizeProperty, fontSize);
+                }
             }
         }
 
-        private void ApplyFontWeight()
+        private void ApplyBackgroundText()
         {
-            if (_selectedRichTextBox == null)
+            if (_selectedElement == null)
                 return;
 
-            switch (Current)
+            if (_selectedElement is RichTextBox richTextBox)
             {
-                case ShapePart.Text:
-                    if (!_selectedRichTextBox.Selection.IsEmpty)
-                    {
-                        _selectedRichTextBox.Selection.ApplyPropertyValue(TextElement.FontWeightProperty, _preferences.FontWeight);
-                    }
-                    break;
+                if (_preferences.IsApplyBackgroundColor)
+                {
+                    richTextBox.Background = _preferences.SelectedColor;
+                }
+                else
+                {
+                    richTextBox.Background = Brushes.Transparent;
+                }
             }
+        }
+
+        public void Deselect()
+        {
+            _selectedElement = null;
         }
     }
 }

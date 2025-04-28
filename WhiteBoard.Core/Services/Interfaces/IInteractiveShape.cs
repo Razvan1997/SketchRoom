@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using WhiteBoard.Core.Events;
 
 namespace WhiteBoard.Core.Services.Interfaces
@@ -49,5 +50,12 @@ namespace WhiteBoard.Core.Services.Interfaces
         /// Eveniment declanșat la click pentru a finaliza o conexiune într-o zonă generală (ex: Border).
         /// </summary>
         event EventHandler<ConnectionPointEventArgs>? ConnectionPointTargetClicked;
+
+        void AddTextToCenter();
+        void RequestChangeBackgroundColor(Brush brush);
+        void RequestChangeStrokeColor(Brush brush);
+
+        void RequestChangeForegroundColor(Brush brush);
+        event EventHandler<ShapeActionEventArgs> ShapeActionRequested;
     }
 }

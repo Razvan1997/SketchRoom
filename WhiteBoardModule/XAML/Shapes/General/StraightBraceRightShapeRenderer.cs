@@ -8,16 +8,18 @@ using System.Windows.Media;
 using System.Windows;
 using WhiteBoard.Core.Services.Interfaces;
 using System.Windows.Shapes;
+using SketchRoom.Models.Enums;
 
 namespace WhiteBoardModule.XAML.Shapes.General
 {
     public class StraightBraceRightShapeRenderer : IShapeRenderer
     {
         private readonly bool _withBindings;
-
+        private readonly IShapeSelectionService _selectionService;
         public StraightBraceRightShapeRenderer(bool withBindings = false)
         {
             _withBindings = withBindings;
+            _selectionService = ContainerLocator.Container.Resolve<IShapeSelectionService>();
         }
 
         public UIElement CreatePreview()
@@ -50,6 +52,17 @@ namespace WhiteBoardModule.XAML.Shapes.General
 
             var brace = CreateBrace();
             grid.Children.Add(brace);
+
+            grid.PreviewMouseLeftButtonDown += (s, e) =>
+            {
+                var clickedPath = FindFirstPathInChildren(grid);
+
+                if (clickedPath != null)
+                {
+                    var pos = e.GetPosition(clickedPath);
+                    _selectionService.Select(ShapePart.Margin, clickedPath);
+                }
+            };
             return grid;
         }
 
@@ -83,10 +96,39 @@ namespace WhiteBoardModule.XAML.Shapes.General
                 Data = geometry,
                 Stroke = Brushes.White,
                 StrokeThickness = 2,
+                Tag = "Bracket",
                 Stretch = Stretch.Fill,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Stretch
             };
+        }
+
+        private bool IsMouseOverMargin(Path path, Point mousePos)
+        {
+            const double marginWidth = 6;
+
+            Rect bounds = path.RenderedGeometry.Bounds;
+
+            return mousePos.X < bounds.Left + marginWidth ||
+                   mousePos.X > bounds.Right - marginWidth ||
+                   mousePos.Y < bounds.Top + marginWidth ||
+                   mousePos.Y > bounds.Bottom - marginWidth;
+        }
+
+        private Path? FindFirstPathInChildren(DependencyObject parent)
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+
+                if (child is Path path)
+                    return path;
+
+                var found = FindFirstPathInChildren(child);
+                if (found != null)
+                    return found;
+            }
+            return null;
         }
     }
 }

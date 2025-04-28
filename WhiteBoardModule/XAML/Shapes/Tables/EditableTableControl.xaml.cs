@@ -144,14 +144,14 @@ namespace WhiteBoardModule.XAML.Shapes.Tables
                     // click normal pe text – selectează text
                     tb.PreviewMouseLeftButtonDown += (s, e) =>
                     {
-                        _selectionService.Select(ShapePart.Text, border, tb);
+                        _selectionService.Select(ShapePart.Text, tb);
                         e.Handled = false;
                     };
 
                     // dublu click pe text – selectează border/fundal
                     tb.MouseDoubleClick += (s, e) =>
                     {
-                        _selectionService.Select(ShapePart.Border, border, tb);
+                        _selectionService.Select(ShapePart.Border, border);
                         e.Handled = true;
                     };
 

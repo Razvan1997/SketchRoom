@@ -104,7 +104,16 @@ namespace WhiteBoardModule.XAML.Shapes.General
             {
                 if (richText.IsFocused && !richText.Selection.IsEmpty)
                 {
-                    _selectionService.SelectRich(ShapePart.Text, GetContainingBorder(richText), richText);
+                    _selectionService.Select(ShapePart.Text, richText);
+                }
+            };
+            richText.PreviewMouseLeftButtonDown += (s, e) =>
+            {
+                if (!richText.IsKeyboardFocusWithin)
+                {
+                    richText.Focus();
+                    RaiseClickToParent(richText, e);
+                    e.Handled = true; // Opțional dacă vrei să previi altceva
                 }
             };
 

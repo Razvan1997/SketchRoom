@@ -10,16 +10,22 @@ using System.Windows.Input;
 using System.Windows.Shapes;
 using WhiteBoard.Core.Events;
 using WhiteBoard.Core.Services.Interfaces;
+using WhiteBoardModule.XAML.Interfaces;
 
 namespace WhiteBoardModule.XAML.Shapes.Entity
 {
-    public class EntityShapeRenderer : IShapeRenderer
+    public class EntityShapeRenderer : IShapeRenderer, IShapeEntityRenderer
     {
         private readonly bool _withBindings;
         private static readonly List<string> _sqlTypes = new() { "INT", "VARCHAR", "DATE", "BOOLEAN", "DECIMAL" };
-
+        private Grid? _entityGrid;
         public event EventHandler<ConnectionPointEventArgs>? ConnectionPointClicked;
         public event EventHandler<ConnectionPointEventArgs>? ConnectionPointTargetClicked;
+        private static UIElement? _lastRightClickedRow;
+        private TextBox? _headerTextBox;
+
+        public UIElement? LastRightClickedRow => _lastRightClickedRow;
+
         public EntityShapeRenderer(bool withBindings = false)
         {
             _withBindings = withBindings;
@@ -71,35 +77,9 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
             Grid.SetRow(tableNameBox, 0);
             Grid.SetColumnSpan(tableNameBox, 2);
             grid.Children.Add(tableNameBox);
-
+            _headerTextBox = tableNameBox;
             // First row
             AddStyledDataRow(grid, 1, "Id", "INT", isPreview);
-
-            if (!isPreview)
-            {
-                var addButton = new Button
-                {
-                    Content = "+",
-                    Width = 24,
-                    Height = 24,
-                    Margin = new Thickness(2),
-                    Background = new SolidColorBrush(Color.FromRgb(65, 65, 68)),
-                    Foreground = Brushes.White,
-                    BorderBrush = Brushes.Gray
-                };
-
-                addButton.Click += (s, e) =>
-                {
-                    int newRow = grid.RowDefinitions.Count - 1;
-                    grid.RowDefinitions.Insert(newRow, new RowDefinition { Height = GridLength.Auto });
-                    AddStyledDataRow(grid, newRow, "", "VARCHAR", isPreview);
-                    Grid.SetRow(addButton, newRow + 1);
-                };
-
-                Grid.SetRow(addButton, 2);
-                Grid.SetColumnSpan(addButton, 2);
-                grid.Children.Add(addButton);
-            }
 
             var border = new Border
             {
@@ -115,7 +95,7 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
                 ConnectionPointTargetClicked?.Invoke(this, new ConnectionPointEventArgs("Auto", border, e));
                 e.Handled = true;
             };
-
+            _entityGrid = grid;
             return border;
         }
 
@@ -124,16 +104,25 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
             var rowGrid = new Grid
             {
                 Margin = new Thickness(2),
-                Background = Brushes.Transparent // asigură că mouse enter se detectează
+                Background = Brushes.Transparent
             };
 
-            // Definim coloanele
-            rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(10) }); // Left connector
+            // Define columns
+            rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(10) }); // 🔵 Left connector
             rowGrid.ColumnDefinitions.Add(new ColumnDefinition());                             // Column name
             rowGrid.ColumnDefinitions.Add(new ColumnDefinition());                             // SQL type
             rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(40) }); // PK
             rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(60) }); // Nullable
-            rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(10) }); // Right connector
+            rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(10) }); // 🔵 Right connector
+
+            void AttachContextMenuEvents(UIElement element, Grid rowGrid)
+            {
+                element.PreviewMouseRightButtonDown += (s, e) =>
+                {
+                    _lastRightClickedRow = rowGrid;
+                    e.Handled = false;
+                };
+            }
 
             // 🔵 Conector stânga
             var leftConnector = new Rectangle
@@ -153,11 +142,10 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
                 ConnectionPointClicked?.Invoke(this, new ConnectionPointEventArgs("Left", leftConnector, e));
                 e.Handled = true;
             };
-
             Grid.SetColumn(leftConnector, 0);
             rowGrid.Children.Add(leftConnector);
 
-            // 📝 TextBox
+            // 📝 TextBox (nume coloană)
             var nameBox = new TextBox
             {
                 Text = columnName,
@@ -167,8 +155,9 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
             };
             Grid.SetColumn(nameBox, 1);
             rowGrid.Children.Add(nameBox);
+            AttachContextMenuEvents(nameBox, rowGrid);
 
-            // 📦 ComboBox
+            // 📦 ComboBox (tip SQL)
             var typeBox = new ComboBox
             {
                 ItemsSource = _sqlTypes,
@@ -179,6 +168,7 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
             };
             Grid.SetColumn(typeBox, 2);
             rowGrid.Children.Add(typeBox);
+            AttachContextMenuEvents(typeBox, rowGrid);
 
             // 🔒 Checkbox PK
             var pkCheck = new CheckBox
@@ -191,18 +181,20 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
             };
             Grid.SetColumn(pkCheck, 3);
             rowGrid.Children.Add(pkCheck);
+            AttachContextMenuEvents(pkCheck, rowGrid);
 
             // 🟨 Checkbox NULL
             var nullableCheck = new CheckBox
             {
                 Content = "NULL",
-                Foreground = Brushes.White,
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center,
+                Foreground = Brushes.White,
                 IsEnabled = !isPreview
             };
             Grid.SetColumn(nullableCheck, 4);
             rowGrid.Children.Add(nullableCheck);
+            AttachContextMenuEvents(nullableCheck, rowGrid);
 
             // 🔵 Conector dreapta
             var rightConnector = new Rectangle
@@ -222,7 +214,6 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
                 ConnectionPointClicked?.Invoke(this, new ConnectionPointEventArgs("Right", rightConnector, e));
                 e.Handled = true;
             };
-
             Grid.SetColumn(rightConnector, 5);
             rowGrid.Children.Add(rightConnector);
 
@@ -238,10 +229,40 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
                 rightConnector.Visibility = Visibility.Collapsed;
             };
 
-            // Adaugă linia în grid-ul mare
+            // Add the rowGrid to parent grid
             Grid.SetRow(rowGrid, rowIndex);
-            Grid.SetColumnSpan(rowGrid, 2); // ocupă ambele coloane din gridul părinte
+            Grid.SetColumnSpan(rowGrid, 2);
             grid.Children.Add(rowGrid);
+        }
+
+        public void AddRow()
+        {
+            if (_entityGrid == null)
+                return;
+
+            int newRow = _entityGrid.RowDefinitions.Count - 1;
+
+            _entityGrid.RowDefinitions.Insert(newRow, new RowDefinition { Height = GridLength.Auto });
+            AddStyledDataRow(_entityGrid, newRow, "", "VARCHAR", isPreview: false);
+        }
+
+        public void RemoveRowAt(UIElement targetRow)
+        {
+            if (_entityGrid == null || targetRow == null)
+                return;
+
+            if (_entityGrid.Children.Contains(targetRow))
+            {
+                _entityGrid.Children.Remove(targetRow);
+            }
+        }
+
+        public void ChangeHeaderBackground(Brush newBackground)
+        {
+            if (_headerTextBox != null)
+            {
+                _headerTextBox.Background = newBackground;
+            }
         }
     }
 }

@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using WhiteBoard.Core.Services;
 using WhiteBoard.Core.Services.Interfaces;
 using WhiteBoard.Core.Tools;
 using WhiteBoardModule.Events;
@@ -29,6 +30,8 @@ namespace WhiteBoardModule.ViewModels
         public ICommand SelectColorCommand { get; }
         public ICommand ToggleBoldCommand { get; }
         public ICommand TransformToTextCommand { get; }
+        public ICommand UndoCommand { get; }
+        public ICommand RedoCommand { get; }
 
         public ObservableCollection<Brush> AvailableColors { get; } = new()
         {
@@ -91,6 +94,16 @@ namespace WhiteBoardModule.ViewModels
             set => SetProperty(ref _isSessionActive, value);
         }
 
+        public bool IsZIndex
+        {
+            get => _preferences.IsApplyZIndexOrder;
+            set
+            {
+                _preferences.IsApplyZIndexOrder = value;
+                RaisePropertyChanged();
+            }
+        }
+
         private IUpdateStyle? _selectedShape;
 
         public IUpdateStyle? SelectedShape
@@ -108,7 +121,8 @@ namespace WhiteBoardModule.ViewModels
         public SessionActionsViewModel(
             IEventAggregator eventAggregator,
             DrawingStateService.DrawingStateService stateService,
-            IDrawingPreferencesService preferences)
+            IDrawingPreferencesService preferences,
+            UndoRedoService undoRedoService)
         {
 
             WhiteBoard.Core.Events.ShapeSelectionEventBus.Subscribe(OnShapeSelected);
@@ -139,9 +153,12 @@ namespace WhiteBoardModule.ViewModels
             eventAggregator.GetEvent<SessionContextEvent>().Subscribe(ctx =>
             {
                 _isHost = ctx.IsHost;
-                _sessionCode = ctx.SessionCode;
+                _sessionCode = ctx.SessionCode; 
                 RaisePropertyChanged(nameof(ActionLabel));
             });
+
+            UndoCommand = new DelegateCommand(undoRedoService.Undo);
+            RedoCommand = new DelegateCommand(undoRedoService.Redo);
         }
 
         private void OnShapeSelected(IUpdateStyle? style)

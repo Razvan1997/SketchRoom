@@ -37,6 +37,7 @@ namespace SketchRoom.Toolkit.Wpf
         public event EventHandler? ConnectionRequested;
         public event EventHandler<ConnectionPointEventArgs>? ConnectionPointClicked;
         public event EventHandler<ConnectionPointEventArgs>? ConnectionPointTargetClicked;
+        public event EventHandler<ShapeActionEventArgs> ShapeActionRequested;
 
         public bool EnableConnectors { get; set; } = false;
         private readonly ISnapService _snapService;
@@ -257,6 +258,26 @@ namespace SketchRoom.Toolkit.Wpf
         private double SnapToGrid(double value, double gridSize)
         {
             return Math.Round(value / gridSize) * gridSize;
+        }
+
+        public void AddTextToCenter()
+        {
+            //throw new NotImplementedException();
+        }
+
+        public void RequestChangeBackgroundColor(Brush brush)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RequestChangeStrokeColor(Brush brush)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RequestChangeForegroundColor(Brush brush)
+        {
+            throw new NotImplementedException();
         }
     }
 }

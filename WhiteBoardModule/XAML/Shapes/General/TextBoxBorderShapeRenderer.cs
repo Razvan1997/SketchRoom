@@ -10,14 +10,16 @@ using System.Windows;
 using WhiteBoard.Core.Services.Interfaces;
 using SketchRoom.Models.Enums;
 using System.Windows.Input;
+using WhiteBoardModule.XAML.Interfaces;
 
 namespace WhiteBoardModule.XAML.Shapes.General
 {
-    public class TextBoxBorderShapeRenderer : IShapeRenderer
+    public class TextBoxBorderShapeRenderer : IShapeRenderer, IBackgroundChangable, IStrokeChangable, IForegroundChangable
     {
         private readonly bool _withBindings;
         private readonly IShapeSelectionService _selectionService;
-
+        private Border _border;
+        private TextBox _textBox;
         public TextBoxBorderShapeRenderer(bool withBindings = false)
         {
             _withBindings = withBindings;
@@ -67,14 +69,14 @@ namespace WhiteBoardModule.XAML.Shapes.General
 
                 if (IsMouseOver(textBox, e))
                 {
-                    _selectionService.Select(ShapePart.Text, border, textBox);
+                    _selectionService.Select(ShapePart.Text, textBox);
                     return;
                 }
 
                 if (IsMouseOverMargin(border, pos))
-                    _selectionService.Select(ShapePart.Margin, border, textBox);
+                    _selectionService.Select(ShapePart.Margin, border);
                 else
-                    _selectionService.Select(ShapePart.Border, border, textBox);
+                    _selectionService.Select(ShapePart.Border, border);
             };
 
             // Hover logic
@@ -92,7 +94,9 @@ namespace WhiteBoardModule.XAML.Shapes.General
                     border.BorderThickness = new Thickness(2);
             };
 
-            _selectionService.ApplyVisual(border, textBox);
+            _selectionService.ApplyVisual(border);
+            _border = border;
+            _textBox = textBox;
             return border;
         }
 
@@ -141,6 +145,21 @@ namespace WhiteBoardModule.XAML.Shapes.General
                     }
                 }
             };
+        }
+
+        public void SetBackground(Brush brush)
+        {
+            _border.Background = brush;
+        }
+
+        public void SetStroke(Brush brush)
+        {
+            _border.BorderBrush = brush;
+        }
+
+        public void SetForeground(Brush brush)
+        {
+            _textBox.Foreground = brush;
         }
     }
 }

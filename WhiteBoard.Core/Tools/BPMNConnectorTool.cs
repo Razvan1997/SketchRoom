@@ -9,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using WhiteBoard.Core.Helpers;
 using WhiteBoard.Core.Models;
+using WhiteBoard.Core.Services;
 using WhiteBoard.Core.Services.Interfaces;
 
 namespace WhiteBoard.Core.Tools
@@ -21,13 +22,14 @@ namespace WhiteBoard.Core.Tools
         private readonly List<BPMNConnection> _selectedConnections = new();
         private readonly UIElement _focusTarget;
         private readonly IToolManager _toolManager;
-
+        private readonly UndoRedoService _undoRedoService;
         private List<Point> _pathPoints = new();
         private Polyline? _tempPolyline;
         private BPMNNode? _fromNode;
         private DateTime _lastClickTime = DateTime.MinValue;
 
         private IInteractiveShape? _selectedShape;
+        private IDrawingPreferencesService _drawingPreferences;
         private FrameworkElement? _selectedElement;
         private readonly ISnapService _snapService;
         private readonly List<Line> _activeSnapLines = new();
@@ -37,7 +39,7 @@ namespace WhiteBoard.Core.Tools
         public bool IsDrawing => _isDrawing;
 
         public BpmnConnectorTool(Canvas canvas, List<BPMNConnection> connections, Dictionary<FrameworkElement, BPMNNode> nodes, UIElement focusTarget,
-            IToolManager toolManager, ISnapService snapService)
+            IToolManager toolManager, ISnapService snapService, UndoRedoService undoRedoService, IDrawingPreferencesService drawingPreferencesService)
         {
             _canvas = canvas;
             _connections = connections;
@@ -45,12 +47,32 @@ namespace WhiteBoard.Core.Tools
             _focusTarget = focusTarget;
             _toolManager = toolManager;
             _snapService = snapService;
+            _undoRedoService = undoRedoService;
+            _drawingPreferences = drawingPreferencesService;
         }
 
         public void OnMouseDown(Point pos, MouseButtonEventArgs e)
         {
-            if (GetConnectionAt(pos) != null)
-                return;
+            var element = _canvas.InputHitTest(pos) as FrameworkElement;
+            var connection = GetConnectionAt(pos);
+
+            if (connection != null)
+            {
+                if (_isDrawing)
+                {
+                    // 🎯 Finalizează conexiunea către linie și adaugă DOT-ul
+                    _pathPoints.Add(pos);
+                    FinalizeConnectionToConnection(pos, connection);
+                    return;
+                }
+                else
+                {
+                    // 🖱️ Nu desenăm => doar selecție normală
+                    bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+                    OnConnectionClicked(connection, ctrl);
+                    return;
+                }
+            }
 
             var now = DateTime.Now;
             if (_isDrawing && (now - _lastClickTime).TotalMilliseconds < 400)
@@ -126,7 +148,7 @@ namespace WhiteBoard.Core.Tools
                     ConnectionIntersectionPoint = snapped,
                     CreatedAt = DateTime.Now
                 };
-
+                connection.SetStroke(_drawingPreferences.SelectedColor);
                 // Adaugă bulina
                 var dot = CreateConnectionDot(snapped);
                 _canvas.Children.Add(dot);
@@ -145,7 +167,7 @@ namespace WhiteBoard.Core.Tools
             }
 
             _pathPoints.Clear();
-            _isDrawing = false;
+            _isDrawing = true;
             _fromNode = null;
             _toolManager.SetNone();
         }
@@ -228,7 +250,7 @@ namespace WhiteBoard.Core.Tools
                 {
                     CreatedAt = DateTime.Now
                 };
-
+                connection.SetStroke(_drawingPreferences.SelectedColor);
                 if (toConnection != null)
                 {
                     connection.ConnectedToConnection = toConnection;
@@ -288,7 +310,7 @@ namespace WhiteBoard.Core.Tools
             };
 
             _canvas.Children.Add(_tempPolyline);
-            _isDrawing = true;
+            //_isDrawing = true;
         }
 
         private Point GetDirectionPoint(FrameworkElement el, string direction)
@@ -358,6 +380,11 @@ namespace WhiteBoard.Core.Tools
 
         public void OnConnectionClicked(BPMNConnection conn, bool ctrl)
         {
+            if (_isDrawing)
+            {
+                _isDrawing = false;
+                return;
+            }
             _focusTarget.Focus();
 
             if (!ctrl)
@@ -370,6 +397,11 @@ namespace WhiteBoard.Core.Tools
 
             foreach (var c in _connections)
                 c.IsSelected = _selectedConnections.Contains(c);
+
+            if (_toolManager.ActiveTool?.Name == "Connector")
+            {
+                _toolManager.SetNone();
+            }
         }
 
         private BPMNConnection? GetConnectionAt(Point pos, double threshold = 8)

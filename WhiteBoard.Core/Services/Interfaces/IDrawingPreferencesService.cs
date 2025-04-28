@@ -15,5 +15,6 @@ namespace WhiteBoard.Core.Services.Interfaces
         double FontSize { get; set; }
         FontWeight FontWeight { get; set; }
         bool IsApplyBackgroundColor { get; set; }
+        bool IsApplyZIndexOrder { get; set; }
     }
 }

@@ -178,7 +178,11 @@ namespace WhiteBoard.Core.Services
 
         public List<Line> GetSnapGuides(Point rawPoint, IEnumerable<FrameworkElement> others, FrameworkElement movingElement)
         {
-            var snapLines = new List<Line>();
+            Line? bestXLine = null;
+            Line? bestYLine = null;
+
+            double bestXDelta = double.MaxValue;
+            double bestYDelta = double.MaxValue;
 
             double elementLeft = rawPoint.X;
             double elementTop = rawPoint.Y;
@@ -205,15 +209,16 @@ namespace WhiteBoard.Core.Services
                 var snapTargetsX = new[] { left, right, centerX };
                 var snapTargetsY = new[] { top, bottom, centerY };
 
-                var seenX = new HashSet<double>();
-                var seenY = new HashSet<double>();
-
                 foreach (var x in pointsToCheckX)
                 {
                     foreach (var tx in snapTargetsX)
                     {
-                        if (Math.Abs(x - tx) < _snapThreshold && seenX.Add(tx))
-                            snapLines.Add(CreateVerticalLine(tx));
+                        double delta = Math.Abs(x - tx);
+                        if (delta < _snapThreshold && delta < bestXDelta)
+                        {
+                            bestXDelta = delta;
+                            bestXLine = CreateVerticalLine(tx);
+                        }
                     }
                 }
 
@@ -221,13 +226,20 @@ namespace WhiteBoard.Core.Services
                 {
                     foreach (var ty in snapTargetsY)
                     {
-                        if (Math.Abs(y - ty) < _snapThreshold && seenY.Add(ty))
-                            snapLines.Add(CreateHorizontalLine(ty));
+                        double delta = Math.Abs(y - ty);
+                        if (delta < _snapThreshold && delta < bestYDelta)
+                        {
+                            bestYDelta = delta;
+                            bestYLine = CreateHorizontalLine(ty);
+                        }
                     }
                 }
             }
 
-            return snapLines;
+            var result = new List<Line>();
+            if (bestXLine != null) result.Add(bestXLine);
+            if (bestYLine != null) result.Add(bestYLine);
+            return result;
         }
     }
 

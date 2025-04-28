@@ -7,16 +7,23 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows;
 using WhiteBoard.Core.Services.Interfaces;
+using SketchRoom.Models.Enums;
+using System.Windows.Input;
+using System.Windows.Shapes;
+using WhiteBoard.Core.Events;
 
 namespace WhiteBoardModule.XAML.Shapes.Containers
 {
     public class ListContainerRenderer : IShapeRenderer
     {
         private readonly bool _withBindings;
-
+        private readonly IShapeSelectionService _selectionService;
+        public event EventHandler<ConnectionPointEventArgs>? ConnectionPointClicked;
+        public event EventHandler<ConnectionPointEventArgs>? ConnectionPointTargetClicked;
         public ListContainerRenderer(bool withBindings = false)
         {
             _withBindings = withBindings;
+            _selectionService = ContainerLocator.Container.Resolve<IShapeSelectionService>();
         }
 
         public UIElement CreatePreview()
@@ -57,6 +64,15 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 HorizontalContentAlignment = HorizontalAlignment.Center,
                 IsReadOnly = isPreview
             };
+
+            if (!isPreview)
+            {
+                titleBox.PreviewMouseLeftButtonDown += (s, e) =>
+                {
+                    _selectionService.Select(ShapePart.Text, (UIElement)s);
+                };
+            }
+
             stack.Children.Add(titleBox);
 
             // Container pentru itemi
@@ -111,7 +127,43 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
 
         private UIElement CreateItem(IDrawingPreferencesService preferences, string text, bool isPreview)
         {
-            return new TextBox
+            var grid = new Grid
+            {
+                Margin = new Thickness(2),
+                Background = Brushes.Transparent
+            };
+
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(10) }); // Left connector
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); // TextBox
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(10) }); // Right connector
+
+            // 🔵 Left connector
+            var leftConnector = new Rectangle
+            {
+                Width = 8,
+                Height = 12,
+                Fill = Brushes.DodgerBlue,
+                Visibility = Visibility.Collapsed,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Cursor = Cursors.Cross,
+                Tag = "Connector"
+            };
+
+            if (!isPreview)
+            {
+                leftConnector.MouseLeftButtonDown += (s, e) =>
+                {
+                    ConnectionPointClicked?.Invoke(this, new ConnectionPointEventArgs("Left", leftConnector, e));
+                    e.Handled = true;
+                };
+            }
+
+            Grid.SetColumn(leftConnector, 0);
+            grid.Children.Add(leftConnector);
+
+            // 📝 TextBox
+            var itemBox = new TextBox
             {
                 Text = text,
                 FontSize = preferences.FontSize,
@@ -124,6 +176,58 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 Margin = new Thickness(2),
                 IsReadOnly = isPreview
             };
+
+            if (!isPreview)
+            {
+                itemBox.PreviewMouseLeftButtonDown += (s, e) =>
+                {
+                    _selectionService.Select(ShapePart.Text, (UIElement)s);
+                };
+            }
+
+            Grid.SetColumn(itemBox, 1);
+            grid.Children.Add(itemBox);
+
+            // 🔵 Right connector
+            var rightConnector = new Rectangle
+            {
+                Width = 8,
+                Height = 12,
+                Fill = Brushes.DodgerBlue,
+                Visibility = Visibility.Collapsed,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Cursor = Cursors.Cross,
+                Tag = "Connector"
+            };
+
+            if (!isPreview)
+            {
+                rightConnector.MouseLeftButtonDown += (s, e) =>
+                {
+                    ConnectionPointClicked?.Invoke(this, new ConnectionPointEventArgs("Right", rightConnector, e));
+                    e.Handled = true;
+                };
+            }
+
+            Grid.SetColumn(rightConnector, 2);
+            grid.Children.Add(rightConnector);
+
+            if (!isPreview)
+            {
+                grid.MouseEnter += (_, _) =>
+                {
+                    leftConnector.Visibility = Visibility.Visible;
+                    rightConnector.Visibility = Visibility.Visible;
+                };
+                grid.MouseLeave += (_, _) =>
+                {
+                    leftConnector.Visibility = Visibility.Collapsed;
+                    rightConnector.Visibility = Visibility.Collapsed;
+                };
+            }
+
+            return grid;
         }
     }
 }

@@ -32,6 +32,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
         private ISnapService? _snapService;
         private SelectedToolService _selectedToolService;
         private IDrawingPreferencesService? _drawingPreferencesService;
+        private IShapeSelectionService _shapeSelectionService;
         private readonly IDropService _dropService;
         private Cursor _previousCursor;
         private Point _lastPanPoint;
@@ -49,8 +50,9 @@ namespace SketchRoom.Toolkit.Wpf.Controls
         {
             InitializeComponent();
             _factory = ContainerLocator.Container.Resolve<IBpmnShapeFactory>();
-
+            var undoRedoService = ContainerLocator.Container.Resolve<UndoRedoService>();
             var tabService = ContainerLocator.Container.Resolve<IWhiteBoardTabService>();
+            var zOrderService = ContainerLocator.Container.Resolve<IZOrderService>();
             _toolManager = tabService.GetCurrentToolManager();
             var drawingService = ContainerLocator.Container.Resolve<IDrawingService>();
             var canvasRenderer = ContainerLocator.Container.Resolve<ICanvasRenderer>();
@@ -61,21 +63,23 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             _toolInterceptorService = new ToolInterceptorService(_toolManager, _selectedToolService);
             _host = new WhiteBoardHost(DrawingCanvas, _toolManager, drawingService, canvasRenderer);
 
+            _shapeSelectionService = ContainerLocator.Container.Resolve<IShapeSelectionService>();
+
             var freeDrawTool = new FreeDrawTool(drawingService, DrawingCanvas);
             freeDrawTool.StrokeCompleted += points => LineDrawn?.Invoke(points);
             freeDrawTool.PointDrawn += point => LivePointDrawn?.Invoke(point);
             freeDrawTool.PointerMoved += point => MouseMoved?.Invoke(point);
 
             var eraserTool = new EraserTool(drawingService, DrawingCanvas);
-            var bpmnTool = new BpmnTool(DrawingCanvas, _snapService, SnapGridCanvas, _toolManager);
+            var bpmnTool = new BpmnTool(DrawingCanvas, _snapService, SnapGridCanvas, _toolManager, undoRedoService);
 
-            _connectorTool = new BpmnConnectorTool(DrawingCanvas, _connections, _nodes, this, _toolManager, _snapService);
-            var connectorCurvedTool = new BpmnConnectorCurvedTool(DrawingCanvas, _connections, _nodes, this, _toolManager, _snapService);
+            _connectorTool = new BpmnConnectorTool(DrawingCanvas, _connections, _nodes, this, _toolManager, _snapService, undoRedoService, _drawingPreferencesService);
+            var connectorCurvedTool = new BpmnConnectorCurvedTool(DrawingCanvas, _connections, _nodes, this, _toolManager, _snapService, undoRedoService);
 
             var rotateTool = new RotateTool(DrawingCanvas);
             _selectionService = new SelectionService(_connectorTool);
             _selectionService.SelectionChanged += OnSelectionChanged;
-            var selectionTool = new SelectionTool(DrawingCanvas, _selectionService,_toolManager);
+            var selectionTool = new SelectionTool(DrawingCanvas, _selectionService, _toolManager);
 
             var panTool = new PanTool(_zoomPanService, ZoomTranslate);
             var textTool = new TextTool(DrawingCanvas, _toolManager, _factory, _snapService, _drawingPreferencesService, _selectedToolService, _textShapes);
@@ -91,7 +95,8 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             _toolManager.RegisterTool(textTool);
 
             var selecteToolService = ContainerLocator.Container.Resolve<SelectedToolService>();
-            _dropService = new DropService(DrawingCanvas, _factory, _toolManager, _connectorTool!, connectorCurvedTool, _nodes, selecteToolService);
+            _dropService = new DropService(DrawingCanvas, _factory, _toolManager, _connectorTool!, connectorCurvedTool, _nodes, selecteToolService, undoRedoService,
+                _drawingPreferencesService, zOrderService);
 
             this.KeyDown += WhiteBoardControl_KeyDown;
             this.Focusable = true;
@@ -111,20 +116,12 @@ namespace SketchRoom.Toolkit.Wpf.Controls
         {
             if (e.Key == Key.Delete)
             {
-                if (_toolManager.ActiveTool is BpmnConnectorTool connectorTool)
-                {
-                    connectorTool.DeleteSelectedConnections();
-                }
-
+                _connectorTool?.DeleteSelectedConnections();
                 foreach (var el in _selectionService.SelectedElements.ToList())
                 {
                     DrawingCanvas.Children.Remove(el);
                 }
-
                 _selectionService.ClearSelection(DrawingCanvas);
-
-
-
                 e.Handled = true;
             }
         }
@@ -151,15 +148,22 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
             var afterInterceptTool = _toolManager.ActiveTool?.Name;
 
-            //if (currentTool == afterInterceptTool && Keyboard.Modifiers == ModifierKeys.Control)
-            //{
-            //    _toolManager.SetActive("Pan");
-            //}
-            if ( Keyboard.Modifiers == ModifierKeys.Control)
+            if (Keyboard.Modifiers == ModifierKeys.Control)
             {
                 _toolManager.SetActive("Pan");
             }
+
             DeselectAllTexts();
+
+            if (_selectionService.SelectedElements.Count > 0)
+            {
+                _selectionService.DeselectAll(DrawingCanvas);
+            }
+
+            if (afterInterceptTool == null)
+            {
+                _shapeSelectionService.Deselect();
+            }
 
             _host.HandleMouseDown(logicalPos, e);
         }
@@ -208,7 +212,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                 DrawingCanvas.ReleaseMouseCapture();
                 return;
             }
-            _host.HandleMouseUp(logicalPos,e);
+            _host.HandleMouseUp(logicalPos, e);
         }
 
         private Point GetLogicalPosition(MouseEventArgs e)

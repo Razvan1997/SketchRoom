@@ -3,6 +3,7 @@ using SketchRoom.Models.Enums;
 using SketchRoom.Models.Shapes;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ using WhiteBoard.Core.Factory.Interfaces;
 using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services.Interfaces;
 using WhiteBoard.Core.Tools;
+using WhiteBoard.Core.UndoRedo;
 
 namespace WhiteBoard.Core.Services
 {
@@ -25,10 +27,14 @@ namespace WhiteBoard.Core.Services
         private readonly Canvas _drawingCanvas;
         private readonly IBpmnShapeFactory _factory;
         private readonly IToolManager _toolManager;
+        private readonly IDrawingPreferencesService _drawingPreferncesService;
         private readonly BpmnConnectorTool _connectorTool;
         private readonly BpmnConnectorCurvedTool _connectorCurvedTool;
         private readonly Dictionary<FrameworkElement, BPMNNode> _nodeMap;
         private readonly SelectedToolService _selectedToolService;
+        private readonly UndoRedoService _undoRedoService;
+        private readonly IZOrderService _zOrderService;
+        private IInteractiveShape? _lastClickedShape;
 
         public DropService(
             Canvas drawingCanvas,
@@ -37,7 +43,10 @@ namespace WhiteBoard.Core.Services
             BpmnConnectorTool connectorTool,
             BpmnConnectorCurvedTool connectorCurvedTool,
             Dictionary<FrameworkElement, BPMNNode> nodeMap,
-            SelectedToolService selectedToolService)
+            SelectedToolService selectedToolService, 
+            UndoRedoService undoRedoService,
+            IDrawingPreferencesService drawingPreferencesService,
+            IZOrderService zOrderService)
         {
             _drawingCanvas = drawingCanvas;
             _factory = factory;
@@ -46,6 +55,24 @@ namespace WhiteBoard.Core.Services
             _connectorCurvedTool = connectorCurvedTool;
             _nodeMap = nodeMap;
             _selectedToolService = selectedToolService;
+            _undoRedoService = undoRedoService;
+            _drawingPreferncesService = drawingPreferencesService;
+            _zOrderService = zOrderService;
+
+            if (_drawingPreferncesService is INotifyPropertyChanged notifier)
+                notifier.PropertyChanged += OnPreferencesChanged;
+        }
+
+        private void OnPreferencesChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(_drawingPreferncesService.IsApplyZIndexOrder))
+            {
+                if (_lastClickedShape?.Visual is FrameworkElement fe)
+                {
+                    _zOrderService.BringToFront(fe, _drawingCanvas);
+                }
+                _drawingPreferncesService.IsApplyZIndexOrder = false;
+            }
         }
 
         public FrameworkElement? HandleDrop(BPMNShapeModel shape, Point dropPos)
@@ -120,6 +147,7 @@ namespace WhiteBoard.Core.Services
 
             shape.ShapeClicked += (s, evt) =>
             {
+                _lastClickedShape = shape;
                 if (_toolManager.ActiveTool is BpmnTool bpmnTool)
                 {
                     bpmnTool.OnMouseDown(evt.GetPosition(_drawingCanvas), evt);
@@ -156,7 +184,15 @@ namespace WhiteBoard.Core.Services
         {
             Canvas.SetLeft(element, position.X);
             Canvas.SetTop(element, position.Y);
-            _drawingCanvas.Children.Add(element);
+
+            if (double.IsNaN(element.Width))
+                element.Width = element.ActualWidth > 0 ? element.ActualWidth : 120; // sau orice default logic
+
+            if (double.IsNaN(element.Height))
+                element.Height = element.ActualHeight > 0 ? element.ActualHeight : 120;
+
+            var command = new AddShapeCommand(_drawingCanvas, element);
+            _undoRedoService.ExecuteCommand(command);
         }
 
         public void RegisterNodeWhenReady(FrameworkElement element)

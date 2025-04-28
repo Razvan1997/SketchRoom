@@ -11,6 +11,8 @@ using WhiteBoard.Core.Services.Interfaces;
 using System.Windows.Shapes;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using WhiteBoard.Core.Services;
+using WhiteBoard.Core.UndoRedo;
 
 namespace WhiteBoard.Core.Tools
 {
@@ -21,6 +23,7 @@ namespace WhiteBoard.Core.Tools
         private readonly Dictionary<FrameworkElement, BPMNNode> _nodes;
         private readonly ISnapService _snapService;
         private readonly IToolManager _toolManager;
+        private readonly UndoRedoService _undoRedoService;
 
         private BPMNNode? _fromNode;
         private Path? _tempPath;
@@ -37,13 +40,15 @@ namespace WhiteBoard.Core.Tools
             Dictionary<FrameworkElement, BPMNNode> nodes,
             UIElement focusTarget,
             IToolManager toolManager,
-            ISnapService snapService)
+            ISnapService snapService,
+            UndoRedoService undoRedoService)
         {
             _canvas = canvas;
             _connections = connections;
             _nodes = nodes;
             _snapService = snapService;
             _toolManager = toolManager;
+            _undoRedoService = undoRedoService;
         }
         private BPMNConnection? GetConnectionAt(Point pos, double threshold = 8)
         {
@@ -84,12 +89,14 @@ namespace WhiteBoard.Core.Tools
             if (_isDrawing)
             {
                 var toNode = GetNodeAt(pos);
-                if (toNode != null)
+                if (toNode != null && toNode != _fromNode)
                 {
                     FinalizeConnection(pos);
                     _isDrawing = false;
                     return;
                 }
+                _isDrawing = false;
+                return;
             }
         }
 
@@ -139,8 +146,8 @@ namespace WhiteBoard.Core.Tools
                     };
                     connection.SetStroke(_tempPath.Stroke);
                     connection.SetArrowFromTo(resultGeometry.LastLineStart, resultGeometry.LastLineEnd);
-                    _connections.Add(connection);
-                    _canvas.Children.Add(connection.Visual);
+                    var command = new AddConnectionCommand(_canvas, connection, _connections);
+                    _undoRedoService.ExecuteCommand(command);
                 }
             }
 
@@ -149,6 +156,7 @@ namespace WhiteBoard.Core.Tools
             _tempPath = null;
             _fromNode = null;
             _startDirection = null;
+            _toolManager.SetNone();
         }
 
         private void FinalizeConnectionMagnetismToDestination(Point endPoint)

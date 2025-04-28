@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="clr-namespace:SketchRoom.Toolkit.Wpf.Controls;assembly=SketchRoom.Toolkit.Wpf"
+    xmlns:i="http://schemas.microsoft.com/xaml/behaviors"
     xmlns:prism="http://prismlibrary.com/"
     xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
     xmlns:vm="clr-namespace:WhiteBoardModule.ViewModels"
@@ -94,13 +95,27 @@
                     Width="24"
                     Height="24"
                     Margin="0,0,10,0"
-                    Source="pack://application:,,,/WhiteBoardModule;component/Resources/undo-left.svg" />
+                    Cursor="Hand"
+                    Source="pack://application:,,,/WhiteBoardModule;component/Resources/undo-left.svg">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="MouseLeftButtonUp">
+                            <prism:InvokeCommandAction Command="{Binding UndoCommand}" />
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </svgc:SvgViewbox>
 
                 <svgc:SvgViewbox
                     Width="24"
                     Height="24"
                     Margin="10,0,10,0"
-                    Source="pack://application:,,,/WhiteBoardModule;component/Resources/undo-right.svg" />
+                    Cursor="Hand"
+                    Source="pack://application:,,,/WhiteBoardModule;component/Resources/undo-right.svg">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="MouseLeftButtonUp">
+                            <prism:InvokeCommandAction Command="{Binding RedoCommand}" />
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                </svgc:SvgViewbox>
             </StackPanel>
 
             <Border
@@ -206,10 +221,13 @@
                     VerticalAlignment="Center"
                     Foreground="White"
                     Text="Z-Index" />
-                <svgc:SvgViewbox
-                    Width="24"
-                    Height="24"
-                    Source="pack://application:,,,/WhiteBoardModule;component/Resources/forward-item.svg" />
+
+                <ToggleButton IsChecked="{Binding IsZIndex, Mode=TwoWay}" Style="{StaticResource ToolToggleButtonStyle}">
+                    <svgc:SvgViewbox
+                        Width="24"
+                        Height="24"
+                        Source="pack://application:,,,/WhiteBoardModule;component/Resources/forward-item.svg" />
+                </ToggleButton>
             </StackPanel>
 
             <!--  Action Button  -->
@@ -245,7 +263,6 @@
                         Source="pack://application:,,,/WhiteBoardModule;component/Resources/apply-background.svg" />
                 </ToggleButton>
             </StackPanel>
-
         </Grid>
     </Border>
 </UserControl>

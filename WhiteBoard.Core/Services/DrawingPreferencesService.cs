@@ -17,6 +17,7 @@ namespace WhiteBoard.Core.Services
         private double _fontSize = 12;
         private FontWeight _fontWeight = FontWeights.Normal;
         private bool _isApplyBackgroundColor = false;
+        private bool _isApplyZIndexOrder = false;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -72,6 +73,19 @@ namespace WhiteBoard.Core.Services
                 if (_isApplyBackgroundColor != value)
                 {
                     _isApplyBackgroundColor = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public bool IsApplyZIndexOrder
+        {
+            get => _isApplyZIndexOrder;
+            set
+            {
+                if (_isApplyZIndexOrder != value)
+                {
+                    _isApplyZIndexOrder = value;
                     RaisePropertyChanged();
                 }
             }

@@ -58,12 +58,12 @@ namespace UsersInteractionsModule.ViewModels
 
         private void LoadShapes()
         {
-            AllShapes.Add(new BPMNShapeModel
-            {
-                Name = "Rectangle",
-                SvgUri = new Uri("pack://application:,,,/WhiteBoardModule;component/SVG/rectangle.svg"),
-                Category = "General"
-            });
+            //AllShapes.Add(new BPMNShapeModel
+            //{
+            //    Name = "Rectangle",
+            //    SvgUri = new Uri("pack://application:,,,/WhiteBoardModule;component/SVG/rectangle.svg"),
+            //    Category = "General"
+            //});
 
             var ellipse = new GenericShapeControl();
             ellipse.SetShapePreview(ShapeType.Ellipse);
@@ -253,6 +253,26 @@ namespace UsersInteractionsModule.ViewModels
                 Type = ShapeType.BorderTextBox,
                 ShapeContent = borderTextBox,
                 Category = "General"
+            });
+
+            var coonnectorDescriptionShape = new GenericShapeControl();
+            coonnectorDescriptionShape.SetShapePreview(ShapeType.ConnectorDescriptionShape);
+            AllShapes.Add(new BPMNShapeModel
+            {
+                Name = "ConnectorDescriptionShape",
+                Type = ShapeType.ConnectorDescriptionShape,
+                ShapeContent = coonnectorDescriptionShape,
+                Category = "Connectors"
+            });
+
+            var simpleContainer = new GenericShapeControl();
+            simpleContainer.SetShapePreview(ShapeType.SimpleContainer);
+            AllShapes.Add(new BPMNShapeModel
+            {
+                Name = "SimpleContainer",
+                Type = ShapeType.SimpleContainer,
+                ShapeContent = simpleContainer,
+                Category = "Containers"
             });
         }
 

@@ -75,6 +75,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
         public event EventHandler<ConnectionPointEventArgs>? ConnectionPointClicked;
         public event EventHandler? ConnectionRequested;
         public event EventHandler<ConnectionPointEventArgs>? ConnectionPointTargetClicked;
+        public event EventHandler<ShapeActionEventArgs> ShapeActionRequested;
 
         public bool IsTextEditing { get; private set; }
 
@@ -265,6 +266,36 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
             // Height: text height + padding
             this.Height = formattedText.Height + 20;
+        }
+
+        public void AddTextToCenter()
+        {
+            //throw new NotImplementedException();
+        }
+
+        public void ChangeBackgroundColor(Brush brush)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ChangeStrokeColor(Brush brush)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RequestChangeBackgroundColor(Brush brush)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RequestChangeStrokeColor(Brush brush)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RequestChangeForegroundColor(Brush brush)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -10,6 +10,8 @@ using System.Windows.Shapes;
 using System.Windows.Controls.Primitives;
 using Microsoft.VisualBasic;
 using System.Windows.Input;
+using WhiteBoard.Core.Services;
+using WhiteBoard.Core.UndoRedo;
 
 namespace WhiteBoard.Core.Tools
 {
@@ -22,7 +24,6 @@ namespace WhiteBoard.Core.Tools
         private readonly ISnapService _snapService;
         private readonly Canvas _snapCanvas;
         private readonly IToolManager _toolManager;
-
         private IInteractiveShape? _selectedShape;
         private IInteractiveShape? _draggingShape;
         private Point _lastMousePos;
@@ -32,15 +33,18 @@ namespace WhiteBoard.Core.Tools
         public IInteractiveShape? SelectedShape => _selectedShape;
 
         public event Action<IInteractiveShape?>? ShapeSelected;
+        private readonly UndoRedoService _undoRedoService;
 
 
-        public BpmnTool(Canvas canvas, ISnapService snapService, Canvas snapCanvas, IToolManager toolManager)
+        public BpmnTool(Canvas canvas, ISnapService snapService, Canvas snapCanvas, IToolManager toolManager, 
+            UndoRedoService undoRedoService)
         {
             _canvas = canvas;
             _snapService = snapService;
             _snapCanvas = snapCanvas;
             _toolManager = toolManager;
             _toolManager.ToolChanged += OnToolChanged;
+            _undoRedoService = undoRedoService;
         }
 
         private void OnToolChanged(IDrawingTool tool)
@@ -124,6 +128,19 @@ namespace WhiteBoard.Core.Tools
 
         public void OnMouseUp(Point pos, MouseButtonEventArgs e)
         {
+            if (_draggingShape is FrameworkElement fe)
+            {
+                var finalPos = new Point(Canvas.GetLeft(fe), Canvas.GetTop(fe));
+
+                // Dacă poziția s-a schimbat față de poziția inițială
+                if (_lastMousePos != finalPos)
+                {
+                    var initialPos = _lastMousePos - _dragOffset;
+                    var moveCommand = new MoveShapeCommand(fe, initialPos, finalPos);
+                    _undoRedoService.ExecuteCommand(moveCommand);
+                }
+            }
+
             _draggingShape = null;
             _snapCanvas.Children.Clear();
             _isDrawing = false;
@@ -147,7 +164,7 @@ namespace WhiteBoard.Core.Tools
                 return true;
 
             // exclude orice altceva ce nu este shape vizibil principal
-            return !(element is Line or Ellipse or Path or Border or TextBlock);
+            return !(element is Line or Ellipse or Path or Border or TextBlock or Canvas);
         }
 
         public void OnMouseDown(Point position)

@@ -107,7 +107,7 @@ namespace WhiteBoard.Core.Services
                 }
             }
 
-            //_toolManager.SetNone();
+            _toolManager.SetNone();
         }
 
         private FrameworkElement? FindElementWithTag(DependencyObject? element)

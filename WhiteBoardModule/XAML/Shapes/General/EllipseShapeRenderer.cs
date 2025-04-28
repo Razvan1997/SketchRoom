@@ -9,15 +9,20 @@ using System.Windows;
 using System.Windows.Data;
 using WhiteBoard.Core.Services.Interfaces;
 using System.Windows.Controls;
+using SketchRoom.Models.Enums;
+using WhiteBoardModule.XAML.Interfaces;
 
 namespace WhiteBoardModule.XAML.Shapes.General
 {
-    public class EllipseShapeRenderer : IShapeRenderer
+    public class EllipseShapeRenderer : IShapeRenderer, IBackgroundChangable, IStrokeChangable
     {
         private readonly bool _withBindings;
+        private readonly IShapeSelectionService _selectionService;
+        private Ellipse _ellipse;
 
         public EllipseShapeRenderer(bool withBindings = false)
         {
+            _selectionService = ContainerLocator.Container.Resolve<IShapeSelectionService>();
             _withBindings = withBindings;
         }
 
@@ -32,28 +37,34 @@ namespace WhiteBoardModule.XAML.Shapes.General
                 VerticalAlignment = VerticalAlignment.Stretch
             };
 
-            if (_withBindings)
-            {
-                var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
-                ellipse.SetBinding(Shape.StrokeProperty, new Binding(nameof(preferences.SelectedColor))
-                {
-                    Source = preferences
-                });
-            }
-            else
-            {
-                // 🟢 pentru instanță individuală (copie a valorii)
-                var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
-                ellipse.Stroke = preferences.SelectedColor;
-            }
+            var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
+            ellipse.Stroke = preferences.SelectedColor;
 
+            ellipse.PreviewMouseLeftButtonDown += (s, e) =>
+            {
+                var pos = e.GetPosition(ellipse);
+
+                if (IsMouseOverMargin(ellipse, pos))
+                    _selectionService.Select(ShapePart.Margin, ellipse);
+                else
+                    _selectionService.Select(ShapePart.Border, ellipse);
+            };
+            _ellipse = ellipse;
             return ellipse;
         }
 
         public UIElement CreatePreview()
         {
-            var renderer = new EllipseShapeRenderer(false);
-            var shape = renderer.Render();
+            var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
+            var shape =  new Ellipse
+            {
+                Fill = Brushes.Transparent,
+                StrokeThickness = 2,
+                Stretch = Stretch.Fill,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch,
+                Stroke = preferences.SelectedColor
+            };
 
             return new Viewbox
             {
@@ -69,5 +80,38 @@ namespace WhiteBoardModule.XAML.Shapes.General
                 }
             };
         }
+
+        public void SetBackground(Brush brush)
+        {
+            _ellipse?.SetValue(Shape.FillProperty, brush);
+        }
+
+        public void SetStroke(Brush brush)
+        {
+            _ellipse?.SetValue(Shape.StrokeProperty, brush);
+        }
+
+        private bool IsMouseOverMargin(Ellipse ellipse, Point mousePos)
+        {
+            if (ellipse.ActualWidth <= 0 || ellipse.ActualHeight <= 0)
+                return false;
+
+            double centerX = ellipse.ActualWidth / 2;
+            double centerY = ellipse.ActualHeight / 2;
+
+            double radiusX = centerX;
+            double radiusY = centerY;
+
+            double normalizedX = (mousePos.X - centerX) / radiusX;
+            double normalizedY = (mousePos.Y - centerY) / radiusY;
+
+            double distance = Math.Sqrt(normalizedX * normalizedX + normalizedY * normalizedY);
+
+            const double marginTolerance = 0.08;
+
+            return Math.Abs(distance - 1) <= marginTolerance;
+        }
+
+        
     }
 }

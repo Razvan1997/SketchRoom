@@ -104,7 +104,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
             var labelBox = new TextBox
             {
                 Text = "Label",
-                FontSize = preferences.FontSize,
+                FontSize = 14,
                 FontWeight = preferences.FontWeight,
                 Foreground = preferences.SelectedColor,
                 Background = Brushes.Transparent,
@@ -125,7 +125,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
             if (_withBindings)
             {
                 labelBox.SetBinding(TextBox.FontWeightProperty, new Binding(nameof(preferences.FontWeight)) { Source = preferences });
-                labelBox.SetBinding(TextBox.FontSizeProperty, new Binding(nameof(preferences.FontSize)) { Source = preferences });
+                //labelBox.SetBinding(TextBox.FontSizeProperty, new Binding(nameof(preferences.FontSize)) { Source = preferences });
                 labelBox.SetBinding(TextBox.ForegroundProperty, new Binding(nameof(preferences.SelectedColor)) { Source = preferences });
             }
 
