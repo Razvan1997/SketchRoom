@@ -104,6 +104,16 @@ namespace WhiteBoard.Core.Services
                         _toolManager.SetActive("TextEdit");
                         return;
                     }
+                    if (_selectedToolService.CurrentTool == WhiteBoardTool.FreeDraw)
+                    {
+                        _toolManager.SetActive("FreeDraw");
+                        return;
+                    }
+                    if (_selectedToolService.CurrentTool == WhiteBoardTool.RemoveStroke)
+                    {
+                        _toolManager.SetActive("RemoveStroke");
+                        return;
+                    }
                 }
             }
 

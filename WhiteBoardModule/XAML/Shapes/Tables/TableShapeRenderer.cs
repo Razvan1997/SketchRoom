@@ -13,8 +13,9 @@ using System.Windows.Shapes;
 
 namespace WhiteBoardModule.XAML.Shapes.Tables
 {
-    public class TableShapeRenderer : IShapeRenderer
+    public class TableShapeRenderer : IShapeRenderer, IShapeTableProvider
     {
+        private EditableTableControl? _editableTableControl;
         private Brush _headerBackground = Brushes.Black;
         private Brush _headerForeground = Brushes.White;
         private Brush _cellBackground = Brushes.White;
@@ -67,8 +68,10 @@ namespace WhiteBoardModule.XAML.Shapes.Tables
 
         public UIElement Render()
         {
-            return new EditableTableControl();
+            _editableTableControl = new EditableTableControl();
+            return _editableTableControl;
         }
+        public ITableShapeRender? TableShape => _editableTableControl;
 
         private void AddCell(Grid grid, int row, int col, bool isPreview = false)
         {
@@ -105,23 +108,7 @@ namespace WhiteBoardModule.XAML.Shapes.Tables
 
                 int rIndex = row, cIndex = col;
 
-                var contextMenu = new ContextMenu();
-                contextMenu.Items.Add(new MenuItem { Header = "Copy", Command = ApplicationCommands.Copy });
-                contextMenu.Items.Add(new MenuItem { Header = "Paste", Command = ApplicationCommands.Paste });
-                contextMenu.Items.Add(new Separator());
-                contextMenu.Items.Add(new MenuItem
-                {
-                    Header = "Add Row Below",
-                   
-                });
-                contextMenu.Items.Add(new MenuItem
-                {
-                    Header = "Add Column Right",
-                });
-
-                textBox.ContextMenu = contextMenu;
                 textBox.TextChanged += (s, e) => _cellValues[rIndex, cIndex] = textBox.Text;
-
                 content = textBox;
             }
 

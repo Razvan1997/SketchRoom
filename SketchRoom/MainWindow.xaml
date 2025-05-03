@@ -14,6 +14,7 @@
     WindowStartupLocation="CenterScreen"
     WindowState="Maximized"
     mc:Ignorable="d">
+
     <!--  Layered Grid where spinner is on top of content  -->
     <Grid>
         <!--  Content of the window goes here  -->

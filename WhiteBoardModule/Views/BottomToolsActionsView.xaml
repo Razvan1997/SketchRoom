@@ -16,6 +16,12 @@
     mc:Ignorable="d">
     <UserControl.Resources>
 
+        <Style x:Key="LineThicknessDotStyle" TargetType="Ellipse">
+            <Setter Property="Fill" Value="White" />
+            <Setter Property="Margin" Value="4" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+
         <coreConverters:EnumEqualityConverter x:Key="EnumEqualityConverter" />
 
         <!--  Stil pentru ToggleButton  -->
@@ -120,6 +126,118 @@
                     Height="24"
                     Source="pack://application:,,,/WhiteBoardModule;component/Resources/text-selection.svg" />
             </ToggleButton>
+
+            <Grid>
+                <ToggleButton
+                    x:Name="FreeDrawButton"
+                    Click="FreeDrawButton_Click"
+                    Command="{Binding SelectToolCommand}"
+                    CommandParameter="{x:Static enums:WhiteBoardTool.FreeDraw}"
+                    IsChecked="{Binding SelectedTool, Mode=TwoWay, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static enums:WhiteBoardTool.FreeDraw}}"
+                    Style="{StaticResource ToolToggleButtonStyle}">
+                    <svgc:SvgViewbox
+                        Width="24"
+                        Height="24"
+                        Source="pack://application:,,,/WhiteBoardModule;component/Resources/free-draw.svg" />
+                </ToggleButton>
+
+                <!--  Popup  -->
+                <Popup
+                    x:Name="ThicknessPopup"
+                    AllowsTransparency="True"
+                    Placement="Top"
+                    PlacementTarget="{Binding ElementName=FreeDrawButton}"
+                    StaysOpen="False"
+                    VerticalOffset="-20">
+                    <Border
+                        Padding="10"
+                        Background="#404040"
+                        CornerRadius="4">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse
+                                Width="6"
+                                Height="6"
+                                MouseDown="Dot_MouseDown"
+                                Style="{StaticResource LineThicknessDotStyle}"
+                                Tag="1" />
+                            <Ellipse
+                                Width="10"
+                                Height="10"
+                                MouseDown="Dot_MouseDown"
+                                Style="{StaticResource LineThicknessDotStyle}"
+                                Tag="2" />
+                            <Ellipse
+                                Width="14"
+                                Height="14"
+                                MouseDown="Dot_MouseDown"
+                                Style="{StaticResource LineThicknessDotStyle}"
+                                Tag="3" />
+                            <Ellipse
+                                Width="18"
+                                Height="18"
+                                MouseDown="Dot_MouseDown"
+                                Style="{StaticResource LineThicknessDotStyle}"
+                                Tag="4" />
+                        </StackPanel>
+                    </Border>
+                </Popup>
+            </Grid>
+
+            <Grid>
+                <ToggleButton
+                    x:Name="RemoveStrokeButton"
+                    Click="RemoveStrokeButton_Click"
+                    Command="{Binding SelectToolCommand}"
+                    CommandParameter="{x:Static enums:WhiteBoardTool.RemoveStroke}"
+                    IsChecked="{Binding SelectedTool, Mode=TwoWay, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static enums:WhiteBoardTool.RemoveStroke}}"
+                    Style="{StaticResource ToolToggleButtonStyle}">
+                    <svgc:SvgViewbox
+                        Width="24"
+                        Height="24"
+                        Source="pack://application:,,,/WhiteBoardModule;component/Resources/remove-stroke.svg" />
+                </ToggleButton>
+
+                <Popup
+                    x:Name="EraserPopup"
+                    AllowsTransparency="True"
+                    Placement="Top"
+                    PlacementTarget="{Binding ElementName=RemoveStrokeButton}"
+                    StaysOpen="False"
+                    VerticalOffset="-20">
+                    <Border
+                        Padding="10"
+                        Background="#404040"
+                        CornerRadius="4">
+                        <StackPanel Orientation="Horizontal">
+                            <Ellipse
+                                Width="10"
+                                Height="10"
+                                MouseDown="EraserDot_MouseDown"
+                                Style="{StaticResource LineThicknessDotStyle}"
+                                Tag="5" />
+                            <Ellipse
+                                Width="14"
+                                Height="14"
+                                MouseDown="EraserDot_MouseDown"
+                                Style="{StaticResource LineThicknessDotStyle}"
+                                Tag="10" />
+                            <Ellipse
+                                Width="18"
+                                Height="18"
+                                MouseDown="EraserDot_MouseDown"
+                                Style="{StaticResource LineThicknessDotStyle}"
+                                Tag="15" />
+                            <Ellipse
+                                Width="22"
+                                Height="22"
+                                MouseDown="EraserDot_MouseDown"
+                                Style="{StaticResource LineThicknessDotStyle}"
+                                Tag="20" />
+                        </StackPanel>
+                    </Border>
+                </Popup>
+            </Grid>
+
         </StackPanel>
     </Border>
 </UserControl>

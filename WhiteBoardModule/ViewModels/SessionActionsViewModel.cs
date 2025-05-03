@@ -117,13 +117,20 @@ namespace WhiteBoardModule.ViewModels
         }
 
         private readonly DrawingStateService.DrawingStateService _stateService;
-
+        public ICommand OpenSaveSketchDialogCommand { get; }
+        private readonly IEventAggregator _eventAggregator;
         public SessionActionsViewModel(
             IEventAggregator eventAggregator,
             DrawingStateService.DrawingStateService stateService,
             IDrawingPreferencesService preferences,
             UndoRedoService undoRedoService)
         {
+            _eventAggregator = eventAggregator;
+
+            OpenSaveSketchDialogCommand = new DelegateCommand(() =>
+            {
+                _eventAggregator.GetEvent<OpenSaveSketchDialogEvent>().Publish();
+            });
 
             WhiteBoard.Core.Events.ShapeSelectionEventBus.Subscribe(OnShapeSelected);
             _preferences = preferences;

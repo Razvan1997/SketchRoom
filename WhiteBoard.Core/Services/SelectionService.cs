@@ -95,33 +95,30 @@ namespace WhiteBoard.Core.Services
                 }
                 else if (element is FrameworkElement fe)
                 {
-                    double left = Canvas.GetLeft(fe);
-                    double top = Canvas.GetTop(fe);
-                    double width = fe.ActualWidth;
-                    double height = fe.ActualHeight;
-
-                    if (width == 0 || height == 0)
+                    if (!fe.IsLoaded || fe.ActualWidth == 0 || fe.ActualHeight == 0)
                         continue;
 
-                    elementRect = new Rect(left, top, width, height);
-
-                    if (!bounds.IntersectsWith(elementRect))
-                        continue;
-
-                    marker = new Rectangle
+                    if (VisualTreeHelper.GetParent(fe) is Visual parent)
                     {
-                        Width = width,
-                        Height = height,
-                        Stroke = Brushes.DeepSkyBlue,
-                        StrokeThickness = 2,
-                        StrokeDashArray = new DoubleCollection { 4, 2 },
-                        IsHitTestVisible = false,
-                        RadiusX = (fe is Ellipse) ? width / 2 : 0,
-                        RadiusY = (fe is Ellipse) ? height / 2 : 0
-                    };
+                        var transform = fe.TransformToAncestor(parent);
+                        var transformedBounds = transform.TransformBounds(new Rect(0, 0, fe.ActualWidth, fe.ActualHeight));
 
-                    Canvas.SetLeft(marker, left);
-                    Canvas.SetTop(marker, top);
+                        if (!bounds.IntersectsWith(transformedBounds))
+                            continue;
+
+                        marker = new Rectangle
+                        {
+                            Width = transformedBounds.Width,
+                            Height = transformedBounds.Height,
+                            Stroke = Brushes.DeepSkyBlue,
+                            StrokeThickness = 2,
+                            StrokeDashArray = new DoubleCollection { 4, 2 },
+                            IsHitTestVisible = false
+                        };
+
+                        Canvas.SetLeft(marker, transformedBounds.Left);
+                        Canvas.SetTop(marker, transformedBounds.Top);
+                    }
                 }
                 if (marker != null)
                 {

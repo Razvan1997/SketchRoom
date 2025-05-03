@@ -59,7 +59,21 @@ namespace SketchRoom.Toolkit.Wpf
 
             _snapService = ContainerLocator.Container.Resolve<ISnapService>();
             this.Cursor = Cursors.Hand;
-            SvgViewbox.Source = svgUri;
+            if (System.IO.Path.GetExtension(svgUri.LocalPath).ToLower() == ".svg")
+            {
+                SvgViewbox.Source = svgUri; // SVG standard
+            }
+            else
+            {
+                var image = new Image
+                {
+                    Source = new BitmapImage(svgUri),
+                    Stretch = Stretch.Uniform,
+                    Width = 120,
+                    Height = 120
+                };
+                SvgViewbox.Child = image;
+            }
             this.Width = 100;
             this.Height = 100;
 

@@ -90,5 +90,33 @@ namespace WhiteBoard.Core.Services
                 }
             }
         }
+
+        private double _strokeThickness = 2.0;
+        public double StrokeThickness
+        {
+            get => _strokeThickness;
+            set
+            {
+                if (_strokeThickness != value)
+                {
+                    _strokeThickness = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double _eraseRadius = 12.0;
+        public double EraseRadius
+        {
+            get => _eraseRadius;
+            set
+            {
+                if (_eraseRadius != value)
+                {
+                    _eraseRadius = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
     }
 }

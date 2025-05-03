@@ -151,11 +151,7 @@ namespace WhiteBoard.Core.Tools
                 }
             }
 
-            _isDrawing = false;
-            _startPoint = null;
-            _tempPath = null;
-            _fromNode = null;
-            _startDirection = null;
+            ResetState();
             _toolManager.SetNone();
         }
 
@@ -248,7 +244,7 @@ namespace WhiteBoard.Core.Tools
 
             _tempPath.Data = GenerateSmartBezierWithInfo(_startPoint.Value, _startPoint.Value).Geometry;
             _canvas.Children.Add(_tempPath);
-            _isDrawing = true;
+            //_isDrawing = true;
         }
 
         private Point GetCenterOfElement(UIElement element)
@@ -376,7 +372,32 @@ namespace WhiteBoard.Core.Tools
 
         public void OnMouseDown(Point position)
         {
-            throw new NotImplementedException();
+            if (_isDrawing)
+            {
+                var toNode = GetNodeAt(position);
+                if (toNode != null && toNode != _fromNode)
+                {
+                    FinalizeConnection(position);
+                    return;
+                }
+
+                // ❗ dacă nu putem finaliza valid, anulăm linia curentă
+                if (_tempPath != null)
+                    _canvas.Children.Remove(_tempPath);
+
+                ResetState();
+                _toolManager.SetNone();
+                return;
+            }
+        }
+
+        private void ResetState()
+        {
+            _isDrawing = false;
+            _startPoint = null;
+            _tempPath = null;
+            _fromNode = null;
+            _startDirection = null;
         }
     }
 }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace WhiteBoard.Core.Services.Interfaces
 {
@@ -14,5 +15,7 @@ namespace WhiteBoard.Core.Services.Interfaces
         void RegisterNodeWhenReady(FrameworkElement element);
         void SetupConnectorButton(FrameworkElement element);
         void PlaceElementOnCanvas(FrameworkElement element, Point position);
+
+        void MoveOverlayImageToWhiteBoard(FrameworkElement element, Point absolutePosition);
     }
 }

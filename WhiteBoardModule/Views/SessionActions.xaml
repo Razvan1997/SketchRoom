@@ -84,6 +84,7 @@
 
                 <ColumnDefinition Width="Auto" />
 
+                <ColumnDefinition Width="10" />
                 <ColumnDefinition Width="*" />
                 <!--  Action  -->
             </Grid.ColumnDefinitions>
@@ -262,6 +263,32 @@
                         Height="24"
                         Source="pack://application:,,,/WhiteBoardModule;component/Resources/apply-background.svg" />
                 </ToggleButton>
+            </StackPanel>
+
+            <StackPanel
+                Grid.Column="14"
+                HorizontalAlignment="Right"
+                Orientation="Horizontal">
+                <Border
+                    Width="200"
+                    Height="30"
+                    Margin="4,0"
+                    Background="SteelBlue"
+                    CornerRadius="2"
+                    Cursor="Hand"
+                    ToolTip="Save sketch">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="MouseLeftButtonUp">
+                            <prism:InvokeCommandAction Command="{Binding OpenSaveSketchDialogCommand}" />
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontWeight="SemiBold"
+                        Foreground="White"
+                        Text="Save sketch" />
+                </Border>
             </StackPanel>
         </Grid>
     </Border>

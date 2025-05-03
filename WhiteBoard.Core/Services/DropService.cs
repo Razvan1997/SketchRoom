@@ -5,15 +5,20 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Media.Media3D;
 using System.Windows.Shapes;
+using System.Xml.Linq;
 using WhiteBoard.Core.Events;
 using WhiteBoard.Core.Factory.Interfaces;
+using WhiteBoard.Core.Helpers;
 using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services.Interfaces;
 using WhiteBoard.Core.Tools;
@@ -81,8 +86,9 @@ namespace WhiteBoard.Core.Services
 
             if (shape.SvgUri != null)
             {
-                visualElement = CreateSvgElement(shape, dropPos);
+                visualElement = CreateVisualElement(shape.SvgUri, dropPos);
                 visualElement.Tag = "interactive";
+                 ShapeMetadata.SetSvgUri(visualElement, shape.SvgUri);
             }
             else if (shape.ShapeContent is IInteractiveShape prototype)
             {
@@ -103,20 +109,6 @@ namespace WhiteBoard.Core.Services
                 };
             }
             return visualElement;
-        }
-
-        private FrameworkElement? CreateSvgElement(BPMNShapeModel shape, Point dropPos)
-        {
-            var element = new BpmnWhiteBoardElement(shape.SvgUri, _factory);
-            element.SetPosition(dropPos);
-            if (element.Visual is not FrameworkElement visual) return null;
-
-            if (element.Visual is IInteractiveShape interactive)
-            {
-                AttachEvents(interactive);
-            }
-
-            return visual;
         }
 
         private FrameworkElement? CreateXamlElement(IInteractiveShape prototype, ShapeType? type, Point dropPos)
@@ -154,6 +146,13 @@ namespace WhiteBoard.Core.Services
                     if (shape is IUpdateStyle updateable)
                     {
                         ShapeSelectionEventBus.Publish(updateable);
+                    }
+
+                    if (_drawingCanvas.Parent is UIElement parent)
+                    {
+                        parent.Focusable = true;
+                        parent.Focus();
+                        Keyboard.Focus(parent);
                     }
                 }
                 evt.Handled = true;
@@ -243,6 +242,55 @@ namespace WhiteBoard.Core.Services
             }
 
             return null;
+        }
+
+        private FrameworkElement? CreateVisualElement(Uri uri, Point dropPos)
+        {
+            var element = new BpmnWhiteBoardElement(uri, _factory);
+            element.SetPosition(dropPos);
+
+            if (element.Visual is not FrameworkElement visual)
+                return null;
+
+            if (element.Visual is IInteractiveShape interactive)
+            {
+                AttachEvents(interactive);
+            }
+            return visual;
+        }
+
+        public void MoveOverlayImageToWhiteBoard(FrameworkElement element, Point absolutePosition)
+        {
+            DetachFromParent(element);
+            var parent = VisualTreeHelper.GetParent(element) as Panel;
+            parent?.Children.Remove(element);
+
+            PlaceElementOnCanvas(element, absolutePosition);
+            RegisterNodeWhenReady(element);
+            SetupConnectorButton(element);
+
+            if (element is IInteractiveShape shape)
+            {
+                shape.Select();
+            }
+        }
+
+        private void DetachFromParent(FrameworkElement element)
+        {
+            if (element.Parent is Panel panel)
+            {
+                panel.Children.Remove(element);
+            }
+            else if (element.Parent is ContentControl content)
+            {
+                if (content.Content == element)
+                    content.Content = null;
+            }
+            else if (element.Parent is Decorator decorator)
+            {
+                if (decorator.Child == element)
+                    decorator.Child = null;
+            }
         }
     }
 }

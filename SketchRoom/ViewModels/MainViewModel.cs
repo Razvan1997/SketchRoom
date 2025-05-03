@@ -1,4 +1,5 @@
 ﻿using Prism.Dialogs;
+using Prism.Events;
 using SketchRoom.Database;
 using SketchRoom.Dialogs;
 using System;
@@ -6,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WhiteBoardModule.Events;
 
 namespace SketchRoom.ViewModels
 {
@@ -13,11 +15,11 @@ namespace SketchRoom.ViewModels
     {
         private readonly IDialogService _dialogService;
         private readonly IRegionManager _regionManager;
-        public MainViewModel(IDialogService dialogService, IRegionManager regionManager)
+        public MainViewModel(IDialogService dialogService, IRegionManager regionManager, IEventAggregator eventAggregator)
         {
             _dialogService = dialogService;
             _regionManager = regionManager;
-
+            eventAggregator.GetEvent<OpenSaveSketchDialogEvent>().Subscribe(OpenSaveSketchDialog);
             var parameters = new NavigationParameters
                     {
                         { "IsHost", true },
@@ -41,6 +43,12 @@ namespace SketchRoom.ViewModels
         public void ShowRegistration()
         {
             var dialog = new RegistrationDialog();
+            dialog.Show();
+        }
+
+        private void OpenSaveSketchDialog()
+        {
+            var dialog = new SaveSketchDialog();
             dialog.Show();
         }
     }

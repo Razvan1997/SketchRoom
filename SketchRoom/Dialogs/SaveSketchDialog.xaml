@@ -1,0 +1,103 @@
+﻿<Window
+    x:Class="SketchRoom.Dialogs.SaveSketchDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:SketchRoom.Dialogs"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:prism="http://prismlibrary.com/"
+    Width="400"
+    Height="Auto"
+    prism:ViewModelLocator.AutoWireViewModel="True"
+    AllowsTransparency="True"
+    Background="Transparent"
+    ResizeMode="NoResize"
+    Topmost="True"
+    WindowStartupLocation="CenterScreen"
+    WindowState="Maximized"
+    WindowStyle="None"
+    mc:Ignorable="d">
+    <Grid>
+        <!--  Fundalul negru semi-transparent  -->
+        <Rectangle Fill="Black" Opacity="0.5" />
+
+        <!--  Dialogul propriu-zis  -->
+        <Border
+            Width="400"
+            Padding="20"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Background="#404040"
+            BorderBrush="#292828"
+            CornerRadius="8">
+            <StackPanel>
+                <!--  Titlu  -->
+                <TextBlock
+                    Margin="0,0,0,20"
+                    FontSize="18"
+                    FontWeight="Bold"
+                    Foreground="White"
+                    Text="Save Sketch" />
+
+                <!--  Format type  -->
+                <TextBlock
+                    Margin="0,0,0,4"
+                    Foreground="White"
+                    Text="Format type" />
+                <ComboBox
+                    ItemsSource="{Binding FormatTypes}"
+                    SelectedItem="{Binding SelectedFormatType, Mode=TwoWay}"
+                    Style="{StaticResource DarkComboBoxStyle}" />
+
+                <!--  Destination path  -->
+                <TextBlock
+                    Margin="0,10,0,4"
+                    Foreground="White"
+                    Text="Destination path" />
+
+                <Grid Margin="0,0,0,10" VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBox
+                        Grid.Column="0"
+                        Margin="0,0,6,0"
+                        VerticalAlignment="Center"
+                        Style="{StaticResource DarkTextBoxStyle}"
+                        Text="{Binding DestinationPath, Mode=TwoWay}" />
+
+                    <Button
+                        Grid.Column="1"
+                        Width="100"
+                        Height="30"
+                        Padding="10,4"
+                        VerticalAlignment="Center"
+                        Command="{Binding BrowsePathCommand}"
+                        Content="Choose path"
+                        Style="{StaticResource DarkFlatButtonStyle}" />
+                </Grid>
+
+                <!--  Butoane  -->
+                <StackPanel
+                    Margin="0,20,0,0"
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal">
+                    <Button
+                        Width="100"
+                        Height="30"
+                        Command="{Binding CancelCommand}"
+                        Content="Cancel"
+                        Style="{StaticResource DarkFlatButtonStyle}" />
+                    <Button
+                        Width="100"
+                        Height="30"
+                        Command="{Binding SaveCommand}"
+                        Content="Save"
+                        Style="{StaticResource DarkFlatButtonStyle}" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

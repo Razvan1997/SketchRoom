@@ -9,13 +9,14 @@ using System.Windows.Shapes;
 using System.Windows;
 using WhiteBoard.Core.Services.Interfaces;
 using System.Windows.Data;
+using WhiteBoardModule.XAML.Interfaces;
 
 namespace WhiteBoardModule.XAML.Shapes.Connectors
 {
-    public class ConnectorLabelShapeRenderer : IShapeRenderer
+    public class ConnectorLabelShapeRenderer : IShapeRenderer, IStrokeChangable, IForegroundChangable
     {
         private readonly bool _withBindings;
-
+        private Grid? _gridPanel;
         public ConnectorLabelShapeRenderer(bool withBindings = false)
         {
             _withBindings = withBindings;
@@ -191,8 +192,30 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 { "RightLine", rightLine },
                 { "Arrow", arrow }
             };
-
+            _gridPanel = grid;
             return grid;
+        }
+
+        public void SetForeground(Brush brush)
+        {
+            if (_gridPanel?.Tag is not Dictionary<string, object> tag) return;
+
+            if (tag["LabelText"] is TextBox label)
+                label.Foreground = brush;
+        }
+
+        public void SetStroke(Brush brush)
+        {
+            if (_gridPanel?.Tag is not Dictionary<string, object> tag) return;
+
+            if (tag["LeftLine"] is Rectangle left)
+                left.Fill = brush;
+
+            if (tag["RightLine"] is Rectangle right)
+                right.Fill = brush;
+
+            if (tag["Arrow"] is Polygon arrow)
+                arrow.Fill = brush;
         }
     }
 }

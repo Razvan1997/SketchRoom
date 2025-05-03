@@ -68,7 +68,7 @@
                             PreviewMouseMove="Tab_PreviewMouseMove"
                             Text="{Binding Name}" />
                         <Border.ContextMenu>
-                            <ContextMenu>
+                            <ContextMenu Style="{StaticResource DarkContextMenuStyle}">
                                 <MenuItem
                                     Command="{Binding DataContext.RenameTabCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     CommandParameter="{Binding}"

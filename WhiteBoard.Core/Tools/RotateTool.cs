@@ -62,9 +62,10 @@ namespace WhiteBoard.Core.Tools
 
             double angle = ComputeRotationAngle(_startMousePos, position, _target);
             _lastSnappedAngle = NormalizeAngle(SnapAngle(angle, 15));
+
+            ApplyRotation(_target.Visual, _lastSnappedAngle);
             ApplyRotation(_ghostShape, _lastSnappedAngle);
             UpdateOverlay(_lastSnappedAngle);
-
             if (_rotationOverlay != null)
             {
                 // 🔄 Forțează actualizarea layout-ului

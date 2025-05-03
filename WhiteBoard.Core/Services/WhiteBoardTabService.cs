@@ -17,6 +17,7 @@ namespace WhiteBoard.Core.Services
         private readonly List<FooterTabModel> _tabs = new();
         public event Action<FooterTabModel>? TabChanged;
         public FooterTabModel? CurrentTab { get; private set; }
+        private readonly Dictionary<Guid, IDrawingService> _drawingServices = new();
 
         public FooterTabModel CreateNewTab(int index)
         {
@@ -68,6 +69,16 @@ namespace WhiteBoard.Core.Services
         {
             CurrentTab = tab;
             TabChanged?.Invoke(tab);
+        }
+
+        public void AssociateDrawingService(Guid tabId, IDrawingService drawingService)
+        {
+            _drawingServices[tabId] = drawingService;
+        }
+
+        public IDrawingService? GetDrawingService(Guid tabId)
+        {
+            return _drawingServices.TryGetValue(tabId, out var ds) ? ds : null;
         }
     }
 }

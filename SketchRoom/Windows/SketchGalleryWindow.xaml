@@ -1,0 +1,64 @@
+﻿<Window
+    x:Class="SketchRoom.Windows.SketchGalleryWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:SketchRoom.Windows"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Title="GhostPreview"
+    Width="800"
+    Height="450"
+    AllowsTransparency="True"
+    Background="Transparent"
+    ShowInTaskbar="False"
+    Topmost="True"
+    WindowState="Maximized"
+    WindowStyle="None"
+    mc:Ignorable="d">
+    <Grid>
+        <!--  Fundal negru transparent  -->
+        <Rectangle Fill="Black" Opacity="0.5" />
+
+        <!--  Poze orizontale  -->
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+            <StackPanel
+                x:Name="ImagePanel"
+                Margin="20"
+                HorizontalAlignment="Center"
+                Orientation="Horizontal" />
+        </ScrollViewer>
+
+        <!--  Preview imagine mare  -->
+        <Border
+            x:Name="PreviewBorder"
+            Padding="0"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            Background="#CC000000"
+            Visibility="Collapsed">
+
+            <ScrollViewer
+                x:Name="ZoomScrollViewer"
+                Cursor="Hand"
+                HorizontalScrollBarVisibility="Auto"
+                PreviewMouseWheel="ZoomScrollViewer_PreviewMouseWheel"
+                VerticalScrollBarVisibility="Auto">
+                <Grid>
+                    <Image
+                        x:Name="PreviewImage"
+                        MouseLeftButtonDown="PreviewImage_MouseLeftButtonDown"
+                        MouseLeftButtonUp="PreviewImage_MouseLeftButtonUp"
+                        MouseMove="PreviewImage_MouseMove"
+                        RenderTransformOrigin="0.5,0.5">
+                        <Image.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform x:Name="ImageScaleTransform" ScaleX="1" ScaleY="1" />
+                                <TranslateTransform x:Name="ImageTranslateTransform" />
+                            </TransformGroup>
+                        </Image.RenderTransform>
+                    </Image>
+                </Grid>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</Window>

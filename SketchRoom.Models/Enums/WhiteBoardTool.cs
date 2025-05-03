@@ -13,6 +13,8 @@ namespace SketchRoom.Models.Enums
         Pan,
         CurvedArrow,
         TextEdit,
-        TextSelection
+        TextSelection,
+        FreeDraw,
+        RemoveStroke
     }
 }

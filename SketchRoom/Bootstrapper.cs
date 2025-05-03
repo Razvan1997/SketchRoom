@@ -32,6 +32,7 @@ namespace SketchRoom
         {
             containerRegistry.RegisterSingleton<MainViewModel>();
             ViewModelLocationProvider.Register<RegistrationDialog, RegistrationDialogViewModel>();
+            ViewModelLocationProvider.Register<SaveSketchDialog, SaveSketchDialogViewModel>();
 
             containerRegistry.RegisterSingleton<WhiteboardHubClient>();
 

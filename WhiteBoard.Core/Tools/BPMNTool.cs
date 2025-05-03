@@ -12,6 +12,7 @@ using Microsoft.VisualBasic;
 using System.Windows.Input;
 using WhiteBoard.Core.Services;
 using WhiteBoard.Core.UndoRedo;
+using WhiteBoard.Core.Helpers;
 
 namespace WhiteBoard.Core.Tools
 {
@@ -132,12 +133,26 @@ namespace WhiteBoard.Core.Tools
             {
                 var finalPos = new Point(Canvas.GetLeft(fe), Canvas.GetTop(fe));
 
-                // Dacă poziția s-a schimbat față de poziția inițială
                 if (_lastMousePos != finalPos)
                 {
                     var initialPos = _lastMousePos - _dragOffset;
                     var moveCommand = new MoveShapeCommand(fe, initialPos, finalPos);
                     _undoRedoService.ExecuteCommand(moveCommand);
+                }
+
+                var svgUri = ShapeMetadata.GetSvgUri(fe);
+                if (svgUri != null)
+                {
+                    var table = FindTableUnderShape(fe);
+                    if (table != null)
+                    {
+                        var globalPos = fe.TranslatePoint(new Point(0, 0), _canvas);
+                        var tablePos = ((FrameworkElement)table).TranslatePoint(new Point(0, 0), _canvas);
+                        var relative = new Point(globalPos.X - tablePos.X, globalPos.Y - tablePos.Y);
+
+                        _canvas.Children.Remove(fe);
+                        table.AddOverlayElement(fe, relative);
+                    }
                 }
             }
 
@@ -170,6 +185,36 @@ namespace WhiteBoard.Core.Tools
         public void OnMouseDown(Point position)
         {
             throw new NotImplementedException();
+        }
+
+        public void DeleteSelectedShape()
+        {
+            if (_selectedShape is FrameworkElement fe)
+            {
+                _canvas.Children.Remove(fe);
+                _selectedShape = null;
+            }
+        }
+
+
+        private ITableShapeRender? FindTableUnderShape(FrameworkElement shape)
+        {
+            var shapeBounds = new Rect(Canvas.GetLeft(shape), Canvas.GetTop(shape), shape.ActualWidth, shape.ActualHeight);
+
+            foreach (var child in _canvas.Children.OfType<FrameworkElement>())
+            {
+                if (child is IShapeAddedXaml shapeWithTable)
+                {
+                    var tableBounds = new Rect(Canvas.GetLeft(child), Canvas.GetTop(child), child.ActualWidth, child.ActualHeight);
+
+                    if (tableBounds.IntersectsWith(shapeBounds) && shapeWithTable.TableShape != null)
+                    {
+                        return shapeWithTable.TableShape;
+                    }
+                }
+            }
+
+            return null;
         }
     }
 }

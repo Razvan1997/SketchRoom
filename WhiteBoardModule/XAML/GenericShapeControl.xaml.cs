@@ -4,10 +4,12 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using WhiteBoard.Core.Events;
 using WhiteBoard.Core.Services;
 using WhiteBoard.Core.Services.Interfaces;
+using WhiteBoard.Core.Tools;
 using WhiteBoard.Core.UndoRedo;
 using WhiteBoardModule.Events;
 using WhiteBoardModule.XAML.Interfaces;
@@ -24,6 +26,26 @@ namespace WhiteBoardModule.XAML
     /// </summary>
     public partial class GenericShapeControl : UserControl, IInteractiveShape, IUpdateStyle, IForegroundChangable, IShapeAddedXaml
     {
+        private RotateTransform _rotateTransform;
+        private TranslateTransform _translateTransform;
+        private ScaleTransform _scaleTransform;
+        private TransformGroup _transformGroup;
+        private bool _isRotating = false;
+        private Point _rotateStart;
+        private Point _resizeStart;
+        private static readonly Dictionary<ShapeType, ShapeContextType> _contextMap = new()
+        {
+            { ShapeType.Rectangle, ShapeContextType.GenericShape },
+            { ShapeType.Ellipse, ShapeContextType.GenericShape },
+            { ShapeType.Triangle, ShapeContextType.GenericShape },
+            { ShapeType.BorderTextBox, ShapeContextType.BorderTextBoxShape },
+            { ShapeType.EntityShape, ShapeContextType.EntityShape },
+            { ShapeType.TableShape, ShapeContextType.TableShape },
+            { ShapeType.ShapeText, ShapeContextType.TextArea },
+            { ShapeType.ConnectorDoubleShapeLabel, ShapeContextType.ConnectorDouble },
+            { ShapeType.ConnectorShapeLabel, ShapeContextType.ConnectorSimpleLabel },
+        };
+
         private readonly IContextMenuService _contextMenuService;
         public event EventHandler<ConnectionPointEventArgs>? ConnectionPointClicked;
         public event MouseButtonEventHandler? ShapeClicked;
@@ -40,6 +62,8 @@ namespace WhiteBoardModule.XAML
         private double _originalHeight;
         private readonly ShapeActionsManager _actionsManager;
         public event EventHandler<ShapeActionEventArgs>? ShapeActionRequested;
+
+        private ShapeType _shapeType;
         public GenericShapeControl()
         {
             InitializeComponent();
@@ -52,14 +76,92 @@ namespace WhiteBoardModule.XAML
             this.MouseUp += ForwardMouseUp;
             this.MouseDown += ForwardMouseDown;
 
-            this.MouseEnter += (_, _) => ShowConnectors();
+            this.MouseEnter += (s, e) =>
+            {
+                if (!RotateIcon.IsMouseOver)
+                    ShowConnectors();
+            };
             this.MouseLeave += (_, _) => HideConnectors();
 
             Loaded += (_, _) => InitResizeThumbs();
 
             _actionsManager = new ShapeActionsManager(this);
             this.ShapeActionRequested += _actionsManager.HandleAction;
+
+            this.PreviewMouseRightButtonUp += (s, e) =>
+            {
+                if (this.ContextMenu != null)
+                {
+                    this.ContextMenu.PlacementTarget = this;
+                    this.ContextMenu.Placement = PlacementMode.MousePoint;
+                    this.ContextMenu.IsOpen = true;
+                    e.Handled = true;
+                }
+            };
+
+            RotateIcon.PreviewMouseLeftButtonDown += RotateIcon_PreviewMouseLeftButtonDown;
+            RotateIcon.PreviewMouseLeftButtonUp += RotateIcon_PreviewMouseLeftButtonUp;
+            RotateIcon.PreviewMouseMove += RotateIcon_PreviewMouseMove;
+
+            _rotateTransform = new RotateTransform();
+            _translateTransform = new TranslateTransform();
+            _scaleTransform = new ScaleTransform();
+            _transformGroup = new TransformGroup();
+
+            _transformGroup.Children.Add(_scaleTransform);
+            _transformGroup.Children.Add(_rotateTransform);
+            _transformGroup.Children.Add(_translateTransform);
+
+            this.RenderTransform = _transformGroup;
+            this.RenderTransformOrigin = new Point(0.5, 0.5);
         }
+
+        private void RotateIcon_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            var tabService = ContainerLocator.Container.Resolve<IWhiteBoardTabService>();
+            var toolManager = tabService.GetCurrentToolManager();
+
+            if (VisualTreeHelper.GetParent(this) is Canvas canvas &&
+                toolManager.GetToolByName("RotateTool") is RotateTool rt)
+            {
+                _isRotating = true;
+                _rotateStart = e.GetPosition(canvas);
+                rt.StartRotation(this, _rotateStart);
+                toolManager.SetActive("RotateTool");
+                e.Handled = true;
+            }
+        }
+
+        private void RotateIcon_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (!_isRotating) return;
+
+            if (VisualTreeHelper.GetParent(this) is Canvas canvas &&
+                ContainerLocator.Container.Resolve<IWhiteBoardTabService>()
+                    .GetCurrentToolManager().ActiveTool is RotateTool rt)
+            {
+                Point pos = e.GetPosition(canvas);
+                rt.OnMouseMove(pos);
+            }
+        }
+
+        private void RotateIcon_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            if (!_isRotating) return;
+
+            if (VisualTreeHelper.GetParent(this) is Canvas canvas &&
+                ContainerLocator.Container.Resolve<IWhiteBoardTabService>()
+                    .GetCurrentToolManager().ActiveTool is RotateTool rt)
+            {
+                rt.OnMouseUp(e.GetPosition(canvas));
+                ContainerLocator.Container.Resolve<IWhiteBoardTabService>()
+                    .GetCurrentToolManager().SetActive("BpmnTool");
+
+                _isRotating = false;
+                e.Handled = true;
+            }
+        }
+
 
         private void SetupContextMenu(ShapeContextType shapeType)
         {
@@ -86,21 +188,8 @@ namespace WhiteBoardModule.XAML
 
         public void SetShape(ShapeType shape)
         {
-            if (shape == ShapeType.Rectangle || shape == ShapeType.Ellipse || shape == ShapeType.Triangle)
-            {
-                SetupContextMenu(ShapeContextType.GenericShape);
-            }
-            if (shape == ShapeType.BorderTextBox)
-            {
-                SetupContextMenu(ShapeContextType.BorderTextBoxShape);
-            }
-            if (shape == ShapeType.EntityShape)
-            {
-                SetupContextMenu(ShapeContextType.EntityShape);
-            }
-
+            _shapeType = shape;
             _renderer = _rendererFactory.CreateRenderer(shape, withBindings: false);
-
             double gridSize = 20;
 
             double rawWidth = 120;
@@ -149,6 +238,11 @@ namespace WhiteBoardModule.XAML
             {
                 ShapePresenter.Content = _renderer.Render();
             }
+
+            if (_contextMap.TryGetValue(shape, out var contextType))
+            {
+                SetupContextMenu(contextType);
+            }
         }
 
         public void SetShapePreview(ShapeType shape)
@@ -156,6 +250,11 @@ namespace WhiteBoardModule.XAML
             IsPreview = true;
             var preview = _rendererFactory.CreateRenderPreview(shape);
             ShapePresenter.Content = preview;
+            if (FindName("RotateIcon") is UIElement rotate)
+            {
+                var parent = VisualTreeHelper.GetParent(rotate) as Panel;
+                parent?.Children.Remove(rotate);
+            }
         }
 
         public void SetPosition(Point pos)
@@ -167,11 +266,18 @@ namespace WhiteBoardModule.XAML
         public void Select()
         {
             ResizeLeft.Visibility = ResizeRight.Visibility = ResizeTop.Visibility = ResizeBottom.Visibility = Visibility.Visible;
+            RotateIcon.Visibility = Visibility.Visible;
+
+            ResizeTop.Cursor = GetRotatedCursor("Top");
+            ResizeBottom.Cursor = GetRotatedCursor("Bottom");
+            ResizeLeft.Cursor = GetRotatedCursor("Left");
+            ResizeRight.Cursor = GetRotatedCursor("Right");
         }
 
         public void Deselect()
         {
             ResizeLeft.Visibility = ResizeRight.Visibility = ResizeTop.Visibility = ResizeBottom.Visibility = Visibility.Collapsed;
+            RotateIcon.Visibility = Visibility.Collapsed;
         }
 
         public UIElement Visual => this;
@@ -181,6 +287,7 @@ namespace WhiteBoardModule.XAML
         public TextBox EditableText => throw new NotImplementedException();
 
         public IShapeRenderer? Renderer => _renderer;
+        public ShapeType GetShapeType() => _shapeType;
 
         private void InitResizeThumbs()
         {
@@ -223,6 +330,12 @@ namespace WhiteBoardModule.XAML
                 var undoService = ContainerLocator.Container.Resolve<UndoRedoService>();
                 undoService.ExecuteCommand(command);
             }
+        }
+
+        private void ResizeStart(object sender, DragStartedEventArgs e)
+        {
+            if (VisualTreeHelper.GetParent(this) is Canvas canvas)
+                _resizeStart = Mouse.GetPosition(canvas);
         }
 
         private void Resize(double dx, double dy, bool left, bool top)
@@ -367,6 +480,31 @@ namespace WhiteBoardModule.XAML
         public void SetForeground(Brush brush)
         {
             _textBox.Foreground = brush;
+        }
+
+        private Cursor GetRotatedCursor(string originalSide)
+        {
+            double angle = _rotateTransform.Angle % 360;
+            if (angle < 0) angle += 360;
+
+            // Determină direcția efectivă pe baza rotației
+            if (originalSide == "Top" || originalSide == "Bottom")
+            {
+                if ((angle >= 45 && angle < 135) || (angle >= 225 && angle < 315))
+                    return Cursors.SizeWE; // devine stânga-dreapta
+                else
+                    return Cursors.SizeNS;
+            }
+
+            if (originalSide == "Left" || originalSide == "Right")
+            {
+                if ((angle >= 45 && angle < 135) || (angle >= 225 && angle < 315))
+                    return Cursors.SizeNS; // devine sus-jos
+                else
+                    return Cursors.SizeWE;
+            }
+
+            return Cursors.Arrow;
         }
     }
 }

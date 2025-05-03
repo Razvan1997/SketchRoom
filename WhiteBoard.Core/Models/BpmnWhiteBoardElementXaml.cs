@@ -7,6 +7,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows;
 using WhiteBoard.Core.Services.Interfaces;
+using System.Windows.Media;
 
 namespace WhiteBoard.Core.Models
 {
@@ -28,12 +29,19 @@ namespace WhiteBoard.Core.Models
 
         public override UIElement Visual => _shape.Visual;
 
-        public override Rect Bounds => new Rect(
-            Canvas.GetLeft(_shape.Visual),
-            Canvas.GetTop(_shape.Visual),
-            (_shape.Visual as FrameworkElement)?.ActualWidth ?? 0,
-            (_shape.Visual as FrameworkElement)?.ActualHeight ?? 0
-        );
+        public override Rect Bounds
+        {
+            get
+            {
+                if (_shape.Visual is FrameworkElement fe &&
+                    VisualTreeHelper.GetParent(fe) is Visual parent)
+                {
+                    GeneralTransform transform = fe.TransformToAncestor(parent);
+                    return transform.TransformBounds(new Rect(0, 0, fe.ActualWidth, fe.ActualHeight));
+                }
+                return Rect.Empty;
+            }
+        }
 
         public override void SetPosition(Point position)
         {

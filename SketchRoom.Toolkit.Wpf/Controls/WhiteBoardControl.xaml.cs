@@ -17,6 +17,9 @@ using WhiteBoard.Core.Factory.Interfaces;
 using System.Windows.Controls.Primitives;
 using WhiteBoard.Core.Services;
 using System.Windows.Documents;
+using SketchRoom.Models.Enums;
+using System.Windows.Media.Media3D;
+using System.IO;
 
 namespace SketchRoom.Toolkit.Wpf.Controls
 {
@@ -33,7 +36,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
         private SelectedToolService _selectedToolService;
         private IDrawingPreferencesService? _drawingPreferencesService;
         private IShapeSelectionService _shapeSelectionService;
-        private readonly IDropService _dropService;
+        public readonly IDropService _dropService;
         private Cursor _previousCursor;
         private Point _lastPanPoint;
         private bool _isPanning;
@@ -41,12 +44,16 @@ namespace SketchRoom.Toolkit.Wpf.Controls
         public event Action<List<Point>>? LineDrawn;
         public event Action<Point>? LivePointDrawn;
         public event Action<Point>? MouseMoved;
-
+        private readonly IContextMenuService _contextMenuService;
         private readonly IBpmnShapeFactory _factory;
         private readonly WhiteBoard.Core.Services.Interfaces.ISelectionService _selectionService;
         private bool _isRightMouseHeld = false;
-
-        public WhiteBoardControl()
+        private Point _rightClickStartPoint;
+        private bool _isRightMouseMoving;
+        private Point? _lastRightClickCanvasPosition = null;
+        private readonly IClipboardService _clipboardService;
+        private readonly IDrawingService _drawingService;
+        public WhiteBoardControl(IDrawingService drawingService, IDrawingPreferencesService drawingPreferences)
         {
             InitializeComponent();
             _factory = ContainerLocator.Container.Resolve<IBpmnShapeFactory>();
@@ -54,18 +61,23 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             var tabService = ContainerLocator.Container.Resolve<IWhiteBoardTabService>();
             var zOrderService = ContainerLocator.Container.Resolve<IZOrderService>();
             _toolManager = tabService.GetCurrentToolManager();
-            var drawingService = ContainerLocator.Container.Resolve<IDrawingService>();
+            _drawingService = drawingService;
+            _drawingPreferencesService = drawingPreferences;
+
+
+            _drawingService.SetCanvas(DrawingCanvas);
             var canvasRenderer = ContainerLocator.Container.Resolve<ICanvasRenderer>();
             _zoomPanService = ContainerLocator.Container.Resolve<IZoomPanService>();
             _snapService = ContainerLocator.Container.Resolve<ISnapService>();
-            _drawingPreferencesService = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
+
+
+
             _selectedToolService = ContainerLocator.Container.Resolve<SelectedToolService>();
             _toolInterceptorService = new ToolInterceptorService(_toolManager, _selectedToolService);
             _host = new WhiteBoardHost(DrawingCanvas, _toolManager, drawingService, canvasRenderer);
-
+            _contextMenuService = ContainerLocator.Container.Resolve<IContextMenuService>();
             _shapeSelectionService = ContainerLocator.Container.Resolve<IShapeSelectionService>();
-
-            var freeDrawTool = new FreeDrawTool(drawingService, DrawingCanvas);
+            var freeDrawTool = new FreeDrawTool(drawingService, DrawingCanvas, _drawingPreferencesService);
             freeDrawTool.StrokeCompleted += points => LineDrawn?.Invoke(points);
             freeDrawTool.PointDrawn += point => LivePointDrawn?.Invoke(point);
             freeDrawTool.PointerMoved += point => MouseMoved?.Invoke(point);
@@ -84,6 +96,8 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             var panTool = new PanTool(_zoomPanService, ZoomTranslate);
             var textTool = new TextTool(DrawingCanvas, _toolManager, _factory, _snapService, _drawingPreferencesService, _selectedToolService, _textShapes);
 
+            var removeStrokeTool = new RemoveStrokeTool(drawingService, DrawingCanvas, _drawingPreferencesService);
+
             _toolManager.RegisterTool(freeDrawTool);
             _toolManager.RegisterTool(eraserTool);
             _toolManager.RegisterTool(bpmnTool);
@@ -93,6 +107,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             _toolManager.RegisterTool(panTool);
             _toolManager.RegisterTool(connectorCurvedTool);
             _toolManager.RegisterTool(textTool);
+            _toolManager.RegisterTool(removeStrokeTool);
 
             var selecteToolService = ContainerLocator.Container.Resolve<SelectedToolService>();
             _dropService = new DropService(DrawingCanvas, _factory, _toolManager, _connectorTool!, connectorCurvedTool, _nodes, selecteToolService, undoRedoService,
@@ -101,6 +116,14 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             this.KeyDown += WhiteBoardControl_KeyDown;
             this.Focusable = true;
             this.Focus();
+
+            DrawingCanvas.ContextMenu = _contextMenuService.CreateContextMenu(ShapeContextType.WhiteBoardArea, this);
+            DrawingCanvas.ContextMenuOpening += (s, e) =>
+            {
+                // Blochează deschiderea automată
+                e.Handled = true;
+            };
+            _clipboardService = new ClipboardService(_dropService);
         }
 
         private void OnSelectionChanged(object? sender, EventArgs e)
@@ -122,7 +145,56 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                     DrawingCanvas.Children.Remove(el);
                 }
                 _selectionService.ClearSelection(DrawingCanvas);
+
+                if (_toolManager.ActiveTool is BpmnTool bpmnTool && bpmnTool.SelectedShape is FrameworkElement fe)
+                {
+                    DrawingCanvas.Children.Remove(fe);
+                    bpmnTool.DeselectCurrent();
+                }
+
                 e.Handled = true;
+            }
+
+            // CTRL + C
+            if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.C)
+            {
+                IInteractiveShape? selectedShape = null;
+
+                // Dacă tool-ul activ este BpmnTool și are o formă selectată
+                if (_toolManager.ActiveTool is BpmnTool bpmnTool && bpmnTool.SelectedShape is IInteractiveShape bpmnSelected)
+                {
+                    selectedShape = bpmnSelected;
+                }
+                else
+                {
+                    // Altfel, folosim selecția generală
+                    selectedShape = _selectionService.SelectedElements.OfType<IInteractiveShape>().FirstOrDefault();
+                }
+
+                if (selectedShape != null)
+                {
+                    _clipboardService.Copy(selectedShape);
+                }
+
+                e.Handled = true;
+                return;
+            }
+
+            // CTRL + V
+            if (Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.V)
+            {
+                var mousePosition = Mouse.GetPosition(DrawingCanvas);
+                var newShape = _clipboardService.Paste(mousePosition);
+
+                if (newShape != null && newShape.Visual is FrameworkElement fe)
+                {
+                    _dropService.PlaceElementOnCanvas(fe, mousePosition);
+                    _dropService.RegisterNodeWhenReady(fe);
+                    _dropService.SetupConnectorButton(fe);
+                }
+
+                e.Handled = true;
+                return;
             }
         }
         private void DeselectAllTexts()
@@ -177,7 +249,29 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
             if (_isRightMouseHeld)
             {
-                _host.HandleMouseMove(logicalPos, e);
+                var currentPoint = e.GetPosition(this);
+                var delta = (currentPoint - _rightClickStartPoint);
+
+                if (!_isRightMouseMoving && (Math.Abs(delta.X) > SystemParameters.MinimumHorizontalDragDistance ||
+                                             Math.Abs(delta.Y) > SystemParameters.MinimumVerticalDragDistance))
+                {
+                    _isRightMouseMoving = true;
+                    var logicalPosMove = GetLogicalPosition(e);
+                    _toolManager.SetActive("Selection");
+                    var fakeButtonEvent = new MouseButtonEventArgs(e.MouseDevice, e.Timestamp, MouseButton.Right)
+                    {
+                        RoutedEvent = Mouse.MouseDownEvent,
+                        Source = e.Source
+                    };
+
+                    _host.HandleMouseDown(logicalPosMove, fakeButtonEvent); // începe selecția
+                }
+
+                if (_isRightMouseMoving)
+                {
+                    _host.HandleMouseMove(logicalPos, e);
+                }
+
                 return;
             }
 
@@ -187,16 +281,12 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                 _lastPanPoint = _zoomPanService.Pan(current, _lastPanPoint, ZoomTranslate);
                 return;
             }
-            var activeTool = _toolManager.ActiveTool;
 
+            var activeTool = _toolManager.ActiveTool;
             if (activeTool is IDrawingTool drawingTool && drawingTool.IsDrawing)
-            {
                 _toolInterceptorService.IsUserActing = true;
-            }
             else
-            {
                 _toolInterceptorService.IsUserActing = false;
-            }
 
             _host.HandleMouseMove(logicalPos, e);
         }
@@ -258,20 +348,52 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             if (IsClickOnSelectableShape(e.OriginalSource))
             {
                 _isRightMouseHeld = false;
-                return; // NU activăm selecția
+                return;
             }
 
             _isRightMouseHeld = true;
-            var logicalPos = GetLogicalPosition(e);
-            _toolManager.SetActive("Selection");
-            _host.HandleMouseDown(logicalPos, e);
+            _isRightMouseMoving = false; // Resetăm
+
+            _rightClickStartPoint = e.GetPosition(this);
         }
 
         private void DrawingRoot_PreviewMouseRightButtonUp(object sender, MouseButtonEventArgs e)
         {
+            if (e.Handled) return; 
+
             _isRightMouseHeld = false;
             var logicalPos = GetLogicalPosition(e);
+            _lastRightClickCanvasPosition = logicalPos;
+
+            if (_isRightMouseMoving)
+            {
+                _isRightMouseMoving = false;
+                _host.HandleMouseUp(logicalPos, e);
+                return;
+            }
+
+            var contextMenu = GetContextMenuFromVisualTree(e.OriginalSource as DependencyObject);
+            if (contextMenu != null)
+            {
+                _host.HandleMouseUp(logicalPos, e);
+
+                contextMenu.PlacementTarget = this;
+                contextMenu.Placement = PlacementMode.MousePoint;
+                contextMenu.IsOpen = true;
+
+                e.Handled = true;
+                return;
+            }
+
             _host.HandleMouseUp(logicalPos, e);
+
+            if (DrawingCanvas.ContextMenu != null)
+            {
+                DrawingCanvas.ContextMenu.PlacementTarget = DrawingCanvas;
+                DrawingCanvas.ContextMenu.Placement = PlacementMode.MousePoint;
+                DrawingCanvas.ContextMenu.IsOpen = true;
+                e.Handled = true;
+            }
         }
 
         private bool IsClickOnSelectableShape(object source)
@@ -283,5 +405,108 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                    !(fe is Adorner) &&
                    !(fe is WhiteBoardControl);
         }
+
+        private static ContextMenu? GetContextMenuFromVisualTree(DependencyObject source)
+        {
+            while (source != null)
+            {
+                if (source is FrameworkElement fe && fe.ContextMenu != null)
+                    return fe.ContextMenu;
+
+                if (source is Visual || source is Visual3D)
+                {
+                    source = VisualTreeHelper.GetParent(source);
+                }
+                else
+                {
+                    source = LogicalTreeHelper.GetParent(source);
+                }
+            }
+
+            return null;
+        }
+
+        public void CopySelectedElements()
+        {
+            // (blank)
+        }
+
+        public void PasteElements()
+        {
+            // (blank)
+        }
+
+        public void DeleteSelectedElements()
+        {
+            // (blank)
+        }
+
+        public async void AddImageAtPosition()
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Select an Image",
+                Filter = "Image Files|*.jpg;*.jpeg;*.png;*.bmp;*.gif",
+                Multiselect = false
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                var selectedPath = dialog.FileName;
+
+                if (!string.IsNullOrEmpty(selectedPath))
+                {
+                    var uri = new Uri(selectedPath);
+
+                    var shape = new BPMNShapeModel
+                    {
+                        Name = System.IO.Path.GetFileNameWithoutExtension(selectedPath),
+                        SvgUri = uri, 
+                        Category = "Images"
+                    };
+
+                    // Poziția default în centru
+                    var position = _lastRightClickCanvasPosition ?? new Point(this.ActualWidth / 2, this.ActualHeight / 2);
+
+                    var visualElement = _dropService.HandleDrop(shape, position);
+                    if (visualElement != null)
+                    {
+                        _dropService.PlaceElementOnCanvas(visualElement, position);
+                        _dropService.RegisterNodeWhenReady(visualElement);
+                        _dropService.SetupConnectorButton(visualElement);
+                    }
+                }
+            }
+        }
+
+        public void SaveToFile(string filePath, string format)
+        {
+            DrawingCanvas.Measure(new Size(DrawingCanvas.Width, DrawingCanvas.Height));
+            DrawingCanvas.Arrange(new Rect(new Size(DrawingCanvas.Width, DrawingCanvas.Height)));
+
+            var dpi = 96d;
+            var rtb = new RenderTargetBitmap(
+                (int)DrawingCanvas.Width,
+                (int)DrawingCanvas.Height,
+                dpi,
+                dpi,
+                PixelFormats.Pbgra32);
+
+            rtb.Render(DrawingCanvas);
+
+            BitmapEncoder encoder = format.ToLower() switch
+            {
+                "jpeg" or "jpg" => new JpegBitmapEncoder(),
+                "bmp" => new BmpBitmapEncoder(),
+                "tiff" => new TiffBitmapEncoder(),
+                _ => new PngBitmapEncoder()
+            };
+
+            encoder.Frames.Add(BitmapFrame.Create(rtb));
+
+            using var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
+            encoder.Save(stream);
+        }
+
     }
 }

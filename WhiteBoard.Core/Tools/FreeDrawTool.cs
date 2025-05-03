@@ -14,11 +14,13 @@ namespace WhiteBoard.Core.Tools
 {
     public class FreeDrawTool : IDrawingTool
     {
+        public double StrokeThickness { get; set; } = 2.0;
         public string Name => "FreeDraw";
 
         private readonly IDrawingService _drawingService;
+        private readonly IDrawingPreferencesService _preferencesService;
         private readonly Canvas _canvas;
-        public Brush StrokeColor { get; set; } = Brushes.Black;
+        public Brush StrokeColor { get; set; } = Brushes.White;
         private FreeDrawStroke? _currentStroke;
 
         public event Action<List<Point>>? StrokeCompleted;
@@ -27,17 +29,18 @@ namespace WhiteBoard.Core.Tools
         private bool _isDrawing = false;
         public bool IsDrawing => _isDrawing;
 
-        public FreeDrawTool(IDrawingService drawingService, Canvas canvas)
+        public FreeDrawTool(IDrawingService drawingService,  Canvas canvas, IDrawingPreferencesService preferencesService)
         {
             _drawingService = drawingService;
             _canvas = canvas;
+            _preferencesService = preferencesService;
         }
 
         public void OnMouseDown(Point pos, MouseButtonEventArgs e)
         {
             _isDrawing = true;
-            var color = StrokeColor;
-            var thickness = 2.0;
+            var color = _preferencesService.SelectedColor;
+            var thickness = _preferencesService.StrokeThickness;
 
             _currentStroke = _drawingService.StartStroke(pos, color, thickness);
             _canvas.Children.Add(_currentStroke.Visual);
@@ -71,6 +74,11 @@ namespace WhiteBoard.Core.Tools
         public void OnMouseDown(Point position)
         {
             throw new NotImplementedException();
+        }
+
+        public void SetThickness(double thickness)
+        {
+            StrokeThickness = thickness;
         }
     }
 }

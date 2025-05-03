@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using WhiteBoard.Core.Colaboration.Interfaces;
 using WhiteBoard.Core.Models;
+using WhiteBoard.Core.Services;
 using WhiteBoard.Core.Services.Interfaces;
 using WhiteBoard.Core.Tools;
 using WhiteBoardModule.ViewModels;
@@ -43,7 +44,13 @@ namespace FooterModule.ViewModels
             var toolManager = new ToolManager();
             _tabService.AssociateToolManager(newTab.Id, toolManager);
             _tabService.SetCurrent(newTab);
-            var whiteBoard = new WhiteBoardControl();
+
+            var drawingService = new DrawingService();
+            _tabService.AssociateDrawingService(newTab.Id, drawingService);
+
+            var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
+            var whiteBoard = new WhiteBoardControl(drawingService, preferences);
+
             _tabService.AssociateWhiteBoard(newTab.Id, whiteBoard);
             Tabs.Add(newTab);
             SelectTab(newTab);

@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using WhiteBoard.Core.Services;
 using WhiteBoard.Core.Services.Interfaces;
@@ -53,6 +54,12 @@ namespace WhiteBoardModule.ViewModels
                     case WhiteBoardTool.Pan:
                         _toolManager.SetActive("Pan");
                         break;
+                    case WhiteBoardTool.FreeDraw:
+                        _toolManager.SetActive("FreeDraw");
+                        break;
+                    case WhiteBoardTool.RemoveStroke:
+                        _toolManager.SetActive("RemoveStroke");
+                        break;
                     case WhiteBoardTool.None:
                         _toolManager.SetNone();
                         break;
@@ -87,6 +94,18 @@ namespace WhiteBoardModule.ViewModels
                 if (SelectedTool == WhiteBoardTool.None)
                     _toolManager.SetNone();
             }
+        }
+
+        public void SetFreeDrawThickness(int thickness)
+        {
+            var _drawingPreferencesService = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
+            _drawingPreferencesService.StrokeThickness = thickness;
+        }
+
+        public void SetEraseRadius(int radius)
+        {
+            var _drawingPreferencesService = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
+            _drawingPreferencesService.EraseRadius = radius;
         }
     }
 }

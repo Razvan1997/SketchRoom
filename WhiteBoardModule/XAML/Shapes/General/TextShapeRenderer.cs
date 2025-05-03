@@ -8,13 +8,15 @@ using System.Windows.Input;
 using System.Windows.Media;
 using WhiteBoard.Core.Services;
 using WhiteBoard.Core.Services.Interfaces;
+using WhiteBoardModule.XAML.Interfaces;
 
 namespace WhiteBoardModule.XAML.Shapes.General
 {
-    public class TextShapeRenderer : IShapeRenderer
+    public class TextShapeRenderer : IShapeRenderer, IBackgroundChangable, IForegroundChangable
     {
         private readonly bool _withBindings;
         private readonly IShapeSelectionService _selectionService;
+        private RichTextBox _richTextBox;
         public TextShapeRenderer(bool withBindings = false)
         {
             _withBindings = withBindings;
@@ -25,7 +27,6 @@ namespace WhiteBoardModule.XAML.Shapes.General
         {
             var previewContent = Render();
 
-            // Wrapper scalabil pentru preview în formă pătrată
             return new Viewbox
             {
                 Width = 100,
@@ -117,6 +118,8 @@ namespace WhiteBoardModule.XAML.Shapes.General
                 }
             };
 
+            _richTextBox = richText;
+
             return new Border
             {
                 Padding = new Thickness(8),
@@ -145,6 +148,36 @@ namespace WhiteBoardModule.XAML.Shapes.General
             while (element != null && element is not Border)
                 element = VisualTreeHelper.GetParent(element);
             return element as Border;
+        }
+
+        public void SetBackground(Brush brush)
+        {
+            _richTextBox.Background = brush;
+        }
+
+        public void SetStroke(Brush brush)
+        {
+            //throw new NotImplementedException();
+        }
+
+        public void SetForeground(Brush brush)
+        {
+            _richTextBox.Foreground = brush;
+            _richTextBox.Foreground = brush;
+
+            foreach (Block block in _richTextBox.Document.Blocks)
+            {
+                if (block is Paragraph paragraph)
+                {
+                    foreach (Inline inline in paragraph.Inlines)
+                    {
+                        if (inline is Run run)
+                        {
+                            run.Foreground = brush;
+                        }
+                    }
+                }
+            }
         }
     }
 

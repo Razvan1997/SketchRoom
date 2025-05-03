@@ -30,12 +30,14 @@ namespace WhiteBoard.Core.Models
             set
             {
                 _isSelected = value;
-                _path.Stroke = value ? Brushes.Red : Brushes.Black;
+                _path.Stroke = value ? Brushes.Red : _originalStroke;
                 _path.StrokeDashArray = value ? new DoubleCollection { 2, 2 } : null;
+
                 if (_arrowHead != null)
                     _arrowHead.Fill = _path.Stroke;
             }
         }
+        private Brush _originalStroke = Brushes.Black;
 
         public event EventHandler? Clicked;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
@@ -129,6 +131,7 @@ namespace WhiteBoard.Core.Models
 
         public void SetStroke(Brush stroke)
         {
+            _originalStroke = stroke;
             _path.Stroke = stroke;
 
             if (_arrowHead != null)

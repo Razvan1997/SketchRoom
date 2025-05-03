@@ -16,5 +16,7 @@ namespace WhiteBoard.Core.Services.Interfaces
         FontWeight FontWeight { get; set; }
         bool IsApplyBackgroundColor { get; set; }
         bool IsApplyZIndexOrder { get; set; }
+        double StrokeThickness { get; set; }
+        double EraseRadius { get; set; }
     }
 }

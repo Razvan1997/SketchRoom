@@ -12,6 +12,10 @@ namespace SketchRoom.Models.Enums
         TableShape,
         EntityShape,
         SimpleLinesContainer,
-        BorderTextBoxShape
+        BorderTextBoxShape,
+        WhiteBoardArea,
+        TextArea,
+        ConnectorDouble,
+        ConnectorSimpleLabel
     }
 }

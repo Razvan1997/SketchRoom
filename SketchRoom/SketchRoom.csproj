@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\DarkCursor.cur" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Prism.DryIoc" Version="9.0.537" />
     <PackageReference Include="Prism.Wpf" Version="9.0.537" />
   </ItemGroup>
@@ -26,6 +30,10 @@
     <ProjectReference Include="..\WalkthroughDemo\WalkthroughDemo.csproj" />
     <ProjectReference Include="..\WhiteBoard.Core\WhiteBoard.Core.csproj" />
     <ProjectReference Include="..\WhiteBoardModule\WhiteBoardModule.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\DarkCursor.cur" />
   </ItemGroup>
 
 </Project>
