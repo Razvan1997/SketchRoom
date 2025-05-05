@@ -8,10 +8,11 @@ using System.Windows.Input;
 using System.Windows;
 using WhiteBoard.Core.Services.Interfaces;
 using System.Windows.Media;
+using WhiteBoard.Core.Helpers;
 
 namespace WhiteBoard.Core.Models
 {
-    public class BpmnWhiteBoardElementXaml : WhiteBoardElement
+    public class BpmnWhiteBoardElementXaml : WhiteBoardElement, ISerializableShape
     {
         private readonly IInteractiveShape _shape;
 
@@ -48,6 +49,16 @@ namespace WhiteBoard.Core.Models
             Canvas.SetLeft(_shape.Visual, position.X);
             Canvas.SetTop(_shape.Visual, position.Y);
         }
+
+        public BPMNShapeModelWithPosition ExportData()
+        {
+            if (_shape is not IShapeAddedXaml shapeWithRenderer)
+                throw new InvalidOperationException("Shape is not IShapeAddedXaml.");
+
+            return shapeWithRenderer.ExportData();
+        }
+
+
 
         public override string? Label { get; set; }
     }

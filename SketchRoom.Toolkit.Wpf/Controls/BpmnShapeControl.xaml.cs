@@ -181,6 +181,8 @@ namespace SketchRoom.Toolkit.Wpf
 
         public UIElement Visual => this;
 
+        public TextBox? InteractiveTextBox => throw new NotImplementedException();
+
         private void ConnectionHandle_Click(object sender, RoutedEventArgs e)
         {
             ConnectionRequested?.Invoke(this, EventArgs.Empty);

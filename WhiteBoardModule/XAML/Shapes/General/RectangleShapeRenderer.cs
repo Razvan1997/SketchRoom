@@ -1,20 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Media;
+﻿using SketchRoom.Models.Enums;
 using System.Windows;
-using System.Windows.Shapes;
-using System.Windows.Data;
-using WhiteBoard.Core.Services.Interfaces;
 using System.Windows.Controls;
-using SketchRoom.Models.Enums;
-using WhiteBoardModule.XAML.Interfaces;
+using System.Windows.Data;
+using System.Windows.Media;
+using System.Windows.Shapes;
+using WhiteBoard.Core.Models;
+using WhiteBoard.Core.Services.Interfaces;
 
 namespace WhiteBoardModule.XAML.Shapes.General
 {
-    public class RectangleShapeRenderer : IShapeRenderer, IBackgroundChangable, IStrokeChangable
+    public class RectangleShapeRenderer : IShapeRenderer, IBackgroundChangable, IStrokeChangable, IRestoreFromShape
     {
         private readonly bool _withBindings;
         private readonly IShapeSelectionService _selectionService;
@@ -114,6 +109,50 @@ namespace WhiteBoardModule.XAML.Shapes.General
                    mousePos.X > rect.ActualWidth - marginWidth ||
                    mousePos.Y < marginWidth ||
                    mousePos.Y > rect.ActualHeight - marginWidth;
+        }
+
+        public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
+        {
+            if (control is not FrameworkElement fe || _rectangle == null)
+                return null;
+
+            string? fillColor = (_rectangle.Fill as SolidColorBrush)?.Color.ToString();
+            string? strokeColor = (_rectangle.Stroke as SolidColorBrush)?.Color.ToString();
+
+            return new BPMNShapeModelWithPosition
+            {
+                Type = ShapeType.Rectangle,
+                Left = Canvas.GetLeft(fe),
+                Top = Canvas.GetTop(fe),
+                Width = fe.Width,
+                Height = fe.Height,
+                Name = fe.Name,
+                Category = "General",
+                SvgUri = null,
+                ExtraProperties = new Dictionary<string, string>
+        {
+            { "Fill", fillColor ?? "#00FFFFFF" },      // Transparent fallback
+            { "Stroke", strokeColor ?? "#FFFFFFFF" }   // White fallback
+        }
+            };
+        }
+
+        public void Restore(Dictionary<string, string> extraProperties)
+        {
+            if (_rectangle == null)
+                return;
+
+            if (extraProperties.TryGetValue("Fill", out var fillHex))
+            {
+                try { _rectangle.Fill = (SolidColorBrush)(new BrushConverter().ConvertFromString(fillHex)); }
+                catch { _rectangle.Fill = Brushes.Transparent; }
+            }
+
+            if (extraProperties.TryGetValue("Stroke", out var strokeHex))
+            {
+                try { _rectangle.Stroke = (SolidColorBrush)(new BrushConverter().ConvertFromString(strokeHex)); }
+                catch { _rectangle.Stroke = Brushes.White; }
+            }
         }
     }
 }

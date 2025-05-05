@@ -18,12 +18,12 @@ namespace WhiteBoard.Core.Services
         public event Action<FooterTabModel>? TabChanged;
         public FooterTabModel? CurrentTab { get; private set; }
         private readonly Dictionary<Guid, IDrawingService> _drawingServices = new();
-
+        public IEnumerable<FooterTabModel> AllTabs => _tabs;
         public FooterTabModel CreateNewTab(int index)
         {
             var tab = new FooterTabModel
             {
-                Name = $"Pagină-{index}",
+                Name = $"Sketch-{index}",
                 IsSelected = false
             };
 
@@ -79,6 +79,18 @@ namespace WhiteBoard.Core.Services
         public IDrawingService? GetDrawingService(Guid tabId)
         {
             return _drawingServices.TryGetValue(tabId, out var ds) ? ds : null;
+        }
+
+        public string FolderName { get; private set; } = string.Empty;
+
+        public void SetFolderName(string folderName)
+        {
+            FolderName = folderName;
+        }
+
+        public string GetFolderName()
+        {
+            return FolderName;
         }
     }
 }

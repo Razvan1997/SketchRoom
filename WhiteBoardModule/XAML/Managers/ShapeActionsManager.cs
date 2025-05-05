@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Shapes;
 using WhiteBoard.Core.Events;
-using WhiteBoardModule.XAML.Interfaces;
-using WhiteBoardModule.XAML.Shapes.General;
+using WhiteBoard.Core.Services.Interfaces;
 
 namespace WhiteBoardModule.XAML.Managers
 {

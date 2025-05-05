@@ -1,9 +1,12 @@
-﻿using SketchRoom.ViewModels;
+﻿using SketchRoom.Toolkit.Wpf.Controls;
+using SketchRoom.Toolkit.Wpf.Services;
+using SketchRoom.ViewModels;
 using SketchRoom.Windows;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
 using WalkthroughDemo;
+using WhiteBoard.Core.Services.Interfaces;
 
 namespace SketchRoom
 {
@@ -56,6 +59,21 @@ namespace SketchRoom
         {
             _hotkeyService?.Dispose();
             base.OnClosed(e);
+        }
+
+        protected override async void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            base.OnClosing(e);
+
+            var tabService = ContainerLocator.Container.Resolve<IWhiteBoardTabService>();
+
+            if (string.IsNullOrWhiteSpace(tabService.GetFolderName()))
+            {
+                tabService.SetFolderName("UnnamedSketch_" + DateTime.Now.Ticks);
+            }
+
+            var persistence = new WhiteBoardPersistenceService(tabService);
+            await persistence.SaveAllTabsAsync();
         }
     }
 }

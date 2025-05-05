@@ -274,6 +274,26 @@ namespace UsersInteractionsModule.ViewModels
                 ShapeContent = simpleContainer,
                 Category = "Containers"
             });
+
+            var connectorLabelLeft = new GenericShapeControl();
+            connectorLabelLeft.SetShapePreview(ShapeType.ConnectorLabelLeft);
+            AllShapes.Add(new BPMNShapeModel
+            {
+                Name = "ConnectorLabelLeft",
+                Type = ShapeType.ConnectorLabelLeft,
+                ShapeContent = connectorLabelLeft,
+                Category = "Connectors"
+            });
+
+            var connectorDoubleLabelLeft = new GenericShapeControl();
+            connectorDoubleLabelLeft.SetShapePreview(ShapeType.ConnectorDoubleLabelLeft);
+            AllShapes.Add(new BPMNShapeModel
+            {
+                Name = "ConnectorDoubleLabelLeft",
+                Type = ShapeType.ConnectorDoubleLabelLeft,
+                ShapeContent = connectorDoubleLabelLeft,
+                Category = "Connectors"
+            });
         }
 
         private void FilterShapes()

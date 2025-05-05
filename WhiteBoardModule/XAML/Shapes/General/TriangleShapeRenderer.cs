@@ -1,20 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using SketchRoom.Models.Enums;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using System.Windows;
-using System.Windows.Data;
+using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services.Interfaces;
-using SketchRoom.Models.Enums;
-using WhiteBoardModule.XAML.Interfaces;
 
 namespace WhiteBoardModule.XAML.Shapes.General
 {
-    public class TriangleShapeRenderer : IShapeRenderer, IBackgroundChangable, IStrokeChangable
+    public class TriangleShapeRenderer : IShapeRenderer, IBackgroundChangable, IStrokeChangable, IRestoreFromShape
     {
         private readonly bool _withBindings;
         private readonly IShapeSelectionService _selectionService;
@@ -158,6 +152,58 @@ namespace WhiteBoardModule.XAML.Shapes.General
                     return polygon;
             }
             return null;
+        }
+
+        public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
+        {
+            if (control is not FrameworkElement fe)
+                return null;
+
+            var stroke = (_triangle?.Stroke as SolidColorBrush)?.Color.ToString() ?? "#FF000000";
+            var fill = (_triangle?.Fill as SolidColorBrush)?.Color.ToString() ?? "#00FFFFFF";
+
+            return new BPMNShapeModelWithPosition
+            {
+                Type = ShapeType.Triangle,
+                Left = Canvas.GetLeft(fe),
+                Top = Canvas.GetTop(fe),
+                Width = fe.Width,
+                Height = fe.Height,
+                Name = fe.Name,
+                Category = "General",
+                SvgUri = null,
+                ExtraProperties = new Dictionary<string, string>
+        {
+            { "Stroke", stroke },
+            { "Fill", fill }
+        }
+            };
+        }
+
+        public void Restore(Dictionary<string, string> extraProperties)
+        {
+            if (_triangle == null)
+                return;
+
+            if (extraProperties.TryGetValue("Stroke", out var strokeColor))
+            {
+                try
+                {
+                    var strokeBrush = (Brush)new BrushConverter().ConvertFromString(strokeColor);
+                    _triangle.Stroke = strokeBrush;
+                }
+                catch { }
+            }
+
+            if (extraProperties.TryGetValue("Fill", out var fillColor))
+            {
+                try
+                {
+                    var fillBrush = (Brush)new BrushConverter().ConvertFromString(fillColor);
+                    _triangle.Fill = fillBrush;
+                }
+                catch { }
+            }
         }
     }
 }

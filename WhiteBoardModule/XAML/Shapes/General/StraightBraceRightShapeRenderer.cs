@@ -1,21 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using SketchRoom.Models.Enums;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows;
-using WhiteBoard.Core.Services.Interfaces;
 using System.Windows.Shapes;
-using SketchRoom.Models.Enums;
+using WhiteBoard.Core.Models;
+using WhiteBoard.Core.Services.Interfaces;
 
 namespace WhiteBoardModule.XAML.Shapes.General
 {
-    public class StraightBraceRightShapeRenderer : IShapeRenderer
+    public class StraightBraceRightShapeRenderer : IShapeRenderer, IRestoreFromShape
     {
         private readonly bool _withBindings;
         private readonly IShapeSelectionService _selectionService;
+        private Grid? _lastRenderedGrid;
         public StraightBraceRightShapeRenderer(bool withBindings = false)
         {
             _withBindings = withBindings;
@@ -63,6 +60,7 @@ namespace WhiteBoardModule.XAML.Shapes.General
                     _selectionService.Select(ShapePart.Margin, clickedPath);
                 }
             };
+            _lastRenderedGrid = grid;
             return grid;
         }
 
@@ -129,6 +127,52 @@ namespace WhiteBoardModule.XAML.Shapes.General
                     return found;
             }
             return null;
+        }
+
+        public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
+        {
+            if (control is not FrameworkElement fe)
+                return null;
+
+            var path = FindFirstPathInChildren(fe) as Path;
+
+            string? strokeColor = (path?.Stroke as SolidColorBrush)?.Color.ToString();
+
+            return new BPMNShapeModelWithPosition
+            {
+                Type = ShapeType.StraightBraceRightShape,
+                Left = Canvas.GetLeft(fe),
+                Top = Canvas.GetTop(fe),
+                Width = fe.Width,
+                Height = fe.Height,
+                Name = fe.Name,
+                Category = "General",
+                SvgUri = null,
+                ExtraProperties = new Dictionary<string, string>
+        {
+            { "Stroke", strokeColor ?? "#FFFFFFFF" },
+            { "StrokeThickness", (path?.StrokeThickness.ToString() ?? "2") }
+        }
+            };
+        }
+
+        public void Restore(Dictionary<string, string> extraProperties)
+        {
+            var path = FindFirstPathInChildren(_lastRenderedGrid ?? new Grid());
+            if (path == null)
+                return;
+
+            if (extraProperties.TryGetValue("Stroke", out var strokeHex))
+            {
+                try { path.Stroke = (SolidColorBrush)(new BrushConverter().ConvertFromString(strokeHex)); }
+                catch { path.Stroke = Brushes.White; }
+            }
+
+            if (extraProperties.TryGetValue("StrokeThickness", out var thicknessStr) &&
+                double.TryParse(thicknessStr, out var thickness))
+            {
+                path.StrokeThickness = thickness;
+            }
         }
     }
 }

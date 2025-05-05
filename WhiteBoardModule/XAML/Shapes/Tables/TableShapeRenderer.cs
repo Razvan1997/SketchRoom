@@ -10,10 +10,12 @@ using WhiteBoard.Core.Services.Interfaces;
 using Microsoft.ML.Transforms;
 using System.Windows.Input;
 using System.Windows.Shapes;
+using SketchRoom.Models.Enums;
+using WhiteBoard.Core.Models;
 
 namespace WhiteBoardModule.XAML.Shapes.Tables
 {
-    public class TableShapeRenderer : IShapeRenderer, IShapeTableProvider
+    public class TableShapeRenderer : IShapeRenderer, IShapeTableProvider, IRestoreFromShape
     {
         private EditableTableControl? _editableTableControl;
         private Brush _headerBackground = Brushes.Black;
@@ -123,6 +125,52 @@ namespace WhiteBoardModule.XAML.Shapes.Tables
             Grid.SetRow(border, row);
             Grid.SetColumn(border, col);
             grid.Children.Add(border);
+        }
+
+        public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
+        {
+            if (control is not FrameworkElement fe)
+                return null;
+
+            if (_editableTableControl == null)
+                return null;
+
+            var position = new Point(Canvas.GetLeft(fe), Canvas.GetTop(fe));
+            var size = new Size(fe.Width, fe.Height);
+
+            var data = _editableTableControl.ExportTableData();
+
+          
+            return new BPMNShapeModelWithPosition
+            {
+                Type = ShapeType.TableShape,
+                Left = position.X,
+                Top = position.Y,
+                Width = size.Width,
+                Height = size.Height,
+                Name = fe.Name,
+                Category = "Tables",
+                SvgUri = null,
+                ExtraProperties = new Dictionary<string, string>
+                {
+                    { "TableJson", data.ToJson() }
+                }
+            };
+        }
+
+        public void Restore(Dictionary<string, string> extraProperties)
+        {
+            if (_editableTableControl == null)
+                return;
+
+            if (extraProperties.TryGetValue("TableJson", out var json))
+            {
+                var model = TableSerializedModel.FromJson(json);
+                if (model != null)
+                {
+                    _editableTableControl.LoadFrom(model);
+                }
+            }
         }
 
     }

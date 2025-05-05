@@ -22,5 +22,8 @@ namespace WhiteBoard.Core.Services.Interfaces
         void AssociateToolManager(Guid tabId, IToolManager toolManager);
         event Action<FooterTabModel>? TabChanged;
         void AssociateDrawingService(Guid tabId, IDrawingService drawingService);
+        IEnumerable<FooterTabModel> AllTabs { get; }
+        void SetFolderName(string name);
+        string GetFolderName();
     }
 }

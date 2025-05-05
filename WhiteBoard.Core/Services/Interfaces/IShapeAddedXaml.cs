@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using WhiteBoard.Core.Models;
 
 namespace WhiteBoard.Core.Services.Interfaces
 {
@@ -12,5 +13,6 @@ namespace WhiteBoard.Core.Services.Interfaces
         IShapeRenderer? Renderer { get; }
         ITableShapeRender? TableShape => Renderer is IShapeTableProvider p ? p.TableShape : null;
         ShapeType GetShapeType();
+        BPMNShapeModelWithPosition ExportData();
     }
 }

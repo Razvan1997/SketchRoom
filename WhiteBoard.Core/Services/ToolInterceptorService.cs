@@ -87,6 +87,10 @@ namespace WhiteBoard.Core.Services
                         case "ConnectorCurved":
                             _toolManager.SetActive("ConnectorCurved");
                             return;
+
+                        case "Resize":
+                            _toolManager.SetActive("BpmnTool");
+                            return;
                     }
                 }
                 else

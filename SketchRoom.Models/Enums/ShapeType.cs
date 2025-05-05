@@ -30,6 +30,9 @@ namespace SketchRoom.Models.Enums
         TreeNodeShape,
         BorderTextBox,
         ConnectorDescriptionShape,
-        SimpleContainer
+        SimpleContainer,
+        ConnectorLabelLeft, 
+        ConnectorDoubleLabelLeft,
+        Unknown
     }
 }

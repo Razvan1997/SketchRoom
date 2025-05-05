@@ -13,6 +13,8 @@ using System.Windows.Input;
 using WhiteBoard.Core.Services;
 using WhiteBoard.Core.UndoRedo;
 using WhiteBoard.Core.Helpers;
+using System.Windows.Media;
+using System.Windows.Media.Media3D;
 
 namespace WhiteBoard.Core.Tools
 {
@@ -60,6 +62,10 @@ namespace WhiteBoard.Core.Tools
         {
             _draggingShape = null;
             _isDrawing = true;
+
+            if (IsInsideResizeThumb(e.OriginalSource as DependencyObject))
+                return;
+
             foreach (var el in _canvas.Children.OfType<FrameworkElement>().Reverse())
             {
                 var bounds = new Rect(
@@ -215,6 +221,21 @@ namespace WhiteBoard.Core.Tools
             }
 
             return null;
+        }
+
+        private bool IsInsideResizeThumb(DependencyObject? source)
+        {
+            while (source != null)
+            {
+                if (source is Thumb thumb && thumb.Tag?.ToString() == "Resize")
+                    return true;
+
+                source = (source is Visual || source is Visual3D)
+                    ? VisualTreeHelper.GetParent(source)
+                    : LogicalTreeHelper.GetParent(source);
+            }
+
+            return false;
         }
     }
 }

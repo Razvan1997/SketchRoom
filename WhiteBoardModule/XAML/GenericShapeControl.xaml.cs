@@ -7,12 +7,12 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using WhiteBoard.Core.Events;
+using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services;
 using WhiteBoard.Core.Services.Interfaces;
 using WhiteBoard.Core.Tools;
 using WhiteBoard.Core.UndoRedo;
 using WhiteBoardModule.Events;
-using WhiteBoardModule.XAML.Interfaces;
 using WhiteBoardModule.XAML.Managers;
 using WhiteBoardModule.XAML.Shapes.Containers;
 using WhiteBoardModule.XAML.Shapes.Entity;
@@ -44,6 +44,8 @@ namespace WhiteBoardModule.XAML
             { ShapeType.ShapeText, ShapeContextType.TextArea },
             { ShapeType.ConnectorDoubleShapeLabel, ShapeContextType.ConnectorDouble },
             { ShapeType.ConnectorShapeLabel, ShapeContextType.ConnectorSimpleLabel },
+            { ShapeType.ConnectorDoubleLabelLeft, ShapeContextType.ConnectorDouble },
+            { ShapeType.ConnectorLabelLeft, ShapeContextType.ConnectorSimpleLabel },
         };
 
         private readonly IContextMenuService _contextMenuService;
@@ -265,18 +267,28 @@ namespace WhiteBoardModule.XAML
 
         public void Select()
         {
-            ResizeLeft.Visibility = ResizeRight.Visibility = ResizeTop.Visibility = ResizeBottom.Visibility = Visibility.Visible;
+            ResizeTopLeft.Visibility = ResizeTop.Visibility = ResizeTopRight.Visibility =
+            ResizeRight.Visibility = ResizeBottomRight.Visibility = ResizeBottom.Visibility =
+            ResizeBottomLeft.Visibility = ResizeLeft.Visibility = Visibility.Visible;
+
             RotateIcon.Visibility = Visibility.Visible;
 
+            ResizeTopLeft.Cursor = Cursors.SizeNWSE;
             ResizeTop.Cursor = GetRotatedCursor("Top");
-            ResizeBottom.Cursor = GetRotatedCursor("Bottom");
-            ResizeLeft.Cursor = GetRotatedCursor("Left");
+            ResizeTopRight.Cursor = Cursors.SizeNESW;
             ResizeRight.Cursor = GetRotatedCursor("Right");
+            ResizeBottomRight.Cursor = Cursors.SizeNWSE;
+            ResizeBottom.Cursor = GetRotatedCursor("Bottom");
+            ResizeBottomLeft.Cursor = Cursors.SizeNESW;
+            ResizeLeft.Cursor = GetRotatedCursor("Left");
         }
 
         public void Deselect()
         {
-            ResizeLeft.Visibility = ResizeRight.Visibility = ResizeTop.Visibility = ResizeBottom.Visibility = Visibility.Collapsed;
+            ResizeTopLeft.Visibility = ResizeTop.Visibility = ResizeTopRight.Visibility =
+            ResizeRight.Visibility = ResizeBottomRight.Visibility = ResizeBottom.Visibility =
+            ResizeBottomLeft.Visibility = ResizeLeft.Visibility = Visibility.Collapsed;
+
             RotateIcon.Visibility = Visibility.Collapsed;
         }
 
@@ -291,22 +303,36 @@ namespace WhiteBoardModule.XAML
 
         private void InitResizeThumbs()
         {
-            ResizeLeft.DragDelta += (s, e) => Resize(-e.HorizontalChange, 0, true, false);
-            ResizeRight.DragDelta += (s, e) => Resize(e.HorizontalChange, 0, false, false);
+            ResizeTopLeft.DragDelta += (s, e) => Resize(-e.HorizontalChange, -e.VerticalChange, true, true);
             ResizeTop.DragDelta += (s, e) => Resize(0, -e.VerticalChange, false, true);
+            ResizeTopRight.DragDelta += (s, e) => Resize(e.HorizontalChange, -e.VerticalChange, false, true);
+            ResizeRight.DragDelta += (s, e) => Resize(e.HorizontalChange, 0, false, false);
+            ResizeBottomRight.DragDelta += (s, e) => Resize(e.HorizontalChange, e.VerticalChange, false, false);
             ResizeBottom.DragDelta += (s, e) => Resize(0, e.VerticalChange, false, false);
+            ResizeBottomLeft.DragDelta += (s, e) => Resize(-e.HorizontalChange, e.VerticalChange, true, false);
+            ResizeLeft.DragDelta += (s, e) => Resize(-e.HorizontalChange, 0, true, false);
 
-            ResizeLeft.DragStarted += SaveOriginalSize;
-            ResizeRight.DragStarted += SaveOriginalSize;
+            // DragStarted for undo
+            ResizeTopLeft.DragStarted += SaveOriginalSize;
             ResizeTop.DragStarted += SaveOriginalSize;
+            ResizeTopRight.DragStarted += SaveOriginalSize;
+            ResizeRight.DragStarted += SaveOriginalSize;
+            ResizeBottomRight.DragStarted += SaveOriginalSize;
             ResizeBottom.DragStarted += SaveOriginalSize;
+            ResizeBottomLeft.DragStarted += SaveOriginalSize;
+            ResizeLeft.DragStarted += SaveOriginalSize;
 
-            ResizeLeft.DragCompleted += CommitResize;
-            ResizeRight.DragCompleted += CommitResize;
+            // DragCompleted for commit
+            ResizeTopLeft.DragCompleted += CommitResize;
             ResizeTop.DragCompleted += CommitResize;
+            ResizeTopRight.DragCompleted += CommitResize;
+            ResizeRight.DragCompleted += CommitResize;
+            ResizeBottomRight.DragCompleted += CommitResize;
             ResizeBottom.DragCompleted += CommitResize;
+            ResizeBottomLeft.DragCompleted += CommitResize;
+            ResizeLeft.DragCompleted += CommitResize;
 
-
+            // Connector click handlers
             ConnectorTop.MouseLeftButtonDown += (s, e) => RaiseConnector("Top", e);
             ConnectorRight.MouseLeftButtonDown += (s, e) => RaiseConnector("Right", e);
             ConnectorBottom.MouseLeftButtonDown += (s, e) => RaiseConnector("Bottom", e);
@@ -482,29 +508,85 @@ namespace WhiteBoardModule.XAML
             _textBox.Foreground = brush;
         }
 
-        private Cursor GetRotatedCursor(string originalSide)
+        private Cursor GetRotatedCursor(string position)
         {
             double angle = _rotateTransform.Angle % 360;
             if (angle < 0) angle += 360;
 
-            // Determină direcția efectivă pe baza rotației
-            if (originalSide == "Top" || originalSide == "Bottom")
+            // Normalizează în cadrane de 45°
+            int sector = (int)((angle + 22.5) / 45) % 8;
+
+            // Maparea poziției și sectorului la cursor
+            return (position, sector) switch
             {
-                if ((angle >= 45 && angle < 135) || (angle >= 225 && angle < 315))
-                    return Cursors.SizeWE; // devine stânga-dreapta
-                else
-                    return Cursors.SizeNS;
+                ("Top", 0 or 4) => Cursors.SizeNS,
+                ("Top", 1 or 5) => Cursors.SizeNESW,
+                ("Top", 2 or 6) => Cursors.SizeWE,
+                ("Top", 3 or 7) => Cursors.SizeNWSE,
+
+                ("Bottom", 0 or 4) => Cursors.SizeNS,
+                ("Bottom", 1 or 5) => Cursors.SizeNESW,
+                ("Bottom", 2 or 6) => Cursors.SizeWE,
+                ("Bottom", 3 or 7) => Cursors.SizeNWSE,
+
+                ("Left", 0 or 4) => Cursors.SizeWE,
+                ("Left", 1 or 5) => Cursors.SizeNWSE,
+                ("Left", 2 or 6) => Cursors.SizeNS,
+                ("Left", 3 or 7) => Cursors.SizeNESW,
+
+                ("Right", 0 or 4) => Cursors.SizeWE,
+                ("Right", 1 or 5) => Cursors.SizeNWSE,
+                ("Right", 2 or 6) => Cursors.SizeNS,
+                ("Right", 3 or 7) => Cursors.SizeNESW,
+
+                ("TopLeft", 0 or 4) => Cursors.SizeNWSE,
+                ("TopLeft", 1 or 5) => Cursors.SizeNS,
+                ("TopLeft", 2 or 6) => Cursors.SizeNESW,
+                ("TopLeft", 3 or 7) => Cursors.SizeWE,
+
+                ("TopRight", 0 or 4) => Cursors.SizeNESW,
+                ("TopRight", 1 or 5) => Cursors.SizeWE,
+                ("TopRight", 2 or 6) => Cursors.SizeNWSE,
+                ("TopRight", 3 or 7) => Cursors.SizeNS,
+
+                ("BottomLeft", 0 or 4) => Cursors.SizeNESW,
+                ("BottomLeft", 1 or 5) => Cursors.SizeWE,
+                ("BottomLeft", 2 or 6) => Cursors.SizeNWSE,
+                ("BottomLeft", 3 or 7) => Cursors.SizeNS,
+
+                ("BottomRight", 0 or 4) => Cursors.SizeNWSE,
+                ("BottomRight", 1 or 5) => Cursors.SizeNS,
+                ("BottomRight", 2 or 6) => Cursors.SizeNESW,
+                ("BottomRight", 3 or 7) => Cursors.SizeWE,
+
+                _ => Cursors.Arrow
+            };
+        }
+
+        public BPMNShapeModelWithPosition ExportData()
+        {
+            if (Renderer == null)
+                throw new InvalidOperationException("Renderer is missing.");
+
+            var model = Renderer.ExportData(this);
+
+            if (this.Content is Grid grid)
+            {
+                var textBox = grid.Children
+                    .OfType<TextBox>()
+                    .FirstOrDefault(tb => tb.Tag?.ToString() == "interactive");
+
+                if (textBox != null)
+                {
+                    model.ExtraProperties ??= new Dictionary<string, string>();
+                    model.ExtraProperties["Text"] = textBox.Text;
+                    model.ExtraProperties["FontSize"] = textBox.FontSize.ToString();
+                    model.ExtraProperties["Foreground"] = textBox.Foreground.ToString();
+                    model.ExtraProperties["TextWrapping"] = textBox.TextWrapping.ToString();
+                }
             }
 
-            if (originalSide == "Left" || originalSide == "Right")
-            {
-                if ((angle >= 45 && angle < 135) || (angle >= 225 && angle < 315))
-                    return Cursors.SizeNS; // devine sus-jos
-                else
-                    return Cursors.SizeWE;
-            }
-
-            return Cursors.Arrow;
+            return model;
         }
     }
 }

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using WhiteBoardModule.Events;
 
 namespace SketchRoom.ViewModels
@@ -32,11 +33,23 @@ namespace SketchRoom.ViewModels
 
         public void OnLoaded()
         {
+            ShowContinueDialog();
+
             var user = SecureStorage.LoadUser();
             if (user == null)
             {
                 ShowRegistration();
             }
+        }
+
+        private void ShowContinueDialog()
+        {
+            var dialog = new ContinueDialog
+            {
+                Owner = Application.Current.MainWindow 
+            };
+
+            dialog.ShowDialog();
         }
 
 

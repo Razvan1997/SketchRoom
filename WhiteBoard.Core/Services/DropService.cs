@@ -1,21 +1,10 @@
-﻿using Microsoft.VisualBasic;
-using SketchRoom.Models.Enums;
+﻿using SketchRoom.Models.Enums;
 using SketchRoom.Models.Shapes;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Media.Media3D;
-using System.Windows.Shapes;
-using System.Xml.Linq;
 using WhiteBoard.Core.Events;
 using WhiteBoard.Core.Factory.Interfaces;
 using WhiteBoard.Core.Helpers;
@@ -35,11 +24,12 @@ namespace WhiteBoard.Core.Services
         private readonly IDrawingPreferencesService _drawingPreferncesService;
         private readonly BpmnConnectorTool _connectorTool;
         private readonly BpmnConnectorCurvedTool _connectorCurvedTool;
-        private readonly Dictionary<FrameworkElement, BPMNNode> _nodeMap;
+        public Dictionary<FrameworkElement, BPMNNode> _nodeMap { get; }
         private readonly SelectedToolService _selectedToolService;
         private readonly UndoRedoService _undoRedoService;
         private readonly IZOrderService _zOrderService;
         private IInteractiveShape? _lastClickedShape;
+        private readonly IShapeRendererFactory _rendererFactory;
 
         public DropService(
             Canvas drawingCanvas,
@@ -48,10 +38,11 @@ namespace WhiteBoard.Core.Services
             BpmnConnectorTool connectorTool,
             BpmnConnectorCurvedTool connectorCurvedTool,
             Dictionary<FrameworkElement, BPMNNode> nodeMap,
-            SelectedToolService selectedToolService, 
+            SelectedToolService selectedToolService,
             UndoRedoService undoRedoService,
             IDrawingPreferencesService drawingPreferencesService,
-            IZOrderService zOrderService)
+            IZOrderService zOrderService,
+            IShapeRendererFactory rendererFactory)
         {
             _drawingCanvas = drawingCanvas;
             _factory = factory;
@@ -66,6 +57,7 @@ namespace WhiteBoard.Core.Services
 
             if (_drawingPreferncesService is INotifyPropertyChanged notifier)
                 notifier.PropertyChanged += OnPreferencesChanged;
+            _rendererFactory = rendererFactory;
         }
 
         private void OnPreferencesChanged(object? sender, PropertyChangedEventArgs e)
@@ -88,7 +80,7 @@ namespace WhiteBoard.Core.Services
             {
                 visualElement = CreateVisualElement(shape.SvgUri, dropPos);
                 visualElement.Tag = "interactive";
-                 ShapeMetadata.SetSvgUri(visualElement, shape.SvgUri);
+                ShapeMetadata.SetSvgUri(visualElement, shape.SvgUri);
             }
             else if (shape.ShapeContent is IInteractiveShape prototype)
             {
@@ -108,6 +100,47 @@ namespace WhiteBoard.Core.Services
                     }
                 };
             }
+            return visualElement;
+        }
+
+        public FrameworkElement? HandleDropSavedElements(BPMNShapeModelWithPosition shape, Point dropPos, IInteractiveShape? interactiveShape)
+        {
+            FrameworkElement? visualElement = null;
+
+            if (shape.SvgUri != null)
+            {
+                visualElement = CreateVisualElement(shape.SvgUri, dropPos);
+                visualElement.Tag = "interactive";
+                ShapeMetadata.SetSvgUri(visualElement, shape.SvgUri);
+            }
+            else if (shape.Type.HasValue && interactiveShape != null)
+            {
+                // setezi tipul formei pe instanța deja creată
+                interactiveShape.SetShape(shape.Type.Value);
+                shape.ShapeContent = interactiveShape;
+
+                // creezi elementul vizual pe baza acesteia
+                visualElement = CreateXamlElement(interactiveShape, shape.Type, dropPos);
+                visualElement.Tag = "interactive";
+
+                // 🔁 Aplică stilurile restaurate
+                ShapeStyleRestorer.ApplyStyle(shape, visualElement);
+            }
+
+            // Autofocus pentru ShapeText
+            if (visualElement != null && shape.Type == ShapeType.ShapeText)
+            {
+                visualElement.Loaded += (_, _) =>
+                {
+                    if (visualElement is DependencyObject root)
+                    {
+                        var textBox = FindFirstTextBox(root);
+                        textBox?.Focus();
+                        textBox?.SelectAll();
+                    }
+                };
+            }
+
             return visualElement;
         }
 
@@ -291,6 +324,24 @@ namespace WhiteBoard.Core.Services
                 if (decorator.Child == element)
                     decorator.Child = null;
             }
+        }
+
+        public bool TryGetShapeWrapper(FrameworkElement element, out BpmnWhiteBoardElementXaml? wrapper)
+        {
+            if (element is null)
+            {
+                wrapper = null;
+                return false;
+            }
+
+            if (_droppedShapes.FirstOrDefault(s => s.Visual == element) is IInteractiveShape shape)
+            {
+                wrapper = new BpmnWhiteBoardElementXaml(shape);
+                return true;
+            }
+
+            wrapper = null;
+            return false;
         }
     }
 }

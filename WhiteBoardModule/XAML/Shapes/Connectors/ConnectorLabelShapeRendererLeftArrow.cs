@@ -1,5 +1,4 @@
-﻿using SketchRoom.Models.Enums;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
@@ -9,11 +8,12 @@ using WhiteBoard.Core.Services.Interfaces;
 
 namespace WhiteBoardModule.XAML.Shapes.Connectors
 {
-    public class ConnectorLabelShapeRenderer : IShapeRenderer, IStrokeChangable, IForegroundChangable, IRestoreFromShape
+    public class ConnectorLabelShapeRendererLeftArrow : IShapeRenderer, IStrokeChangable, IForegroundChangable, IRestoreFromShape
     {
         private readonly bool _withBindings;
         private Grid? _gridPanel;
-        public ConnectorLabelShapeRenderer(bool withBindings = false)
+
+        public ConnectorLabelShapeRendererLeftArrow(bool withBindings = false)
         {
             _withBindings = withBindings;
         }
@@ -32,6 +32,21 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 VerticalAlignment = VerticalAlignment.Center
             };
 
+            var leftArrow = new Polygon
+            {
+                Points = new PointCollection
+                {
+                    new Point(10, 0),
+                    new Point(0, 5),
+                    new Point(10, 10)
+                },
+                Fill = preferences.SelectedColor,
+                Width = 10,
+                Height = 10,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Left
+            };
+
             var leftLine = new Rectangle
             {
                 Height = 2,
@@ -48,41 +63,26 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 VerticalAlignment = VerticalAlignment.Center
             };
 
-            var arrow = new Polygon
-            {
-                Points = new PointCollection
-        {
-            new Point(0, 0),
-            new Point(10, 5),
-            new Point(0, 10)
-        },
-                Fill = preferences.SelectedColor,
-                Width = 10,
-                Height = 10,
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Right
-            };
-
             var grid = new Grid
             {
                 Width = 100,
                 Height = 40
             };
 
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-            Grid.SetColumn(leftLine, 0);
-            Grid.SetColumn(label, 1);
-            Grid.SetColumn(rightLine, 2);
-            Grid.SetColumn(arrow, 3);
+            Grid.SetColumn(leftArrow, 0);
+            Grid.SetColumn(leftLine, 1);
+            Grid.SetColumn(label, 2);
+            Grid.SetColumn(rightLine, 3);
 
+            grid.Children.Add(leftArrow);
             grid.Children.Add(leftLine);
             grid.Children.Add(label);
             grid.Children.Add(rightLine);
-            grid.Children.Add(arrow);
 
             return new Viewbox
             {
@@ -97,7 +97,6 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
         {
             var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
 
-            // Creează TextBox (label)
             var labelBox = new TextBox
             {
                 Text = "Label",
@@ -116,15 +115,30 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
 
             labelBox.GotFocus += (s, e) =>
             {
-                labelBox.Foreground = preferences.SelectedColor; // sau orice culoare vrei tu
+                labelBox.Foreground = preferences.SelectedColor;
             };
 
             if (_withBindings)
             {
                 labelBox.SetBinding(TextBox.FontWeightProperty, new Binding(nameof(preferences.FontWeight)) { Source = preferences });
-                //labelBox.SetBinding(TextBox.FontSizeProperty, new Binding(nameof(preferences.FontSize)) { Source = preferences });
                 labelBox.SetBinding(TextBox.ForegroundProperty, new Binding(nameof(preferences.SelectedColor)) { Source = preferences });
             }
+
+            var arrow = new Polygon
+            {
+                Points = new PointCollection
+                {
+                    new Point(10, 0),
+                    new Point(0, 5),
+                    new Point(10, 10)
+                },
+                Fill = preferences.SelectedColor,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Width = 10,
+                Height = 10,
+                Name = "ConnectorArrow"
+            };
 
             var leftLine = new Rectangle
             {
@@ -144,42 +158,26 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 Name = "ConnectorLineRight"
             };
 
-            var arrow = new Polygon
-            {
-                Points = new PointCollection
-                {
-                    new Point(0, 0),
-                    new Point(10, 5),
-                    new Point(0, 10)
-                },
-                Fill = preferences.SelectedColor,
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Width = 10,
-                Height = 10,
-                Name = "ConnectorArrow"
-            };
-
             var grid = new Grid
             {
                 VerticalAlignment = VerticalAlignment.Center,
                 Height = 40
             };
 
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-            Grid.SetColumn(leftLine, 0);
-            Grid.SetColumn(labelBox, 1);
-            Grid.SetColumn(rightLine, 2);
-            Grid.SetColumn(arrow, 3);
+            Grid.SetColumn(arrow, 0);
+            Grid.SetColumn(leftLine, 1);
+            Grid.SetColumn(labelBox, 2);
+            Grid.SetColumn(rightLine, 3);
 
+            grid.Children.Add(arrow);
             grid.Children.Add(leftLine);
             grid.Children.Add(labelBox);
             grid.Children.Add(rightLine);
-            grid.Children.Add(arrow);
 
             grid.Tag = new Dictionary<string, object>
             {
@@ -188,6 +186,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 { "RightLine", rightLine },
                 { "Arrow", arrow }
             };
+
             _gridPanel = grid;
             return grid;
         }
@@ -242,7 +241,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
 
             return new BPMNShapeModelWithPosition
             {
-                Type = ShapeType.ConnectorShapeLabel,
+                Type = SketchRoom.Models.Enums.ShapeType.ConnectorLabelLeft,
                 Left = position.X,
                 Top = position.Y,
                 Width = size.Width,
@@ -264,7 +263,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
             if (_gridPanel?.Tag is not Dictionary<string, object> tag)
                 return;
 
-            if (tag.TryGetValue("LabelText", out var labelObj) && labelObj is TextBox label)
+            if (tag.TryGetValue("LabelText", out var lblObj) && lblObj is TextBox label)
             {
                 if (extraProperties.TryGetValue("LabelText", out var labelText))
                     label.Text = labelText;

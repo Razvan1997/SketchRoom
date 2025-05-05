@@ -8,14 +8,16 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services.Interfaces;
 
 namespace WhiteBoardModule.XAML.Shapes.Containers
 {
-    public class HorizontalPoolLaneOneRenderer : IShapeRenderer
+    public class HorizontalPoolLaneOneRenderer : IShapeRenderer, IRestoreFromShape
     {
         private readonly bool _withBindings;
         private readonly IShapeSelectionService _selectionService;
+        private Grid? _renderedGrid;
         public HorizontalPoolLaneOneRenderer(bool withBindings = false)
         {
             _withBindings = withBindings;
@@ -220,7 +222,7 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 Grid.SetColumn(contentBorder, 1);
                 outerGrid.Children.Add(contentBorder);
             }
-
+            _renderedGrid = outerGrid;
             return outerGrid;
         }
 
@@ -232,6 +234,75 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                    mousePos.X > grid.ActualWidth - marginWidth ||
                    mousePos.Y < marginWidth ||
                    mousePos.Y > grid.ActualHeight - marginWidth;
+        }
+
+        public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
+        {
+            if (control is not FrameworkElement fe)
+                return null;
+
+            if (fe is not Grid grid)
+                return null;
+
+            var position = new Point(Canvas.GetLeft(fe), Canvas.GetTop(fe));
+            var size = new Size(fe.Width, fe.Height);
+
+            string poolText = "";
+            var laneTexts = new List<string>();
+
+            foreach (var child in grid.Children)
+            {
+                if (child is Border border && border.Child is TextBox tb)
+                {
+                    int row = Grid.GetRow(border);
+                    if (row == 0)
+                        poolText = tb.Text;
+                    else if (row >= 1 && row <= 3)
+                        laneTexts.Add(tb.Text);
+                }
+            }
+
+            return new BPMNShapeModelWithPosition
+            {
+                Type = ShapeType.ContainerHorizontalPoolLineOneShape,
+                Left = position.X,
+                Top = position.Y,
+                Width = size.Width,
+                Height = size.Height,
+                Name = fe.Name,
+                Category = "Pool",
+                SvgUri = null,
+                ExtraProperties = new Dictionary<string, string>
+        {
+            { "PoolName", poolText },
+            { "Lane1", laneTexts.ElementAtOrDefault(0) ?? "" },
+            { "Lane2", laneTexts.ElementAtOrDefault(1) ?? "" },
+            { "Lane3", laneTexts.ElementAtOrDefault(2) ?? "" }
+        }
+            };
+        }
+
+        public void Restore(Dictionary<string, string> extraProperties)
+        {
+            if (_renderedGrid == null) return;
+
+            foreach (var child in _renderedGrid.Children.OfType<Border>())
+            {
+                if (child.Child is TextBox tb)
+                {
+                    if (tb.Name == "PoolTextBox" && extraProperties.TryGetValue("PoolName", out var poolText))
+                        tb.Text = poolText;
+
+                    if (tb.Name == "Lane1TextBox" && extraProperties.TryGetValue("Lane1", out var lane1))
+                        tb.Text = lane1;
+
+                    if (tb.Name == "Lane2TextBox" && extraProperties.TryGetValue("Lane2", out var lane2))
+                        tb.Text = lane2;
+
+                    if (tb.Name == "Lane3TextBox" && extraProperties.TryGetValue("Lane3", out var lane3))
+                        tb.Text = lane3;
+                }
+            }
         }
     }
 }

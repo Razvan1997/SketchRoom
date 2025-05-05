@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using WhiteBoard.Core.Models;
 
 namespace WhiteBoard.Core.Services.Interfaces
 {
@@ -16,5 +17,6 @@ namespace WhiteBoard.Core.Services.Interfaces
         {
             // implementare implicită: nu face nimic
         }
+        BPMNShapeModelWithPosition? ExportData(IInteractiveShape control);
     }
 }

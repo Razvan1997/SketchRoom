@@ -58,41 +58,91 @@
             VerticalAlignment="Stretch" />
         <!--  Thumbs pentru resize  -->
         <Thumb
-            x:Name="ResizeLeft"
-            Width="2"
+            x:Name="ResizeTopLeft"
+            Margin="-10,-10,0,0"
             HorizontalAlignment="Left"
-            VerticalAlignment="Stretch"
-            Cursor="SizeWE"
-            Style="{StaticResource VerticalDashedLineThumbStyle}"
+            VerticalAlignment="Top"
+            Cursor="SizeNWSE"
+            Tag="Resize"
+            Style="{StaticResource ResizeThumbCircleStyle}"
             Visibility="Collapsed" />
 
-        <Thumb
-            x:Name="ResizeRight"
-            Width="2"
-            HorizontalAlignment="Right"
-            VerticalAlignment="Stretch"
-            Cursor="SizeWE"
-            Style="{StaticResource VerticalDashedLineThumbStyle}"
-            Visibility="Collapsed" />
-
+        <!--  Top  -->
         <Thumb
             x:Name="ResizeTop"
-            Height="2"
-            HorizontalAlignment="Stretch"
+            Margin="0,-10,0,0"
+            HorizontalAlignment="Center"
             VerticalAlignment="Top"
             Cursor="SizeNS"
-            Style="{StaticResource HorizontalDashedLineThumbStyle}"
+            Tag="Resize"
+            Style="{StaticResource ResizeThumbCircleStyle}"
             Visibility="Collapsed" />
 
+        <!--  TopRight  -->
+        <Thumb
+            x:Name="ResizeTopRight"
+            Margin="0,-10,-10,0"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top"
+            Tag="Resize"
+            Cursor="SizeNESW"
+            Style="{StaticResource ResizeThumbCircleStyle}"
+            Visibility="Collapsed" />
+
+        <!--  Right  -->
+        <Thumb
+            x:Name="ResizeRight"
+            Margin="0,0,-10,0"
+            HorizontalAlignment="Right"
+            Tag="Resize"
+            VerticalAlignment="Center"
+            Cursor="SizeWE"
+            Style="{StaticResource ResizeThumbCircleStyle}"
+            Visibility="Collapsed" />
+
+        <!--  BottomRight  -->
+        <Thumb
+            x:Name="ResizeBottomRight"
+            Margin="0,0,-10,-10"
+            Tag="Resize"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Bottom"
+            Cursor="SizeNWSE"
+            Style="{StaticResource ResizeThumbCircleStyle}"
+            Visibility="Collapsed" />
+
+        <!--  Bottom  -->
         <Thumb
             x:Name="ResizeBottom"
-            Height="2"
-            HorizontalAlignment="Stretch"
+            Margin="0,0,0,-10"
+            HorizontalAlignment="Center"
+            Tag="Resize"
             VerticalAlignment="Bottom"
             Cursor="SizeNS"
-            Style="{StaticResource HorizontalDashedLineThumbStyle}"
+            Style="{StaticResource ResizeThumbCircleStyle}"
             Visibility="Collapsed" />
 
+        <!--  BottomLeft  -->
+        <Thumb
+            x:Name="ResizeBottomLeft"
+            Tag="Resize"
+            Margin="-10,0,0,-10"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Bottom"
+            Cursor="SizeNESW"
+            Style="{StaticResource ResizeThumbCircleStyle}"
+            Visibility="Collapsed" />
+
+        <!--  Left  -->
+        <Thumb
+            x:Name="ResizeLeft"
+            Margin="-10,0,0,0"
+            HorizontalAlignment="Left"
+            Tag="Resize"
+            VerticalAlignment="Center"
+            Cursor="SizeWE"
+            Style="{StaticResource ResizeThumbCircleStyle}"
+            Visibility="Collapsed" />
 
         <!--  Top connector  -->
         <Rectangle

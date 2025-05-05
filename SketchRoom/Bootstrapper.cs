@@ -14,6 +14,8 @@ using WhiteBoard.Core.Factory.Interfaces;
 using WhiteBoard.Core.Services;
 using WhiteBoard.Core.Services.Interfaces;
 using WhiteBoard.Core.Tools;
+using WhiteBoardModule;
+using WhiteBoardModule.XAML;
 
 namespace SketchRoom
 {
@@ -55,6 +57,8 @@ namespace SketchRoom
             containerRegistry.RegisterSingleton<UndoRedoService>();
             containerRegistry.RegisterSingleton<IZOrderService, ZOrderService>();
             containerRegistry.RegisterSingleton<IContextMenuService, ContextMenuService>();
+            containerRegistry.RegisterSingleton<IShapeRendererFactory, ShapeRendererFactory>();
+            containerRegistry.RegisterSingleton<IGenericShapeFactory, GenericShapeFactory>();
         }
 
         protected override void OnInitialized()

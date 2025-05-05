@@ -8,10 +8,12 @@ using System.Windows.Media;
 using System.Windows;
 using WhiteBoard.Core.Services.Interfaces;
 using System.Windows.Shapes;
+using SketchRoom.Models.Enums;
+using WhiteBoard.Core.Models;
 
 namespace WhiteBoardModule.XAML.Shapes.Entity
 {
-    public class UmlClassShapeRenderer : IShapeRenderer
+    public class UmlClassShapeRenderer : IShapeRenderer, IRestoreFromShape
     {
         private readonly bool _withBindings;
 
@@ -224,6 +226,162 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
             row.Children.Add(removeBtn);
 
             return row;
+        }
+
+        public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
+        {
+            if (control is not FrameworkElement fe)
+                return null;
+
+            var border = fe as Border ?? fe.FindName("border") as Border;
+            if (border?.Child is not StackPanel mainStack)
+                return null;
+
+            var extra = new Dictionary<string, string>();
+
+            if (mainStack.Children[0] is TextBox titleBox)
+                extra["ClassName"] = titleBox.Text;
+
+            if (mainStack.Children.OfType<StackPanel>().FirstOrDefault(p => p.Name == "FieldsPanel") is StackPanel fieldsPanel)
+            {
+                int i = 1;
+                foreach (var row in fieldsPanel.Children.OfType<DockPanel>())
+                {
+                    var elements = row.Children.OfType<UIElement>().ToList();
+
+                    var name = elements.OfType<TextBox>().ElementAtOrDefault(0)?.Text ?? "";
+                    var type = elements.OfType<TextBox>().ElementAtOrDefault(1)?.Text ?? "";
+
+                    extra[$"Field{i}_Name"] = name;
+                    extra[$"Field{i}_Type"] = type;
+                    i++;
+                }
+            }
+
+            if (mainStack.Children.OfType<StackPanel>().FirstOrDefault(p => p.Name == "MethodsPanel") is StackPanel methodsPanel)
+            {
+                int j = 1;
+                foreach (var row in methodsPanel.Children.OfType<DockPanel>())
+                {
+                    var elements = row.Children.OfType<UIElement>().ToList();
+
+                    var name = elements.OfType<TextBox>().ElementAtOrDefault(0)?.Text ?? "";
+                    var parameters = elements.OfType<TextBox>().ElementAtOrDefault(1)?.Text ?? "";
+                    var type = elements.OfType<TextBox>().ElementAtOrDefault(2)?.Text ?? "";
+
+                    extra[$"Method{j}_Name"] = name;
+                    extra[$"Method{j}_Params"] = parameters;
+                    extra[$"Method{j}_Type"] = type;
+                    j++;
+                }
+            }
+
+            return new BPMNShapeModelWithPosition
+            {
+                Type = ShapeType.UmlClassTypeShape,
+                Left = Canvas.GetLeft(fe),
+                Top = Canvas.GetTop(fe),
+                Width = fe.Width,
+                Height = fe.Height,
+                Name = fe.Name,
+                Category = "Entity",
+                SvgUri = null,
+                ExtraProperties = extra
+            };
+        }
+
+        public void Restore(Dictionary<string, string> extraProperties)
+        {
+            if (extraProperties == null || extraProperties.Count == 0)
+                return;
+
+            // Găsește Border-ul cu StackPanel-ul principal
+            var border = VisualTreeHelper.GetChildrenCount(Application.Current.MainWindow) > 0
+                ? FindDescendant<Border>(Application.Current.MainWindow, b => b.Child is StackPanel stack &&
+                    stack.Children.OfType<TextBox>().Any(t => t.Text == "Classname"))
+                : null;
+
+            if (border?.Child is not StackPanel mainStack)
+                return;
+
+            var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
+
+            // Restaurează numele clasei
+            if (mainStack.Children[0] is TextBox titleBox && extraProperties.TryGetValue("ClassName", out var className))
+            {
+                titleBox.Text = className;
+            }
+
+            // Găsește panourile
+            var fieldsPanel = mainStack.Children.OfType<StackPanel>().FirstOrDefault(p => p.Name == "FieldsPanel");
+            var methodsPanel = mainStack.Children.OfType<StackPanel>().FirstOrDefault(p => p.Name == "MethodsPanel");
+
+            if (fieldsPanel != null)
+            {
+                fieldsPanel.Children.Clear();
+                int i = 1;
+                while (extraProperties.TryGetValue($"Field{i}_Name", out var name))
+                {
+                    var type = extraProperties.TryGetValue($"Field{i}_Type", out var t) ? t : "type";
+
+                    var row = CreateLineRow(true, fieldsPanel);
+                    if (row is DockPanel dock)
+                    {
+                        var tbs = dock.Children.OfType<TextBox>().ToList();
+                        if (tbs.Count >= 2)
+                        {
+                            tbs[0].Text = name;
+                            tbs[1].Text = type;
+                        }
+                    }
+
+                    fieldsPanel.Children.Add(row);
+                    i++;
+                }
+            }
+
+            if (methodsPanel != null)
+            {
+                methodsPanel.Children.Clear();
+                int j = 1;
+                while (extraProperties.TryGetValue($"Method{j}_Name", out var name))
+                {
+                    var parameters = extraProperties.TryGetValue($"Method{j}_Params", out var p) ? p : "()";
+                    var type = extraProperties.TryGetValue($"Method{j}_Type", out var t) ? t : "type";
+
+                    var row = CreateLineRow(false, methodsPanel);
+                    if (row is DockPanel dock)
+                    {
+                        var tbs = dock.Children.OfType<TextBox>().ToList();
+                        if (tbs.Count >= 3)
+                        {
+                            tbs[0].Text = name;
+                            tbs[1].Text = parameters;
+                            tbs[2].Text = type;
+                        }
+                    }
+
+                    methodsPanel.Children.Add(row);
+                    j++;
+                }
+            }
+        }
+
+        private T? FindDescendant<T>(DependencyObject parent, Func<T, bool>? predicate = null) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+
+                if (child is T typed && (predicate == null || predicate(typed)))
+                    return typed;
+
+                var result = FindDescendant(child, predicate);
+                if (result != null)
+                    return result;
+            }
+
+            return null;
         }
     }
 }

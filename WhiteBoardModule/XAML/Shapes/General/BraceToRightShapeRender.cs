@@ -8,10 +8,12 @@ using System.Windows.Media;
 using System.Windows;
 using WhiteBoard.Core.Services.Interfaces;
 using System.Windows.Shapes;
+using SketchRoom.Models.Enums;
+using WhiteBoard.Core.Models;
 
 namespace WhiteBoardModule.XAML.Shapes.General
 {
-    public class BraceToRightShapeRender : IShapeRenderer
+    public class BraceToRightShapeRender : IShapeRenderer, IRestoreFromShape
     {
         private readonly bool _withBindings;
 
@@ -75,6 +77,31 @@ namespace WhiteBoardModule.XAML.Shapes.General
             };
 
             return path;
+        }
+
+        public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
+        {
+            if (control is not FrameworkElement fe)
+                return null;
+
+            return new BPMNShapeModelWithPosition
+            {
+                Type = ShapeType.BraceToRightShape,
+                Left = Canvas.GetLeft(fe),
+                Top = Canvas.GetTop(fe),
+                Width = fe.Width,
+                Height = fe.Height,
+                Name = fe.Name,
+                Category = "General",
+                SvgUri = null,
+                ExtraProperties = new Dictionary<string, string>() // gol pentru că nu are date dinamice
+            };
+        }
+
+        public void Restore(Dictionary<string, string> extraProperties)
+        {
+            // Nu există extraProperties de restaurat pentru acest shape.
+            // Dacă dorești, poți accesa controlul și poziția/size-ul (dacă sunt necesare).
         }
     }
 }

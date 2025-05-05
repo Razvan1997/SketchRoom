@@ -9,18 +9,18 @@ using WhiteBoard.Core.Services.Interfaces;
 
 namespace WhiteBoardModule.XAML.Shapes.Connectors
 {
-    public class ConnectorDoubleLabelShapeRenderer : IShapeRenderer, IStrokeChangable, IForegroundChangable, IRestoreFromShape
+    public class ConnectorDoubleLabelShapeRendererLeft : IShapeRenderer, IStrokeChangable, IForegroundChangable, IRestoreFromShape
     {
         private readonly bool _withBindings;
         private StackPanel? _stackPanel;
-        public ConnectorDoubleLabelShapeRenderer(bool withBindings = false)
+
+        public ConnectorDoubleLabelShapeRendererLeft(bool withBindings = false)
         {
             _withBindings = withBindings;
         }
 
         public UIElement CreatePreview()
         {
-            // Simulare simplificată a formei cu două etichete și săgeată
             var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
 
             var sourceLabel = new TextBlock
@@ -31,7 +31,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 Foreground = preferences.SelectedColor,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 TextAlignment = TextAlignment.Center,
-                Margin = new Thickness(0, 0, 20, 1)
+                Margin = new Thickness(20, 0, 0, 1)
             };
 
             var inlineLabel = new TextBlock
@@ -42,6 +42,21 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 Foreground = preferences.SelectedColor,
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center
+            };
+
+            var leftArrow = new Polygon
+            {
+                Points = new PointCollection
+                {
+                    new Point(10, 0),
+                    new Point(0, 5),
+                    new Point(10, 10)
+                },
+                Fill = preferences.SelectedColor,
+                Width = 10,
+                Height = 10,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Left
             };
 
             var leftLine = new Rectangle
@@ -60,41 +75,26 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 HorizontalAlignment = HorizontalAlignment.Stretch
             };
 
-            var arrow = new Polygon
-            {
-                Points = new PointCollection
-        {
-            new Point(0, 0),
-            new Point(10, 5),
-            new Point(0, 10)
-        },
-                Fill = preferences.SelectedColor,
-                Width = 10,
-                Height = 10,
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Right
-            };
-
             var lineGrid = new Grid
             {
                 Height = 30,
                 Width = 100
             };
 
-            lineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             lineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             lineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             lineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            lineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-            Grid.SetColumn(leftLine, 0);
-            Grid.SetColumn(inlineLabel, 1);
-            Grid.SetColumn(rightLine, 2);
-            Grid.SetColumn(arrow, 3);
+            Grid.SetColumn(leftArrow, 0);
+            Grid.SetColumn(leftLine, 1);
+            Grid.SetColumn(inlineLabel, 2);
+            Grid.SetColumn(rightLine, 3);
 
+            lineGrid.Children.Add(leftArrow);
             lineGrid.Children.Add(leftLine);
             lineGrid.Children.Add(inlineLabel);
             lineGrid.Children.Add(rightLine);
-            lineGrid.Children.Add(arrow);
 
             var preview = new StackPanel
             {
@@ -117,7 +117,6 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
         {
             var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
 
-            // TextBox pentru Source (deasupra liniei)
             var sourceBox = new TextBox
             {
                 Text = "Source",
@@ -127,19 +126,18 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 Background = Brushes.Transparent,
                 BorderBrush = Brushes.Transparent,
                 TextAlignment = TextAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Left,
+                HorizontalAlignment = HorizontalAlignment.Right,
                 Margin = new Thickness(0, 0, 0, -10),
-                MinWidth = 60
+                MinWidth = 60,
+                Name = "SourceLabel"
             };
 
             if (_withBindings)
             {
                 sourceBox.SetBinding(TextBox.FontWeightProperty, new Binding(nameof(preferences.FontWeight)) { Source = preferences });
-                //sourceBox.SetBinding(TextBox.FontSizeProperty, new Binding(nameof(preferences.FontSize)) { Source = preferences });
                 sourceBox.SetBinding(TextBox.ForegroundProperty, new Binding(nameof(preferences.SelectedColor)) { Source = preferences });
             }
 
-            // TextBox pentru Label (în linie)
             var labelBox = new TextBox
             {
                 Text = "Label",
@@ -156,10 +154,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 Name = "ConnectorLabelText"
             };
 
-            labelBox.GotFocus += (s, e) =>
-            {
-                labelBox.Foreground = preferences.SelectedColor;
-            };
+            labelBox.GotFocus += (s, e) => labelBox.Foreground = preferences.SelectedColor;
 
             if (_withBindings)
             {
@@ -168,7 +163,22 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 labelBox.SetBinding(TextBox.ForegroundProperty, new Binding(nameof(preferences.SelectedColor)) { Source = preferences });
             }
 
-            // Linii
+            var arrow = new Polygon
+            {
+                Points = new PointCollection
+                {
+                    new Point(10, 0),
+                    new Point(0, 5),
+                    new Point(10, 10)
+                },
+                Fill = preferences.SelectedColor,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Width = 10,
+                Height = 10,
+                Name = "ConnectorArrow"
+            };
+
             var leftLine = new Rectangle
             {
                 Height = 2,
@@ -187,44 +197,26 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 Name = "ConnectorLineRight"
             };
 
-            // Săgeată
-            var arrow = new Polygon
-            {
-                Points = new PointCollection
-                {
-                    new Point(0, 0),
-                    new Point(10, 5),
-                    new Point(0, 10)
-                },
-                Fill = preferences.SelectedColor,
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Width = 10,
-                Height = 10,
-                Name = "ConnectorArrow"
-            };
-
-            // Grid pentru săgeată
             var lineGrid = new Grid
             {
                 Height = 40
             };
-            lineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
             lineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             lineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             lineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            lineGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-            Grid.SetColumn(leftLine, 0);
-            Grid.SetColumn(labelBox, 1);
-            Grid.SetColumn(rightLine, 2);
-            Grid.SetColumn(arrow, 3);
+            Grid.SetColumn(arrow, 0);
+            Grid.SetColumn(leftLine, 1);
+            Grid.SetColumn(labelBox, 2);
+            Grid.SetColumn(rightLine, 3);
 
+            lineGrid.Children.Add(arrow);
             lineGrid.Children.Add(leftLine);
             lineGrid.Children.Add(labelBox);
             lineGrid.Children.Add(rightLine);
-            lineGrid.Children.Add(arrow);
 
-            // StackPanel vertical (sourceBox deasupra săgeții)
             var stackPanel = new StackPanel
             {
                 Orientation = Orientation.Vertical,
@@ -234,18 +226,6 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
             stackPanel.Children.Add(sourceBox);
             stackPanel.Children.Add(lineGrid);
 
-            // Setări de binding dacă e cazul
-            if (_withBindings)
-            {
-                sourceBox.SetBinding(TextBox.FontWeightProperty, new Binding(nameof(preferences.FontWeight)) { Source = preferences });
-                sourceBox.SetBinding(TextBox.FontSizeProperty, new Binding(nameof(preferences.FontSize)) { Source = preferences });
-                sourceBox.SetBinding(TextBox.ForegroundProperty, new Binding(nameof(preferences.SelectedColor)) { Source = preferences });
-
-                labelBox.SetBinding(TextBox.FontWeightProperty, new Binding(nameof(preferences.FontWeight)) { Source = preferences });
-                labelBox.SetBinding(TextBox.FontSizeProperty, new Binding(nameof(preferences.FontSize)) { Source = preferences });
-            }
-
-            // Tag pentru UpdateStyle()
             stackPanel.Tag = new Dictionary<string, object>
             {
                 { "LabelText", labelBox },
@@ -254,6 +234,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 { "Arrow", arrow },
                 { "SourceLabel", sourceBox }
             };
+
             _stackPanel = stackPanel;
             return stackPanel;
         }
@@ -317,7 +298,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
 
             return new BPMNShapeModelWithPosition
             {
-                Type = ShapeType.ConnectorDoubleShapeLabel,
+                Type = ShapeType.ConnectorDoubleLabelLeft,
                 Left = position.X,
                 Top = position.Y,
                 Width = size.Width,
@@ -338,8 +319,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
 
         public void Restore(Dictionary<string, string> extraProperties)
         {
-            if (_stackPanel?.Tag is not Dictionary<string, object> tag)
-                return;
+            if (_stackPanel?.Tag is not Dictionary<string, object> tag) return;
 
             if (tag.TryGetValue("LabelText", out var labelObj) && labelObj is TextBox label)
             {
@@ -350,7 +330,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                     label.Foreground = ShapeStyleRestorer.ConvertToBrush(labelColor);
             }
 
-            if (tag.TryGetValue("SourceLabel", out var srcObj) && srcObj is TextBox source)
+            if (tag.TryGetValue("SourceLabel", out var sourceObj) && sourceObj is TextBox source)
             {
                 if (extraProperties.TryGetValue("SourceText", out var sourceText))
                     source.Text = sourceText;
@@ -362,9 +342,15 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
             if (extraProperties.TryGetValue("LineColor", out var lineColor))
             {
                 var brush = ShapeStyleRestorer.ConvertToBrush(lineColor);
-                if (tag.TryGetValue("LeftLine", out var left) && left is Shape l) l.Fill = brush;
-                if (tag.TryGetValue("RightLine", out var right) && right is Shape r) r.Fill = brush;
-                if (tag.TryGetValue("Arrow", out var arrow) && arrow is Shape a) a.Fill = brush;
+
+                if (tag.TryGetValue("LeftLine", out var left) && left is Shape leftLine)
+                    leftLine.Fill = brush;
+
+                if (tag.TryGetValue("RightLine", out var right) && right is Shape rightLine)
+                    rightLine.Fill = brush;
+
+                if (tag.TryGetValue("Arrow", out var arrow) && arrow is Shape arrowShape)
+                    arrowShape.Fill = brush;
             }
         }
     }

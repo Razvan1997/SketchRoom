@@ -9,13 +9,15 @@ using System.Windows;
 using WhiteBoard.Core.Services.Interfaces;
 using System.Windows.Data;
 using SketchRoom.Models.Enums;
+using WhiteBoard.Core.Models;
 
 namespace WhiteBoardModule.XAML.Shapes.Containers
 {
-    public class HorizontalContainerShapeRenderer : IShapeRenderer
+    public class HorizontalContainerShapeRenderer : IShapeRenderer, IRestoreFromShape
     {
         private readonly bool _withBindings;
         private readonly IShapeSelectionService _selectionService;
+        private Grid? _renderedGrid;
         public HorizontalContainerShapeRenderer(bool withBindings = false)
         {
             _withBindings = withBindings;
@@ -167,7 +169,7 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 { "SideLabel", labelBox },
                 { "ContainerBorder", containerBorder }
             };
-
+            _renderedGrid = mainGrid; // 🆕 păstrăm pentru Restore
             return mainGrid;
         }
 
@@ -179,6 +181,62 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                    mousePos.X > grid.ActualWidth - marginWidth ||
                    mousePos.Y < marginWidth ||
                    mousePos.Y > grid.ActualHeight - marginWidth;
+        }
+
+        public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
+        {
+            if (control is not FrameworkElement fe || fe.Tag is not Dictionary<string, object> tag)
+                return null;
+
+            var position = new Point(Canvas.GetLeft(fe), Canvas.GetTop(fe));
+            var size = new Size(fe.Width, fe.Height);
+
+            string? labelText = null, borderColor = null;
+
+            if (tag.TryGetValue("SideLabel", out var labelObj) && labelObj is TextBox label)
+            {
+                labelText = label.Text;
+            }
+
+            if (tag.TryGetValue("ContainerBorder", out var borderObj) && borderObj is Border border)
+            {
+                borderColor = (border.BorderBrush as SolidColorBrush)?.Color.ToString();
+            }
+
+            return new BPMNShapeModelWithPosition
+            {
+                Type = ShapeType.ContainerHorizontalShape,
+                Left = position.X,
+                Top = position.Y,
+                Width = size.Width,
+                Height = size.Height,
+                Name = fe.Name,
+                Category = "Container",
+                SvgUri = null,
+                ExtraProperties = new Dictionary<string, string>
+        {
+            { "SideLabelText", labelText ?? "" },
+            { "BorderColor", borderColor ?? "" }
+        }
+            };
+        }
+
+        public void Restore(Dictionary<string, string> extraProperties)
+        {
+            if (_renderedGrid?.Tag is not Dictionary<string, object> tag)
+                return;
+
+            if (tag.TryGetValue("SideLabel", out var labelObj) && labelObj is TextBox label)
+            {
+                if (extraProperties.TryGetValue("SideLabelText", out var labelText))
+                    label.Text = labelText;
+            }
+
+            if (tag.TryGetValue("ContainerBorder", out var borderObj) && borderObj is Border border)
+            {
+                if (extraProperties.TryGetValue("BorderColor", out var color))
+                    border.BorderBrush = ShapeStyleRestorer.ConvertToBrush(color);
+            }
         }
     }
 }

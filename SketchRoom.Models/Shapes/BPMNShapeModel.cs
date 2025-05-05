@@ -11,8 +11,9 @@ namespace SketchRoom.Models.Shapes
 {
     public class BPMNShapeModel
     {
+        public Guid Id { get; set; } = Guid.NewGuid();
         public string Name { get; set; } = string.Empty;
-        public Uri SvgUri { get; set; } = null!; // ex: new Uri("pack://application:,,,/Resources/SVG/rectangle.svg")
+        public Uri SvgUri { get; set; } = null!;
         public object? ShapeContent { get; set; }
         public ShapeType? Type { get; set; }
         public string Category { get; set; } = "General";

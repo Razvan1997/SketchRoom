@@ -9,10 +9,12 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows;
 using WhiteBoard.Core.Services.Interfaces;
+using SketchRoom.Models.Enums;
+using WhiteBoard.Core.Models;
 
 namespace WhiteBoardModule.XAML.Shapes.States
 {
-    public class StateMachineShapeRenderer : IShapeRenderer
+    public class StateMachineShapeRenderer : IShapeRenderer, IRestoreFromShape
     {
         private readonly bool _withBindings;
         private readonly ObservableCollection<TransitionModel> _transitions = new();
@@ -257,6 +259,61 @@ namespace WhiteBoardModule.XAML.Shapes.States
             row.Children.Add(removeBtn);
 
             return row;
+        }
+
+        public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
+        {
+            if (control is not FrameworkElement fe)
+                return null;
+
+            var extra = new Dictionary<string, string>
+    {
+        { "IsStartState", IsStartState.ToString() },
+        { "Transitions", string.Join(";", _transitions.Select(t =>
+            $"{t.Trigger}|{t.Condition}|{t.Action}|{t.TargetState}")) }
+    };
+
+            return new BPMNShapeModelWithPosition
+            {
+                Type = ShapeType.StateMachineShape,
+                Left = Canvas.GetLeft(fe),
+                Top = Canvas.GetTop(fe),
+                Width = fe.Width,
+                Height = fe.Height,
+                Name = fe.Name,
+                Category = "States",
+                SvgUri = null,
+                ExtraProperties = extra
+            };
+        }
+
+        public void Restore(Dictionary<string, string> extraProperties)
+        {
+            if (extraProperties.TryGetValue("IsStartState", out var isStart))
+            {
+                IsStartState = bool.TryParse(isStart, out var parsed) && parsed;
+            }
+
+            if (extraProperties.TryGetValue("Transitions", out var transitionsStr))
+            {
+                _transitions.Clear();
+
+                var transitions = transitionsStr.Split(';');
+                foreach (var t in transitions)
+                {
+                    var parts = t.Split('|');
+                    if (parts.Length == 4)
+                    {
+                        _transitions.Add(new TransitionModel
+                        {
+                            Trigger = parts[0],
+                            Condition = parts[1],
+                            Action = parts[2],
+                            TargetState = parts[3]
+                        });
+                    }
+                }
+            }
         }
     }
 

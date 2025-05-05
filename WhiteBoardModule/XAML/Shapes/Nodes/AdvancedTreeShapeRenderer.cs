@@ -12,10 +12,12 @@ using System.Windows.Threading;
 using SharpVectors.Converters;
 using System.Drawing;
 using System.Windows.Ink;
+using SketchRoom.Models.Enums;
+using WhiteBoard.Core.Models;
 
 namespace WhiteBoardModule.XAML.Shapes.Nodes
 {
-    public class AdvancedTreeShapeRenderer : IShapeRenderer
+    public class AdvancedTreeShapeRenderer : IShapeRenderer, IRestoreFromShape
     {
         private readonly List<StackPanel> _nodes = new();
 
@@ -247,6 +249,52 @@ namespace WhiteBoardModule.XAML.Shapes.Nodes
                 (byte)rand.Next(100, 255),
                 (byte)rand.Next(100, 255),
                 (byte)rand.Next(100, 255));
+        }
+
+        public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
+        {
+            if (control is not FrameworkElement fe)
+                return null;
+
+            // Poți genera un ID sau un nume default
+            return new BPMNShapeModelWithPosition
+            {
+                Type = ShapeType.AdvancedTreeShapeRenderer,
+                Left = Canvas.GetLeft(fe),
+                Top = Canvas.GetTop(fe),
+                Width = fe.Width,
+                Height = fe.Height,
+                Name = fe.Name ?? "AdvancedTree",
+                Category = "Nodes",
+                SvgUri = null,
+                ExtraProperties = new Dictionary<string, string>
+{
+    { "NodeCount", _nodes.Count.ToString() }
+}
+            };
+        }
+
+        public void Restore(Dictionary<string, string> extraProperties)
+        {
+            if (!extraProperties.TryGetValue("NodeCount", out var countStr) || !int.TryParse(countStr, out var count))
+                return;
+
+            if (_nodes.Count == 0)
+                return;
+
+            // presupunem că primul nod e deja adăugat în Render()
+            var root = _nodes.FirstOrDefault();
+            if (root?.Tag is not TreeNodeMetadata metadata)
+                return;
+
+            var childrenPanel = metadata.ChildrenPanel;
+            for (int i = 1; i < count; i++)
+            {
+                var child = CreateNode($"Child {i}", 1);
+                childrenPanel.Children.Add(child);
+            }
+
+            RedrawAllConnections();
         }
 
         private class TreeNodeMetadata

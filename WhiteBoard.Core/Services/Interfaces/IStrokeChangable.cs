@@ -5,10 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media;
 
-namespace WhiteBoardModule.XAML.Interfaces
+namespace WhiteBoard.Core.Services.Interfaces
 {
-    public interface IForegroundChangable
+    public interface IStrokeChangable
     {
-        void SetForeground(Brush brush);
+        void SetStroke(Brush brush);
     }
 }

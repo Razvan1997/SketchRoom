@@ -1,20 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Media;
+﻿using SketchRoom.Models.Enums;
 using System.Windows;
-using WhiteBoard.Core.Services.Interfaces;
-using SketchRoom.Models.Enums;
+using System.Windows.Controls;
 using System.Windows.Input;
-using WhiteBoardModule.XAML.Interfaces;
+using System.Windows.Media;
+using WhiteBoard.Core.Models;
+using WhiteBoard.Core.Services.Interfaces;
 
 namespace WhiteBoardModule.XAML.Shapes.General
 {
-    public class TextBoxBorderShapeRenderer : IShapeRenderer, IBackgroundChangable, IStrokeChangable, IForegroundChangable
+    public class TextBoxBorderShapeRenderer : IShapeRenderer, IBackgroundChangable, IStrokeChangable, IForegroundChangable, IRestoreFromShape
     {
         private readonly bool _withBindings;
         private readonly IShapeSelectionService _selectionService;
@@ -160,6 +154,68 @@ namespace WhiteBoardModule.XAML.Shapes.General
         public void SetForeground(Brush brush)
         {
             _textBox.Foreground = brush;
+        }
+
+        public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
+        {
+            if (control is not FrameworkElement fe)
+                return null;
+
+            // Extrage border și textBox din structura de control
+            var border = fe as Border ?? fe.FindName("border") as Border;
+            var textBox = border?.Child is Grid grid && grid.Children.Count > 0 && grid.Children[0] is TextBox tb ? tb : null;
+
+            var background = (border?.Background as SolidColorBrush)?.Color.ToString() ?? "#FFFFFFFF";
+            var stroke = (border?.BorderBrush as SolidColorBrush)?.Color.ToString() ?? "#FF000000";
+            var foreground = (textBox?.Foreground as SolidColorBrush)?.Color.ToString() ?? "#FF000000";
+
+            return new BPMNShapeModelWithPosition
+            {
+                Type = ShapeType.BorderTextBox,
+                Left = Canvas.GetLeft(fe),
+                Top = Canvas.GetTop(fe),
+                Width = fe.Width,
+                Height = fe.Height,
+                Name = fe.Name,
+                Category = "General",
+                SvgUri = null,
+                ExtraProperties = new Dictionary<string, string>
+        {
+            { "Background", background },
+            { "BorderBrush", stroke },
+            { "Foreground", foreground },
+            { "Text", textBox?.Text ?? "" }
+        }
+            };
+        }
+
+        public void Restore(Dictionary<string, string> extraProperties)
+        {
+            if (_border == null || _textBox == null)
+                return;
+
+            if (extraProperties.TryGetValue("Background", out var bgColor))
+            {
+                try { _border.Background = (Brush)new BrushConverter().ConvertFromString(bgColor); }
+                catch { _border.Background = Brushes.White; }
+            }
+
+            if (extraProperties.TryGetValue("BorderBrush", out var strokeColor))
+            {
+                try { _border.BorderBrush = (Brush)new BrushConverter().ConvertFromString(strokeColor); }
+                catch { _border.BorderBrush = Brushes.Black; }
+            }
+
+            if (extraProperties.TryGetValue("Foreground", out var fgColor))
+            {
+                try { _textBox.Foreground = (Brush)new BrushConverter().ConvertFromString(fgColor); }
+                catch { _textBox.Foreground = Brushes.Black; }
+            }
+
+            if (extraProperties.TryGetValue("Text", out var text))
+            {
+                _textBox.Text = text;
+            }
         }
     }
 }

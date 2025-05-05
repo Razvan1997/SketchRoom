@@ -38,6 +38,8 @@ namespace WhiteBoardModule.XAML
                 ShapeType.BorderTextBox => new TextBoxBorderShapeRenderer(withBindings),
                 ShapeType.ConnectorDescriptionShape => new DescriptionShapeConnectorRenderer(withBindings),
                 ShapeType.SimpleContainer => new SimpleLinesRenderer(withBindings),
+                ShapeType.ConnectorLabelLeft => new ConnectorLabelShapeRendererLeftArrow(withBindings),
+                ShapeType.ConnectorDoubleLabelLeft => new ConnectorDoubleLabelShapeRendererLeft(withBindings),
                 _ => throw new NotImplementedException($"Renderer for {type} not implemented.")
             };
         }

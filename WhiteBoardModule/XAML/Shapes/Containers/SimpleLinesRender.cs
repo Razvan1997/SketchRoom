@@ -9,10 +9,11 @@ using System.Windows;
 using WhiteBoard.Core.Services.Interfaces;
 using SketchRoom.Models.Enums;
 using System.Windows.Controls.Primitives;
+using WhiteBoard.Core.Models;
 
 namespace WhiteBoardModule.XAML.Shapes.Containers
 {
-    public class SimpleLinesRenderer : IShapeRenderer, ISimpleLinesContainer
+    public class SimpleLinesRenderer : IShapeRenderer, ISimpleLinesContainer, IRestoreFromShape
     {
         private readonly bool _withBindings;
         private readonly IShapeSelectionService _selectionService;
@@ -240,6 +241,135 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
             }
         }
 
+        public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
+        {
+            if (_outerGrid == null || control is not FrameworkElement fe)
+                return null;
+
+            var position = new Point(Canvas.GetLeft(fe), Canvas.GetTop(fe));
+            var size = new Size(fe.Width, fe.Height);
+            var extraProps = new Dictionary<string, string>();
+
+            int lineIndex = 1;
+
+            foreach (var border in _outerGrid.Children.OfType<Border>())
+            {
+                if (border.Child is TextBox tb)
+                {
+                    extraProps[$"Line{lineIndex++}"] = tb.Text;
+                }
+                else if (border.Child is TextBlock txt)
+                {
+                    extraProps[$"Line{lineIndex++}"] = txt.Text;
+                }
+            }
+
+            return new BPMNShapeModelWithPosition
+            {
+                Type = ShapeType.SimpleContainer,
+                Left = position.X,
+                Top = position.Y,
+                Width = size.Width,
+                Height = size.Height,
+                Name = fe.Name,
+                Category = "Container",
+                SvgUri = null,
+                ExtraProperties = extraProps
+            };
+        }
+
         public UIElement Visual => _outerGrid ?? new Grid();
+
+        public void Restore(Dictionary<string, string> extraProperties)
+        {
+            if (_outerGrid == null || extraProperties == null || extraProperties.Count == 0)
+                return;
+
+            _outerGrid.Children.Clear();
+            _outerGrid.RowDefinitions.Clear();
+
+            int lineIndex = 1;
+            while (extraProperties.TryGetValue($"Line{lineIndex}", out var text))
+            {
+                AddRestoredLine(text);
+                lineIndex++;
+            }
+
+            UpdateCornerRadius();
+        }
+
+        private void AddRestoredLine(string text)
+        {
+            if (_outerGrid == null)
+                return;
+
+            int insertAtRow = _outerGrid.RowDefinitions.Count;
+
+            // Row for Border
+            _outerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(50) });
+
+            var border = new Border
+            {
+                Background = Brushes.White,
+                BorderThickness = new Thickness(0),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch
+            };
+
+            var textBox = new TextBox
+            {
+                Text = text,
+                Background = Brushes.Transparent,
+                Foreground = Brushes.Black,
+                BorderThickness = new Thickness(0),
+                Padding = new Thickness(4),
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextAlignment = TextAlignment.Center,
+                FontSize = 14,
+                Tag = "interactive"
+            };
+
+            textBox.PreviewMouseLeftButtonDown += (s, e) =>
+            {
+                if (!textBox.IsKeyboardFocusWithin)
+                    textBox.Focus();
+                _selectionService.Select(ShapePart.Text, textBox);
+                e.Handled = true;
+            };
+
+            border.Child = textBox;
+
+            border.PreviewMouseLeftButtonDown += (s, e) =>
+            {
+                _selectionService.Select(ShapePart.Border, border);
+            };
+
+            border.MouseRightButtonDown += (s, e) =>
+            {
+                _lastRightClickedBorder = border;
+            };
+
+            Grid.SetRow(border, insertAtRow);
+            _outerGrid.Children.Add(border);
+
+            // Row for separator (Thumb)
+            _outerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1) });
+
+            var separator = new Thumb
+            {
+                Height = 1,
+                Background = Brushes.Transparent,
+                Cursor = System.Windows.Input.Cursors.SizeNS,
+                Opacity = 0,
+                IsHitTestVisible = true
+            };
+
+            separator.DragDelta += (s, e) => ResizeRows(insertAtRow, e.VerticalChange);
+            Grid.SetRow(separator, insertAtRow + 1);
+            _outerGrid.Children.Add(separator);
+        }
     }
 }

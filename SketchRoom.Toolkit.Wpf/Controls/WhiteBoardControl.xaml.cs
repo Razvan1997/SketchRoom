@@ -27,7 +27,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
     {
         private readonly List<ITextInteractiveShape> _textShapes = new();
         private BpmnConnectorTool? _connectorTool;
-        private readonly List<BPMNConnection> _connections = new();
+        public List<BPMNConnection> _connections = new();
         private readonly Dictionary<FrameworkElement, BPMNNode> _nodes = new();
         private WhiteBoardHost _host;
         private IZoomPanService _zoomPanService;
@@ -60,6 +60,8 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             var undoRedoService = ContainerLocator.Container.Resolve<UndoRedoService>();
             var tabService = ContainerLocator.Container.Resolve<IWhiteBoardTabService>();
             var zOrderService = ContainerLocator.Container.Resolve<IZOrderService>();
+            var shapeRenderFactory = ContainerLocator.Container.Resolve<IShapeRendererFactory>();
+
             _toolManager = tabService.GetCurrentToolManager();
             _drawingService = drawingService;
             _drawingPreferencesService = drawingPreferences;
@@ -111,7 +113,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
             var selecteToolService = ContainerLocator.Container.Resolve<SelectedToolService>();
             _dropService = new DropService(DrawingCanvas, _factory, _toolManager, _connectorTool!, connectorCurvedTool, _nodes, selecteToolService, undoRedoService,
-                _drawingPreferencesService, zOrderService);
+                _drawingPreferencesService, zOrderService, shapeRenderFactory);
 
             this.KeyDown += WhiteBoardControl_KeyDown;
             this.Focusable = true;

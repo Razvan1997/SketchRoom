@@ -1,13 +1,10 @@
-﻿using SketchRoom.Models.Enums;
-using SketchRoom.Toolkit.Wpf.Controls;
+﻿using SketchRoom.Toolkit.Wpf.Controls;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using WhiteBoard.Core.Services.Interfaces;
-using WhiteBoard.Core.Tools;
 using WhiteBoardModule.Events;
-using WhiteBoardModule.XAML.Interfaces;
 
 namespace WhiteBoardModule.XAML.Shapes.Tables
 {
@@ -56,7 +53,7 @@ namespace WhiteBoardModule.XAML.Shapes.Tables
             }
 
             OverlayCanvas.MouseLeftButtonUp += OverlayCanvas_MouseLeftButtonUp;
-            OverlayCanvas.MouseMove += OverlayCanvas_MouseMove;            
+            OverlayCanvas.MouseMove += OverlayCanvas_MouseMove;
         }
 
         private void OverlayCanvas_MouseMove(object sender, MouseEventArgs e)
@@ -477,9 +474,52 @@ namespace WhiteBoardModule.XAML.Shapes.Tables
             _eventAggregator.GetEvent<TableResizedEvent>().Publish(info);
         }
 
-    
-    }
+        public TableSerializedModel ExportTableData()
+        {
+            var data = new TableSerializedModel
+            {
+                Rows = _rows,
+                Columns = _columns,
+                Cells = new List<List<string>>()
+            };
 
+            for (int r = 0; r < _rows; r++)
+            {
+                var rowList = new List<string>();
+                for (int c = 0; c < _columns; c++)
+                {
+                    rowList.Add(_cellValues[r, c]);
+                }
+                data.Cells.Add(rowList);
+            }
+
+            return data;
+        }
+
+        public void LoadFrom(TableSerializedModel model)
+        {
+            _rows = model.Rows;
+            _columns = model.Columns;
+            _cellValues = new string[_rows, _columns];
+
+            for (int r = 0; r < _rows; r++)
+                for (int c = 0; c < _columns; c++)
+                    _cellValues[r, c] = model.Cells[r][c];
+
+            RenderTable();
+        }
+
+    }
+    public class TableSerializedModel
+    {
+        public int Rows { get; set; }
+        public int Columns { get; set; }
+        public List<List<string>> Cells { get; set; } = new();
+
+        public string ToJson() => System.Text.Json.JsonSerializer.Serialize(this);
+        public static TableSerializedModel? FromJson(string json) =>
+            System.Text.Json.JsonSerializer.Deserialize<TableSerializedModel>(json);
+    }
     public class RelayCommand : ICommand
     {
         private readonly Action<object?> _execute;
@@ -499,6 +539,6 @@ namespace WhiteBoardModule.XAML.Shapes.Tables
 
         public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
 
-       
+
     }
 }

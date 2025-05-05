@@ -11,15 +11,17 @@ using SketchRoom.Models.Enums;
 using System.Windows.Input;
 using System.Windows.Shapes;
 using WhiteBoard.Core.Events;
+using WhiteBoard.Core.Models;
 
 namespace WhiteBoardModule.XAML.Shapes.Containers
 {
-    public class ListContainerRenderer : IShapeRenderer
+    public class ListContainerRenderer : IShapeRenderer, IRestoreFromShape
     {
         private readonly bool _withBindings;
         private readonly IShapeSelectionService _selectionService;
         public event EventHandler<ConnectionPointEventArgs>? ConnectionPointClicked;
         public event EventHandler<ConnectionPointEventArgs>? ConnectionPointTargetClicked;
+        private Border? _renderedBorder;
         public ListContainerRenderer(bool withBindings = false)
         {
             _withBindings = withBindings;
@@ -38,7 +40,11 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
             };
         }
 
-        public UIElement Render() => CreateListUI();
+        public UIElement Render()
+        {
+            _renderedBorder = CreateListUI() as Border;
+            return _renderedBorder!;
+        }
 
         private UIElement CreateListUI(bool isPreview = false)
         {
@@ -228,6 +234,77 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
             }
 
             return grid;
+        }
+
+        public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
+        {
+            if (control is not FrameworkElement fe)
+                return null;
+
+            var position = new Point(Canvas.GetLeft(fe), Canvas.GetTop(fe));
+            var size = new Size(fe.Width, fe.Height);
+
+            var extraProps = new Dictionary<string, string>();
+
+            if (fe is Border border && border.Child is StackPanel stack)
+            {
+                // Titlu
+                if (stack.Children[0] is TextBox titleBox)
+                {
+                    extraProps["Title"] = titleBox.Text;
+                }
+
+                // Items
+                if (stack.Children.OfType<StackPanel>().FirstOrDefault(p => p.Name == "ItemsPanel") is StackPanel itemsPanel)
+                {
+                    int index = 1;
+                    foreach (var item in itemsPanel.Children.OfType<Grid>())
+                    {
+                        var textBox = item.Children.OfType<TextBox>().FirstOrDefault();
+                        if (textBox != null)
+                            extraProps[$"Item{index++}"] = textBox.Text;
+                    }
+                }
+            }
+
+            return new BPMNShapeModelWithPosition
+            {
+                Type = ShapeType.ListContainerShape,
+                Left = position.X,
+                Top = position.Y,
+                Width = size.Width,
+                Height = size.Height,
+                Name = fe.Name,
+                Category = "Container",
+                SvgUri = null,
+                ExtraProperties = extraProps
+            };
+        }
+
+        public void Restore(Dictionary<string, string> extraProperties)
+        {
+            if (_renderedBorder?.Child is not StackPanel stack)
+                return;
+
+            // Restore titlu
+            if (stack.Children[0] is TextBox titleBox &&
+                extraProperties.TryGetValue("Title", out var title))
+            {
+                titleBox.Text = title;
+            }
+
+            // Restore itemi
+            if (stack.Children.OfType<StackPanel>().FirstOrDefault(p => p.Name == "ItemsPanel") is StackPanel itemsPanel)
+            {
+                itemsPanel.Children.Clear();
+                int i = 1;
+                while (extraProperties.TryGetValue($"Item{i}", out var itemText))
+                {
+                    var item = CreateItem(ContainerLocator.Container.Resolve<IDrawingPreferencesService>(), itemText, false);
+                    itemsPanel.Children.Add(item);
+                    i++;
+                }
+            }
         }
     }
 }

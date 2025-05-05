@@ -1,20 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using SketchRoom.Models.Enums;
+using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using System.Windows;
-using System.Windows.Data;
+using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services.Interfaces;
-using System.Windows.Controls;
-using SketchRoom.Models.Enums;
-using WhiteBoardModule.XAML.Interfaces;
 
 namespace WhiteBoardModule.XAML.Shapes.General
 {
-    public class EllipseShapeRenderer : IShapeRenderer, IBackgroundChangable, IStrokeChangable
+    public class EllipseShapeRenderer : IShapeRenderer, IBackgroundChangable, IStrokeChangable, IRestoreFromShape
     {
         private readonly bool _withBindings;
         private readonly IShapeSelectionService _selectionService;
@@ -56,7 +50,7 @@ namespace WhiteBoardModule.XAML.Shapes.General
         public UIElement CreatePreview()
         {
             var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
-            var shape =  new Ellipse
+            var shape = new Ellipse
             {
                 Fill = Brushes.Transparent,
                 StrokeThickness = 2,
@@ -112,6 +106,49 @@ namespace WhiteBoardModule.XAML.Shapes.General
             return Math.Abs(distance - 1) <= marginTolerance;
         }
 
-        
+        public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
+        {
+            if (control is not FrameworkElement fe || _ellipse == null)
+                return null;
+
+            string? fillColor = (_ellipse.Fill as SolidColorBrush)?.Color.ToString();
+            string? strokeColor = (_ellipse.Stroke as SolidColorBrush)?.Color.ToString();
+
+            return new BPMNShapeModelWithPosition
+            {
+                Type = ShapeType.Ellipse,
+                Left = Canvas.GetLeft(fe),
+                Top = Canvas.GetTop(fe),
+                Width = fe.Width,
+                Height = fe.Height,
+                Name = fe.Name,
+                Category = "General",
+                SvgUri = null,
+                ExtraProperties = new Dictionary<string, string>
+        {
+            { "Fill", fillColor ?? "#00FFFFFF" },      // Transparent fallback
+            { "Stroke", strokeColor ?? "#FFFFFFFF" }   // White fallback
+        }
+            };
+        }
+
+        public void Restore(Dictionary<string, string> extraProperties)
+        {
+            if (_ellipse == null)
+                return;
+
+            if (extraProperties.TryGetValue("Fill", out var fillHex))
+            {
+                try { _ellipse.Fill = (SolidColorBrush)(new BrushConverter().ConvertFromString(fillHex)); }
+                catch { _ellipse.Fill = Brushes.Transparent; }
+            }
+
+            if (extraProperties.TryGetValue("Stroke", out var strokeHex))
+            {
+                try { _ellipse.Stroke = (SolidColorBrush)(new BrushConverter().ConvertFromString(strokeHex)); }
+                catch { _ellipse.Stroke = Brushes.White; }
+            }
+        }
+
     }
 }

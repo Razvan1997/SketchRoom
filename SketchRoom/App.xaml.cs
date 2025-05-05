@@ -1,6 +1,9 @@
-﻿using System.Configuration;
+﻿using SketchRoom.Toolkit.Wpf.Controls;
+using SketchRoom.Toolkit.Wpf.Services;
+using System.Configuration;
 using System.Data;
 using System.Windows;
+using WhiteBoard.Core.Services.Interfaces;
 
 namespace SketchRoom
 {

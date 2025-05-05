@@ -1,18 +1,15 @@
 ﻿using SketchRoom.Models.Enums;
-using SketchRoom.Toolkit.Wpf.Converters;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using WhiteBoard.Core.Services;
+using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services.Interfaces;
-using WhiteBoardModule.XAML.Interfaces;
 
 namespace WhiteBoardModule.XAML.Shapes.General
 {
-    public class TextShapeRenderer : IShapeRenderer, IBackgroundChangable, IForegroundChangable
+    public class TextShapeRenderer : IShapeRenderer, IBackgroundChangable, IForegroundChangable, IRestoreFromShape
     {
         private readonly bool _withBindings;
         private readonly IShapeSelectionService _selectionService;
@@ -177,6 +174,74 @@ namespace WhiteBoardModule.XAML.Shapes.General
                         }
                     }
                 }
+            }
+        }
+
+        public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
+        {
+            if (control is not FrameworkElement fe)
+                return null;
+
+            var background = (_richTextBox?.Background as SolidColorBrush)?.Color.ToString() ?? "#00FFFFFF";
+            var foreground = (_richTextBox?.Foreground as SolidColorBrush)?.Color.ToString() ?? "#FF000000";
+
+            string textContent = "";
+            if (_richTextBox?.Document != null)
+            {
+                var range = new TextRange(_richTextBox.Document.ContentStart, _richTextBox.Document.ContentEnd);
+                textContent = range.Text.Trim();
+            }
+
+            return new BPMNShapeModelWithPosition
+            {
+                Type = ShapeType.ShapeText,
+                Left = Canvas.GetLeft(fe),
+                Top = Canvas.GetTop(fe),
+                Width = fe.Width,
+                Height = fe.Height,
+                Name = fe.Name,
+                Category = "General",
+                SvgUri = null,
+                ExtraProperties = new Dictionary<string, string>
+        {
+            { "Background", background },
+            { "Foreground", foreground },
+            { "Text", textContent }
+        }
+            };
+        }
+
+        public void Restore(Dictionary<string, string> extraProperties)
+        {
+            if (_richTextBox == null)
+                return;
+
+            if (extraProperties.TryGetValue("Background", out var bgColor))
+            {
+                try { _richTextBox.Background = (Brush)new BrushConverter().ConvertFromString(bgColor); }
+                catch { _richTextBox.Background = Brushes.Transparent; }
+            }
+
+            if (extraProperties.TryGetValue("Foreground", out var fgColor))
+            {
+                try
+                {
+                    var brush = (Brush)new BrushConverter().ConvertFromString(fgColor);
+                    SetForeground(brush); // actualizează și pe Run-uri
+                }
+                catch { }
+            }
+
+            if (extraProperties.TryGetValue("Text", out var text))
+            {
+                _richTextBox.Document.Blocks.Clear();
+                var paragraph = new Paragraph(new Run(text))
+                {
+                    TextAlignment = TextAlignment.Center,
+                    FontSize = 14,
+                    Foreground = _richTextBox.Foreground
+                };
+                _richTextBox.Document.Blocks.Add(paragraph);
             }
         }
     }

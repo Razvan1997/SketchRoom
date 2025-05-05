@@ -85,6 +85,8 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             set => EditableText.Text = value;
         }
 
+        public TextBox? InteractiveTextBox => throw new NotImplementedException();
+
         public void SetShape(ShapeType shape)
         {
             if (shape == ShapeType.TextInput)

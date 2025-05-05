@@ -9,13 +9,14 @@ using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Windows;
 using WhiteBoard.Core.Services.Interfaces;
+using WhiteBoard.Core.Models;
 
 namespace WhiteBoardModule.XAML.Shapes.Connectors
 {
-    public class DescriptionShapeConnectorRenderer : IShapeRenderer
+    public class DescriptionShapeConnectorRenderer : IShapeRenderer, IRestoreFromShape
     {
         private readonly bool _withBindings;
-
+        private Grid? RenderedElement;
         public DescriptionShapeConnectorRenderer(bool withBindings = false)
         {
             _withBindings = withBindings;
@@ -116,7 +117,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 { "Line", line },
                 { "DescriptionText", textBox }
             };
-
+            RenderedElement = grid;
             return grid;
         }
 
@@ -148,6 +149,70 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Stretch
             };
+        }
+
+        public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
+        {
+            if (control is not FrameworkElement fe || fe.Tag is not Dictionary<string, object> tag)
+                return null;
+
+            var position = new Point(Canvas.GetLeft(fe), Canvas.GetTop(fe));
+            var size = new Size(fe.Width, fe.Height);
+
+            string? text = null, textColor = null, lineColor = null;
+
+            if (tag.TryGetValue("DescriptionText", out var txtObj) && txtObj is TextBox txt)
+            {
+                text = txt.Text;
+                textColor = (txt.Foreground as SolidColorBrush)?.Color.ToString();
+            }
+
+            if (tag.TryGetValue("Line", out var lineObj) && lineObj is Rectangle line)
+            {
+                lineColor = (line.Fill as SolidColorBrush)?.Color.ToString();
+            }
+
+            return new BPMNShapeModelWithPosition
+            {
+                Type = SketchRoom.Models.Enums.ShapeType.ConnectorDescriptionShape,
+                Left = position.X,
+                Top = position.Y,
+                Width = size.Width,
+                Height = size.Height,
+                Name = fe.Name,
+                Category = "Connector",
+                SvgUri = null,
+                ExtraProperties = new Dictionary<string, string>
+        {
+            { "DescriptionText", text ?? "" },
+            { "TextColor", textColor ?? "" },
+            { "LineColor", lineColor ?? "" }
+        }
+            };
+        }
+
+        public void Restore(Dictionary<string, string> extraProperties)
+        {
+            if (extraProperties == null || extraProperties.Count == 0)
+                return;
+
+            if (RenderedElement is not Grid grid || grid.Tag is not Dictionary<string, object> tag)
+                return;
+
+            if (tag.TryGetValue("DescriptionText", out var textObj) && textObj is TextBox textBox)
+            {
+                if (extraProperties.TryGetValue("DescriptionText", out var text))
+                    textBox.Text = text;
+
+                if (extraProperties.TryGetValue("TextColor", out var color))
+                    textBox.Foreground = ShapeStyleRestorer.ConvertToBrush(color);
+            }
+
+            if (tag.TryGetValue("Line", out var lineObj) && lineObj is Rectangle line &&
+                extraProperties.TryGetValue("LineColor", out var lineColor))
+            {
+                line.Fill = ShapeStyleRestorer.ConvertToBrush(lineColor);
+            }
         }
     }
 }
