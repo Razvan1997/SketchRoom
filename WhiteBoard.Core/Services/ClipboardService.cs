@@ -30,25 +30,22 @@ namespace WhiteBoard.Core.Services
         {
             if (shape is IShapeAddedXaml xamlShape)
             {
-                _copiedShapeModel = new BPMNShapeModel
+                var copied = new BPMNShapeModel
                 {
                     Type = xamlShape.GetShapeType(),
-                    ShapeContent = shape
+                    ShapeContent = shape,
                 };
-            }
-            else
-            {
-                if (shape.Visual is FrameworkElement fe)
+
+                // dacă este imagine, salvează și uri-ul dacă există
+                if (copied.Type == ShapeType.Image &&
+                    shape.Visual is FrameworkElement feImage)
                 {
-                    var uri = ShapeMetadata.GetSvgUri(fe);
+                    var uri = ShapeMetadata.GetSvgUri(feImage);
                     if (uri != null)
-                    {
-                        _copiedShapeModel = new BPMNShapeModel
-                        {
-                            SvgUri = uri
-                        };
-                    }
+                        copied.SvgUri = uri;
                 }
+
+                _copiedShapeModel = copied;
             }
         }
 

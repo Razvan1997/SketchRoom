@@ -449,4 +449,26 @@
         </Setter>
     </Style>
 
+    <Style x:Key="WalkthroughPopupStyle" TargetType="Border">
+        <Setter Property="Background" Value="#2B2B2B" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="12" />
+        <Setter Property="BorderBrush" Value="#555" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect
+                    BlurRadius="10"
+                    Opacity="0.4"
+                    ShadowDepth="2" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="WalkthroughTextStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
 </ResourceDictionary>

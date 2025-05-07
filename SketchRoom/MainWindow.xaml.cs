@@ -1,4 +1,5 @@
-﻿using SketchRoom.Toolkit.Wpf.Controls;
+﻿using SketchRoom.Services;
+using SketchRoom.Toolkit.Wpf.Controls;
 using SketchRoom.Toolkit.Wpf.Services;
 using SketchRoom.ViewModels;
 using SketchRoom.Windows;
@@ -23,6 +24,8 @@ namespace SketchRoom
             //var uri = new Uri("pack://application:,,,/Resources/DarkCursor.cur");
             //this.Cursor = new Cursor(Application.GetResourceStream(uri).Stream);
 
+            string description = WalkthroughTexts.ShapesControlDescription;
+            Walkthrough.SetDescription(UserInteractions, description);
             Loaded += MainWindow_Loaded;
         }
 

@@ -15,11 +15,13 @@ using WhiteBoard.Core.UndoRedo;
 using WhiteBoard.Core.Helpers;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
+using System.ComponentModel.Design;
 
 namespace WhiteBoard.Core.Tools
 {
     public class BpmnTool : IDrawingTool
     {
+        private Dictionary<UIElement, Point> _selectionInitialOffsets = new();
         private Vector _dragOffset;
         public string Name => "BpmnTool";
 
@@ -37,10 +39,11 @@ namespace WhiteBoard.Core.Tools
 
         public event Action<IInteractiveShape?>? ShapeSelected;
         private readonly UndoRedoService _undoRedoService;
+        private readonly Services.Interfaces.ISelectionService _selectionService;
 
 
         public BpmnTool(Canvas canvas, ISnapService snapService, Canvas snapCanvas, IToolManager toolManager, 
-            UndoRedoService undoRedoService)
+            UndoRedoService undoRedoService, Services.Interfaces.ISelectionService selectionService)
         {
             _canvas = canvas;
             _snapService = snapService;
@@ -48,6 +51,7 @@ namespace WhiteBoard.Core.Tools
             _toolManager = toolManager;
             _toolManager.ToolChanged += OnToolChanged;
             _undoRedoService = undoRedoService;
+            _selectionService = selectionService;
         }
 
         private void OnToolChanged(IDrawingTool tool)
@@ -87,16 +91,27 @@ namespace WhiteBoard.Core.Tools
                     _draggingShape = interactive;
                     _lastMousePos = pos;
 
-                    _draggingShape = interactive;
-                    _lastMousePos = pos;
-
-                    // 🔁 Calculează offsetul dintre mouse și colțul shape-ului
                     if (interactive is FrameworkElement fe)
                     {
                         var left = Canvas.GetLeft(fe);
                         var top = Canvas.GetTop(fe);
                         _dragOffset = pos - new Point(left, top);
                     }
+
+                    // 📦 Stochează pozițiile relative pentru toată selecția
+                    _selectionInitialOffsets.Clear();
+                    foreach (var selected in _canvas.Children.OfType<FrameworkElement>())
+                    {
+                        if (selected != interactive && _selectionService.SelectedElements.Contains(selected))
+                        {
+                            var offset = new Point(
+                                Canvas.GetLeft(selected) - Canvas.GetLeft((FrameworkElement)_draggingShape),
+                                Canvas.GetTop(selected) - Canvas.GetTop((FrameworkElement)_draggingShape));
+
+                            _selectionInitialOffsets[selected] = offset;
+                        }
+                    }
+
                     return;
                 }
             }
@@ -111,26 +126,31 @@ namespace WhiteBoard.Core.Tools
 
             if (_draggingShape is FrameworkElement fe)
             {
-                // 🧮 Calculăm poziția reală dorită pe bază de offset
                 Point desiredTopLeft = pos - _dragOffset;
-
-                // 🧲 Snap la grid (doar top-left-ul formei)
                 Point gridSnapped = _snapService.GetSnappedPoint(desiredTopLeft, gridSize: 20);
 
-                // 🔁 Afișează ghidaje dacă e cazul
-                var others = _canvas.Children.OfType<FrameworkElement>()
-                                 .Where(e => e != fe && IsSnappable(e))
-                                 .ToList();
-                var formSnapLines = _snapService.GetSnapGuides(gridSnapped, others, fe);
-
-                _snapCanvas.Children.Clear();
-                foreach (var line in formSnapLines)
-                    _snapCanvas.Children.Add(line);
-
-                // 🔩 Mutăm forma în poziția snap-uită
+                // Mută forma principală
                 Canvas.SetLeft(fe, gridSnapped.X);
                 Canvas.SetTop(fe, gridSnapped.Y);
+
+                // Mută restul formelor selectate proporțional
+                foreach (var (element, offset) in _selectionInitialOffsets)
+                {
+                    Canvas.SetLeft(element, gridSnapped.X + offset.X);
+                    Canvas.SetTop(element, gridSnapped.Y + offset.Y);
+                }
+
+                // Snap guides, doar pentru forma principală
+                var others = _canvas.Children.OfType<FrameworkElement>()
+                                 .Where(e => e != fe && IsSnappable(e)).ToList();
+                var snapLines = _snapService.GetSnapGuides(gridSnapped, others, fe);
+
+                _snapCanvas.Children.Clear();
+                foreach (var line in snapLines)
+                    _snapCanvas.Children.Add(line);
             }
+
+            _selectionService.UpdateSelectionMarkersPosition();
         }
 
         public void OnMouseUp(Point pos, MouseButtonEventArgs e)

@@ -44,8 +44,20 @@ namespace WhiteBoard.Core.Services
         {
             ClearSelection(canvas);
 
+            var allConnections = _connectorTool.GetAllConnections().Select(c => c.Visual).ToHashSet();
+
             foreach (UIElement element in canvas.Children.OfType<UIElement>().ToList())
             {
+                if (element is FrameworkElement fe)
+                {
+                    var isConnector = fe.Tag?.ToString() == "Connector";
+                    var isInteractive = fe.Tag?.ToString() == "interactive";
+                    var isConnection = _connectorTool.GetAllConnections().Any(c => c.Visual == fe);
+                    var isShapeInMap = _connectorTool.GetAllConnections().Any(c => c.From?.Visual == fe || c.To?.Visual == fe);
+
+                    if (!isConnector && !isInteractive && !isConnection && !isShapeInMap)
+                        continue;
+                }
                 Rect elementRect;
                 UIElement? marker = null;
 
@@ -81,27 +93,26 @@ namespace WhiteBoard.Core.Services
 
                         marker = new Path
                         {
-                            Data = path2.Data.Clone(), // clone geometry
+                            Data = path2.Data.Clone(),
                             Stroke = Brushes.DeepSkyBlue,
                             StrokeThickness = 3,
                             StrokeDashArray = new DoubleCollection { 4, 2 },
                             IsHitTestVisible = false
                         };
 
-                        // Poziționează Path-ul exact pe cel original
                         Canvas.SetLeft(marker, 0);
                         Canvas.SetTop(marker, 0);
                     }
                 }
-                else if (element is FrameworkElement fe)
+                else if (element is FrameworkElement shapeFe)
                 {
-                    if (!fe.IsLoaded || fe.ActualWidth == 0 || fe.ActualHeight == 0)
+                    if (!shapeFe.IsLoaded || shapeFe.ActualWidth == 0 || shapeFe.ActualHeight == 0)
                         continue;
 
-                    if (VisualTreeHelper.GetParent(fe) is Visual parent)
+                    if (VisualTreeHelper.GetParent(shapeFe) is Visual parent)
                     {
-                        var transform = fe.TransformToAncestor(parent);
-                        var transformedBounds = transform.TransformBounds(new Rect(0, 0, fe.ActualWidth, fe.ActualHeight));
+                        var transform = shapeFe.TransformToAncestor(parent);
+                        var transformedBounds = transform.TransformBounds(new Rect(0, 0, shapeFe.ActualWidth, shapeFe.ActualHeight));
 
                         if (!bounds.IntersectsWith(transformedBounds))
                             continue;
@@ -120,6 +131,7 @@ namespace WhiteBoard.Core.Services
                         Canvas.SetTop(marker, transformedBounds.Top);
                     }
                 }
+
                 if (marker != null)
                 {
                     _selected.Add(element);
@@ -178,6 +190,27 @@ namespace WhiteBoard.Core.Services
             _connectorTool.DeselectAllConnections();
 
             SelectionChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void UpdateSelectionMarkersPosition()
+        {
+            foreach (var pair in _selectionMarkers)
+            {
+                var element = pair.Key;
+                var marker = pair.Value;
+
+                if (element is FrameworkElement fe && marker is Rectangle rect)
+                {
+                    double left = Canvas.GetLeft(fe);
+                    double top = Canvas.GetTop(fe);
+
+                    rect.Width = fe.ActualWidth;
+                    rect.Height = fe.ActualHeight;
+
+                    Canvas.SetLeft(rect, left);
+                    Canvas.SetTop(rect, top);
+                }
+            }
         }
     }
 }

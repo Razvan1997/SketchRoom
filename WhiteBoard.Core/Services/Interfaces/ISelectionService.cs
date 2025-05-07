@@ -16,5 +16,6 @@ namespace WhiteBoard.Core.Services.Interfaces
         IReadOnlyList<UIElement> SelectedElements { get; }
         event EventHandler SelectionChanged;
         void DeselectAll(Canvas canvas);
+        void UpdateSelectionMarkersPosition();
     }
 }

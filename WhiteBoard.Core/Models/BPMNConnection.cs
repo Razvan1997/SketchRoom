@@ -165,6 +165,48 @@ namespace WhiteBoard.Core.Models
 
             _containerCanvas.Children.Add(_arrowHead);
         }
+
+        public BPMNConnectionExportModel? Export()
+        {
+            var model = new BPMNConnectionExportModel
+            {
+                CreatedAt = this.CreatedAt,
+                IsCurved = this.Geometry.Figures.Any(f => f.Segments.OfType<BezierSegment>().Any()),
+                PathPoints = new List<Point>(),
+                StrokeHex = (_path.Stroke as SolidColorBrush)?.Color.ToString(),
+                BezierSegments = new List<BezierSegmentData>()
+            };
+
+            foreach (var figure in this.Geometry.Figures)
+            {
+                model.PathPoints.Add(figure.StartPoint);
+
+                foreach (var segment in figure.Segments)
+                {
+                    if (segment is LineSegment line)
+                        model.PathPoints.Add(line.Point);
+                    else if (segment is BezierSegment bezier)
+                    {
+                        model.BezierSegments.Add(new BezierSegmentData
+                        {
+                            Point1 = bezier.Point1,
+                            Point2 = bezier.Point2,
+                            Point3 = bezier.Point3
+                        });
+
+                        model.PathPoints.Add(bezier.Point3);
+                    }
+                }
+            }
+
+            if (From?.Visual is FrameworkElement fromEl && fromEl.Tag is string fromId)
+                model.FromId = fromId;
+
+            if (To?.Visual is FrameworkElement toEl && toEl.Tag is string toId)
+                model.ToId = toId;
+
+            return model.PathPoints.Count >= 2 ? model : null;
+        }
     }
 
 

@@ -22,10 +22,29 @@ namespace WalkthroughDemo
     {
         public event Action NextClicked;
         public event Action SkipAllClicked;
-
+        private CancellationTokenSource _cts;
         public ArrowedPopup()
         {
             InitializeComponent();
+            Loaded += async (s, e) =>
+            {
+                if (!string.IsNullOrWhiteSpace(DescriptionText.Text))
+                {
+                    await AnimateText(DescriptionText.Text);
+                }
+            };
+        }
+
+        private async Task AnimateText(string text, TimeSpan? delayPerChar = null)
+        {
+            delayPerChar ??= TimeSpan.FromMilliseconds(1);
+            DescriptionText.Text = "";
+
+            foreach (char c in text)
+            {
+                DescriptionText.Text += c;
+                await Task.Delay(delayPerChar.Value);
+            }
         }
 
         public void SetArrowRotation(double angle)

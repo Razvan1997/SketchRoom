@@ -56,8 +56,8 @@
 
                 <Border Grid.Column="0" Width="300">
                     <ContentControl
+                        x:Name="UserInteractions"
                         prism:RegionManager.RegionName="UsersInteractionsRegion"
-                        walk:Walkthrough.Description="dsadasd asd asda sda"
                         walk:Walkthrough.HighlightPulse="True"
                         walk:Walkthrough.HighlightRGBBorder="False"
                         walk:Walkthrough.PopupPlacement="Right"

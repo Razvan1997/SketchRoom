@@ -26,6 +26,7 @@ namespace WhiteBoardModule.XAML.Shapes.General
 
             var border = new Border
             {
+                Name = "border",
                 BorderThickness = new Thickness(2),
                 Background = Brushes.White,
                 CornerRadius = new CornerRadius(8),
@@ -161,13 +162,8 @@ namespace WhiteBoardModule.XAML.Shapes.General
             if (control is not FrameworkElement fe)
                 return null;
 
-            // Extrage border și textBox din structura de control
-            var border = fe as Border ?? fe.FindName("border") as Border;
-            var textBox = border?.Child is Grid grid && grid.Children.Count > 0 && grid.Children[0] is TextBox tb ? tb : null;
-
-            var background = (border?.Background as SolidColorBrush)?.Color.ToString() ?? "#FFFFFFFF";
-            var stroke = (border?.BorderBrush as SolidColorBrush)?.Color.ToString() ?? "#FF000000";
-            var foreground = (textBox?.Foreground as SolidColorBrush)?.Color.ToString() ?? "#FF000000";
+            if (_border == null || _textBox == null)
+                return null;
 
             return new BPMNShapeModelWithPosition
             {
@@ -181,10 +177,10 @@ namespace WhiteBoardModule.XAML.Shapes.General
                 SvgUri = null,
                 ExtraProperties = new Dictionary<string, string>
         {
-            { "Background", background },
-            { "BorderBrush", stroke },
-            { "Foreground", foreground },
-            { "Text", textBox?.Text ?? "" }
+            { "Background", (_border.Background as SolidColorBrush)?.Color.ToString() ?? "#FFFFFFFF" },
+            { "BorderBrush", (_border.BorderBrush as SolidColorBrush)?.Color.ToString() ?? "#FF000000" },
+            { "Foreground", (_textBox.Foreground as SolidColorBrush)?.Color.ToString() ?? "#FF000000" },
+            { "TextShape", _textBox.Text ?? "" }
         }
             };
         }
@@ -212,7 +208,7 @@ namespace WhiteBoardModule.XAML.Shapes.General
                 catch { _textBox.Foreground = Brushes.Black; }
             }
 
-            if (extraProperties.TryGetValue("Text", out var text))
+            if (extraProperties.TryGetValue("TextShape", out var text))
             {
                 _textBox.Text = text;
             }

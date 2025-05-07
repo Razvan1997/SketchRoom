@@ -4,10 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WhiteBoard.Core.Services.Interfaces;
-using WhiteBoardModule.XAML;
 
-namespace WhiteBoardModule
+namespace WhiteBoard.Core.Services.Interfaces
 {
     public interface IGenericShapeFactory
     {

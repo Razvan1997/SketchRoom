@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using WhiteBoard.Core.Events;
+using WhiteBoard.Core.Helpers;
 using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services;
 using WhiteBoard.Core.Services.Interfaces;
@@ -33,6 +34,7 @@ namespace WhiteBoardModule.XAML
         private bool _isRotating = false;
         private Point _rotateStart;
         private Point _resizeStart;
+        private Viewbox? _imageContainer;
         private static readonly Dictionary<ShapeType, ShapeContextType> _contextMap = new()
         {
             { ShapeType.Rectangle, ShapeContextType.GenericShape },
@@ -191,7 +193,10 @@ namespace WhiteBoardModule.XAML
         public void SetShape(ShapeType shape)
         {
             _shapeType = shape;
-            _renderer = _rendererFactory.CreateRenderer(shape, withBindings: false);
+            if (shape != ShapeType.Image)
+            {
+                _renderer = _rendererFactory.CreateRenderer(shape, withBindings: false);
+            }
             double gridSize = 20;
 
             double rawWidth = 120;
@@ -199,6 +204,30 @@ namespace WhiteBoardModule.XAML
 
             this.Width = SnapToGrid(rawWidth, gridSize);
             this.Height = SnapToGrid(rawHeight, gridSize);
+
+            if (shape == ShapeType.Image)
+            {
+                var uri = ShapeMetadata.GetSvgUri(this);
+                if (uri != null)
+                {
+                    var image = new Image
+                    {
+                        Source = new BitmapImage(uri),
+                        Stretch = Stretch.Uniform,
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center
+                    };
+
+                    var container = new Viewbox
+                    {
+                        Stretch = Stretch.Fill,
+                        Child = image
+                    };
+                    _imageContainer = container;
+                    ShapePresenter.Content = container;
+                }
+                return;
+            }
 
             if (_renderer is EntityShapeRenderer entityRenderer)
             {
@@ -565,6 +594,25 @@ namespace WhiteBoardModule.XAML
 
         public BPMNShapeModelWithPosition ExportData()
         {
+            if (_shapeType == ShapeType.Image && this is FrameworkElement fe)
+            {
+                var uri = ShapeMetadata.GetSvgUri(fe);
+                if (uri == null)
+                    throw new InvalidOperationException("Image shape has no SvgUri metadata.");
+
+                return new BPMNShapeModelWithPosition
+                {
+                    Id = Guid.NewGuid(),
+                    Type = ShapeType.Image,
+                    SvgUri = uri,
+                    Left = Canvas.GetLeft(fe),
+                    Top = Canvas.GetTop(fe),
+                    Width = this.Width,
+                    Height = this.Height,
+                    RotationAngle = (_transformGroup?.Children.OfType<RotateTransform>().FirstOrDefault()?.Angle) ?? 0
+                };
+            }
+
             if (Renderer == null)
                 throw new InvalidOperationException("Renderer is missing.");
 

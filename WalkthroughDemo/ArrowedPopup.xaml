@@ -22,7 +22,7 @@
             Grid.Row="0"
             Height="10"
             HorizontalAlignment="Center"
-            Fill="White"
+            Fill="#2B2B2B"
             Points="0,10 10,0 20,10"
             RenderTransformOrigin="0.5,0.5" />
 
@@ -31,31 +31,35 @@
             Grid.Row="1"
             Width="270"
             Padding="12"
-            Background="White"
-            CornerRadius="8">
+            CornerRadius="8"
+            Style="{StaticResource WalkthroughPopupStyle}">
             <StackPanel>
                 <!--  Descriere  -->
                 <TextBlock
                     x:Name="DescriptionText"
                     Margin="0,0,0,8"
-                    Foreground="Black"
+                    Style="{StaticResource WalkthroughTextStyle}"
                     TextWrapping="Wrap" />
 
                 <!--  Separator  -->
                 <Separator Margin="0,8,0,8" />
 
                 <!--  Butoane  -->
-                <StackPanel
-                    HorizontalAlignment="Right"
-                    Orientation="Horizontal">
+                <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
                     <Button
+                        Width="50"
+                        Height="30"
                         Padding="8,4"
                         Click="SkipAll_Click"
-                        Content="Skip All" />
+                        Content="Skip All"
+                        Style="{StaticResource DarkFlatButtonStyle}" />
                     <Button
+                        Width="50"
+                        Height="30"
                         Padding="8,4"
                         Click="Next_Click"
-                        Content="Next" />
+                        Content="Next"
+                        Style="{StaticResource DarkFlatButtonStyle}" />
                 </StackPanel>
             </StackPanel>
         </Border>

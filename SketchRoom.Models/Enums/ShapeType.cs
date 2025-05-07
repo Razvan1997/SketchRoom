@@ -33,6 +33,7 @@ namespace SketchRoom.Models.Enums
         SimpleContainer,
         ConnectorLabelLeft, 
         ConnectorDoubleLabelLeft,
-        Unknown
+        Image,
+        Unknown,
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using SketchRoom.Models.Enums;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using WhiteBoard.Core.Factory.Interfaces;
@@ -9,11 +10,13 @@ namespace WhiteBoard.Core.Models
     public class BpmnWhiteBoardElement : WhiteBoardElement
     {
         private readonly UIElement _visual;
+        private readonly Uri _svgUri;
 
         public event MouseButtonEventHandler? Clicked;
 
         public BpmnWhiteBoardElement(Uri svgUri, IBpmnShapeFactory factory)
         {
+            _svgUri = svgUri;
             _visual = factory.CreateShape(svgUri);
 
             if (_visual is IInteractiveShape interactive)

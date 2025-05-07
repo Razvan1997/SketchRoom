@@ -25,6 +25,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 {
     public partial class WhiteBoardControl : UserControl, IWhiteBoardAdapter
     {
+        public Canvas DrawingCanvasPublic => DrawingCanvas;
         private readonly List<ITextInteractiveShape> _textShapes = new();
         private BpmnConnectorTool? _connectorTool;
         public List<BPMNConnection> _connections = new();
@@ -84,14 +85,15 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             freeDrawTool.PointDrawn += point => LivePointDrawn?.Invoke(point);
             freeDrawTool.PointerMoved += point => MouseMoved?.Invoke(point);
 
-            var eraserTool = new EraserTool(drawingService, DrawingCanvas);
-            var bpmnTool = new BpmnTool(DrawingCanvas, _snapService, SnapGridCanvas, _toolManager, undoRedoService);
-
             _connectorTool = new BpmnConnectorTool(DrawingCanvas, _connections, _nodes, this, _toolManager, _snapService, undoRedoService, _drawingPreferencesService);
+            _selectionService = new SelectionService(_connectorTool);
+
+            var eraserTool = new EraserTool(drawingService, DrawingCanvas);
+            var bpmnTool = new BpmnTool(DrawingCanvas, _snapService, SnapGridCanvas, _toolManager, undoRedoService, _selectionService);
+
             var connectorCurvedTool = new BpmnConnectorCurvedTool(DrawingCanvas, _connections, _nodes, this, _toolManager, _snapService, undoRedoService);
 
             var rotateTool = new RotateTool(DrawingCanvas);
-            _selectionService = new SelectionService(_connectorTool);
             _selectionService.SelectionChanged += OnSelectionChanged;
             var selectionTool = new SelectionTool(DrawingCanvas, _selectionService, _toolManager);
 
@@ -216,10 +218,8 @@ namespace SketchRoom.Toolkit.Wpf.Controls
         private void OnCanvasLeftClickStart(object sender, MouseButtonEventArgs e)
         {
             var logicalPos = GetLogicalPosition(e);
-            var currentTool = _toolManager.ActiveTool?.Name;
 
             _toolInterceptorService.InterceptToolSwitch(e);
-
             var afterInterceptTool = _toolManager.ActiveTool?.Name;
 
             if (Keyboard.Modifiers == ModifierKeys.Control)
@@ -229,13 +229,11 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
             DeselectAllTexts();
 
-            if (_selectionService.SelectedElements.Count > 0)
+            if (!IsClickOnSelectableShape(e.OriginalSource))
             {
-                _selectionService.DeselectAll(DrawingCanvas);
-            }
+                if (_selectionService.SelectedElements.Count > 0)
+                    _selectionService.DeselectAll(DrawingCanvas);
 
-            if (afterInterceptTool == null)
-            {
                 _shapeSelectionService.Deselect();
             }
 
@@ -459,15 +457,17 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                 if (!string.IsNullOrEmpty(selectedPath))
                 {
                     var uri = new Uri(selectedPath);
-
+                    var _shapeFactory = ContainerLocator.Container.Resolve<IGenericShapeFactory>();
+                    var shapeInstance = _shapeFactory.Create(ShapeType.Image); 
                     var shape = new BPMNShapeModel
                     {
                         Name = System.IO.Path.GetFileNameWithoutExtension(selectedPath),
-                        SvgUri = uri, 
-                        Category = "Images"
+                        SvgUri = uri,
+                        Category = "Images",
+                        Type = ShapeType.Image,
+                        ShapeContent = shapeInstance // 🔑 IMPORTANT!
                     };
 
-                    // Poziția default în centru
                     var position = _lastRightClickCanvasPosition ?? new Point(this.ActualWidth / 2, this.ActualHeight / 2);
 
                     var visualElement = _dropService.HandleDrop(shape, position);

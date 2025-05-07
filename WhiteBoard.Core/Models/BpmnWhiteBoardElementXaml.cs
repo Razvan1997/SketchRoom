@@ -9,6 +9,7 @@ using System.Windows;
 using WhiteBoard.Core.Services.Interfaces;
 using System.Windows.Media;
 using WhiteBoard.Core.Helpers;
+using SketchRoom.Models.Enums;
 
 namespace WhiteBoard.Core.Models
 {
@@ -52,10 +53,12 @@ namespace WhiteBoard.Core.Models
 
         public BPMNShapeModelWithPosition ExportData()
         {
-            if (_shape is not IShapeAddedXaml shapeWithRenderer)
-                throw new InvalidOperationException("Shape is not IShapeAddedXaml.");
+            if (_shape is IShapeAddedXaml shapeWithRenderer)
+            {
+                return shapeWithRenderer.ExportData();
+            }
 
-            return shapeWithRenderer.ExportData();
+            throw new InvalidOperationException("Unsupported shape for export.");
         }
 
 

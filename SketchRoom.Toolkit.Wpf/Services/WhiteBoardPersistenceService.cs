@@ -76,6 +76,20 @@ namespace SketchRoom.Toolkit.Wpf.Services
 
             foreach (var child in whiteboard.DrawingCanvas.Children.OfType<FrameworkElement>())
             {
+                if (child.Tag?.ToString() == "Connector" && child is Canvas canvas)
+                {
+                    var connection = whiteboard._connections
+                        .FirstOrDefault(c => c.Visual == canvas);
+                    if (connection != null)
+                    {
+                        var export = connection.Export();
+                        if (export != null)
+                            model.Connections.Add(export);
+                    }
+
+                    continue;
+                }
+
                 if (child.Tag?.ToString() != "interactive")
                     continue;
 

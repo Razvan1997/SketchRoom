@@ -1,5 +1,6 @@
 ﻿using SketchRoom.Models.Enums;
 using SketchRoom.Models.Shapes;
+using System;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
@@ -76,22 +77,16 @@ namespace WhiteBoard.Core.Services
         {
             FrameworkElement? visualElement = null;
 
-            if (shape.SvgUri != null)
+            if (shape.ShapeContent is IInteractiveShape prototype)
             {
-                visualElement = CreateVisualElement(shape.SvgUri, dropPos);
-                visualElement.Tag = "interactive";
-                ShapeMetadata.SetSvgUri(visualElement, shape.SvgUri);
-            }
-            else if (shape.ShapeContent is IInteractiveShape prototype)
-            {
-                visualElement = CreateXamlElement(prototype, shape.Type, dropPos);
+                visualElement = CreateXamlElement(prototype, shape, dropPos);
                 visualElement.Tag = "interactive";
             }
+           
             if (visualElement != null && shape.Type == ShapeType.ShapeText)
             {
                 visualElement.Loaded += (_, _) =>
                 {
-                    // caută TextBox și setează focus
                     if (visualElement is DependencyObject root)
                     {
                         var textBox = FindFirstTextBox(root);
@@ -100,6 +95,7 @@ namespace WhiteBoard.Core.Services
                     }
                 };
             }
+
             return visualElement;
         }
 
@@ -107,27 +103,40 @@ namespace WhiteBoard.Core.Services
         {
             FrameworkElement? visualElement = null;
 
-            if (shape.SvgUri != null)
+            // 1. Dacă este o imagine (ShapeType.Image), creăm controlul generic și setăm SvgUri
+            if (shape.Type == ShapeType.Image && interactiveShape != null)
             {
-                visualElement = CreateVisualElement(shape.SvgUri, dropPos);
+                // Setăm tipul și asociem shape-ul
+                interactiveShape.SetShape(ShapeType.Image);
+                shape.ShapeContent = interactiveShape;
+
+                // Creăm elementul vizual
+                visualElement = CreateXamlElement(interactiveShape, shape, dropPos);
                 visualElement.Tag = "interactive";
-                ShapeMetadata.SetSvgUri(visualElement, shape.SvgUri);
+                visualElement.Width = shape.Width;
+                visualElement.Height = shape.Height;    
+
+                if (shape.SvgUri != null)
+                {
+                    ShapeMetadata.SetSvgUri(visualElement, shape.SvgUri);
+                }
+
+                return visualElement; 
             }
-            else if (shape.Type.HasValue && interactiveShape != null)
+
+            // 3. Pentru forme XAML cu control existent
+            if (shape.Type.HasValue && interactiveShape != null)
             {
-                // setezi tipul formei pe instanța deja creată
                 interactiveShape.SetShape(shape.Type.Value);
                 shape.ShapeContent = interactiveShape;
 
-                // creezi elementul vizual pe baza acesteia
-                visualElement = CreateXamlElement(interactiveShape, shape.Type, dropPos);
+                visualElement = CreateXamlElement(interactiveShape, shape, dropPos);
                 visualElement.Tag = "interactive";
 
-                // 🔁 Aplică stilurile restaurate
                 ShapeStyleRestorer.ApplyStyle(shape, visualElement);
             }
 
-            // Autofocus pentru ShapeText
+            // 4. Autofocus pentru ShapeText
             if (visualElement != null && shape.Type == ShapeType.ShapeText)
             {
                 visualElement.Loaded += (_, _) =>
@@ -144,21 +153,31 @@ namespace WhiteBoard.Core.Services
             return visualElement;
         }
 
-        private FrameworkElement? CreateXamlElement(IInteractiveShape prototype, ShapeType? type, Point dropPos)
+        private FrameworkElement? CreateXamlElement(IInteractiveShape prototype, BPMNShapeModel shape, Point dropPos)
         {
+            var type = shape.Type;
+
             var instance = Activator.CreateInstance(prototype.GetType()) as IInteractiveShape;
-            if (instance == null) return null;
+            if (instance == null)
+                return null;
+
+            var element = new BpmnWhiteBoardElementXaml(instance);
+            element.SetPosition(dropPos);
+
+            if (element.Visual is not FrameworkElement visual)
+                return null;
+
+            if (type == ShapeType.Image)
+            {
+                ShapeMetadata.SetSvgUri(visual, shape.SvgUri);
+            }
 
             if (type.HasValue)
             {
                 instance.SetShape(type.Value);
             }
+
             AttachEvents(instance);
-
-            var element = new BpmnWhiteBoardElementXaml(instance);
-            element.SetPosition(dropPos);
-
-            if (element.Visual is not FrameworkElement visual) return null;
 
             return visual;
         }
