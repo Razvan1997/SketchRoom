@@ -2,6 +2,7 @@
 using SketchRoom.Models.Shapes;
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -79,8 +80,11 @@ namespace WhiteBoard.Core.Services
 
             if (shape.ShapeContent is IInteractiveShape prototype)
             {
+                shape.Id = Guid.NewGuid();
+
                 visualElement = CreateXamlElement(prototype, shape, dropPos);
                 visualElement.Tag = "interactive";
+                ShapeMetadata.SetShapeId(visualElement, shape.Id.ToString());
             }
            
             if (visualElement != null && shape.Type == ShapeType.ShapeText)
@@ -113,6 +117,7 @@ namespace WhiteBoard.Core.Services
                 // Creăm elementul vizual
                 visualElement = CreateXamlElement(interactiveShape, shape, dropPos);
                 visualElement.Tag = "interactive";
+                ShapeMetadata.SetShapeId(visualElement, shape.Id.ToString());
                 visualElement.Width = shape.Width;
                 visualElement.Height = shape.Height;    
 
@@ -132,6 +137,7 @@ namespace WhiteBoard.Core.Services
 
                 visualElement = CreateXamlElement(interactiveShape, shape, dropPos);
                 visualElement.Tag = "interactive";
+                ShapeMetadata.SetShapeId(visualElement, shape.Id.ToString());
 
                 ShapeStyleRestorer.ApplyStyle(shape, visualElement);
             }
@@ -256,7 +262,7 @@ namespace WhiteBoard.Core.Services
 
                 if (width > 0 && height > 0)
                 {
-                    var node = new BPMNNode(pos, width, height);
+                    var node = new BPMNNode(element); 
                     _nodeMap[element] = node;
                 }
             }
@@ -268,6 +274,34 @@ namespace WhiteBoard.Core.Services
             else
             {
                 element.Loaded += (_, _) => RegisterNode();
+            }
+        }
+
+        public void RegisterNodeWhenReadyRestore(FrameworkElement element, string shapeId, Dictionary<string, BPMNNode> externalNodeMap)
+        {
+            void Register()
+            {
+                if (element.ActualWidth > 0 && element.ActualHeight > 0)
+                {
+                    var node = new BPMNNode(element);
+                    _nodeMap[element] = node;
+
+                    externalNodeMap[shapeId] = node;
+                }
+            }
+
+            if (element.IsLoaded)
+                Register();
+            else
+                element.Loaded += (_, _) => Register();
+        }
+
+        public void TryRegisterNodeImmediate(FrameworkElement element)
+        {
+            if (element.IsLoaded && element.ActualWidth > 0 && element.ActualHeight > 0)
+            {
+                var node = new BPMNNode(element);
+                _nodeMap[element] = node;
             }
         }
 

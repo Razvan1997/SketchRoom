@@ -13,6 +13,7 @@ using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services.Interfaces;
 using System.Windows.Media.Imaging;
 using System.Windows.Media;
+using System.Text.Json.Serialization;
 
 namespace SketchRoom.Toolkit.Wpf.Services
 {
@@ -107,7 +108,14 @@ namespace SketchRoom.Toolkit.Wpf.Services
             var fileName = $"tab_{tab.Id}.json";
             var filePath = Path.Combine(folder, fileName);
 
-            var json = JsonSerializer.Serialize(model, new JsonSerializerOptions { WriteIndented = true });
+
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals
+            };
+
+            var json = JsonSerializer.Serialize(model, options);
             await File.WriteAllTextAsync(filePath, json);
 
             if (saveThumbnail)

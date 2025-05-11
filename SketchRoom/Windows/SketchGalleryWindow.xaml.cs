@@ -65,6 +65,17 @@ namespace SketchRoom.Windows
 
                 img.MouseLeftButtonUp += (s, e) => ShowPreview(file);
 
+                var contextMenu = new ContextMenu
+                {
+                    Style = (Style)FindResource("DarkContextMenuStyle")
+                };
+
+                var deleteMenuItem = new MenuItem { Header = "Delete" };
+                deleteMenuItem.Click += (s, e) => DeleteImage(file);
+                contextMenu.Items.Add(deleteMenuItem);
+
+                img.ContextMenu = contextMenu;
+
                 var text = new TextBlock
                 {
                     Text = System.IO.Path.GetFileName(file),
@@ -156,6 +167,27 @@ namespace SketchRoom.Windows
             Vector v = _start - e.GetPosition(ZoomScrollViewer);
             ImageTranslateTransform.X = _origin.X - v.X;
             ImageTranslateTransform.Y = _origin.Y - v.Y;
+        }
+
+        private void DeleteImage(string filePath)
+        {
+            var result = MessageBox.Show($"Are you sure you want to delete \"{System.IO.Path.GetFileName(filePath)}\"?",
+                                         "Confirm Delete",
+                                         MessageBoxButton.YesNo,
+                                         MessageBoxImage.Warning);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    File.Delete(filePath);
+                    LoadImages(); // Reîncarcă galeria
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to delete file: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
         }
     }
 }

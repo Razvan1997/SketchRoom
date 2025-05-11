@@ -12,47 +12,25 @@ namespace WhiteBoard.Core.Models
 {
     public class BPMNNode : WhiteBoardElement
     {
-        private readonly Rectangle _rect;
+        private readonly FrameworkElement _visual;
 
-        public BPMNNode(Point position, double width = 100, double height = 60)
+        public BPMNNode(FrameworkElement visual)
         {
-            _rect = new Rectangle
-            {
-                Width = width,
-                Height = height,
-                Fill = Brushes.LightBlue,
-                Stroke = Brushes.DarkBlue,
-                StrokeThickness = 2
-            };
-
-            Canvas.SetLeft(_rect, position.X);
-            Canvas.SetTop(_rect, position.Y);
+            _visual = visual;
         }
 
-        public override UIElement Visual => _rect;
+        public override UIElement Visual => _visual;
 
         public Point Center => new Point(
-            Canvas.GetLeft(_rect) + _rect.Width / 2,
-            Canvas.GetTop(_rect) + _rect.Height / 2
+            Canvas.GetLeft(_visual) + _visual.ActualWidth / 2,
+            Canvas.GetTop(_visual) + _visual.ActualHeight / 2
         );
 
-        public override Rect Bounds
-        {
-            get
-            {
-                if (_rect.IsLoaded)
-                {
-                    var bounds = VisualTreeHelper.GetDescendantBounds(_rect);
-                    var offset = new Point(Canvas.GetLeft(_rect), Canvas.GetTop(_rect));
-                    return new Rect(offset, bounds.Size);
-                }
-
-                return new Rect(
-                    Canvas.GetLeft(_rect),
-                    Canvas.GetTop(_rect),
-                    _rect.Width,
-                    _rect.Height);
-            }
-        }
+        public override Rect Bounds => new Rect(
+            Canvas.GetLeft(_visual),
+            Canvas.GetTop(_visual),
+            _visual.ActualWidth,
+            _visual.ActualHeight
+        );
     }
 }

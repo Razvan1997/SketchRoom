@@ -1,4 +1,5 @@
-﻿using SketchRoom.Services;
+﻿using SketchRoom.Database;
+using SketchRoom.Services;
 using SketchRoom.Toolkit.Wpf.Controls;
 using SketchRoom.Toolkit.Wpf.Services;
 using SketchRoom.ViewModels;
@@ -33,9 +34,11 @@ namespace SketchRoom
         {
             base.OnSourceInitialized(e);
 
+            var settings = SettingsStorage.Load();
+
             _hotkeyService = new GlobalHotkeyService(this);
             _hotkeyService.HotkeyPressed += OnGlobalHotkeyPressed;
-            _hotkeyService.RegisterHotkey();
+            _hotkeyService.RegisterHotkey("CTRL", settings.Hotkey2);
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -50,7 +53,11 @@ namespace SketchRoom
 
         private void OnGlobalHotkeyPressed()
         {
-            var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Sketches");
+            var settings = SettingsStorage.Load();
+
+            var folder = string.IsNullOrWhiteSpace(settings.GhostPreviewPath)
+                ? ""
+                : settings.GhostPreviewPath;
             Application.Current.Dispatcher.Invoke(() =>
             {
                 var gallery = new SketchGalleryWindow(folder);

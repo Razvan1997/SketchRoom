@@ -6,6 +6,7 @@
     xmlns:local="clr-namespace:TopBarModule.Views"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:prism="http://prismlibrary.com/"
+    xmlns:svgc="http://sharpvectors.codeplex.com/svgc/"
     d:DesignHeight="150"
     d:DesignWidth="800"
     prism:ViewModelLocator.AutoWireViewModel="True"
@@ -25,6 +26,23 @@
             HorizontalAlignment="Right"
             VerticalAlignment="Top"
             Orientation="Horizontal">
+
+            <Button
+                Width="40"
+                Height="20"
+                Background="Transparent"
+                BorderThickness="0"
+                Command="{Binding SettingsCommand}">
+                <StackPanel
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <svgc:SvgViewbox
+                        Width="18"
+                        Height="18"
+                        Source="pack://application:,,,/TopBarModule;component/Resources/settings.svg" />
+                </StackPanel>
+            </Button>
 
             <!--  Minimize  -->
             <Button

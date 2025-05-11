@@ -7,6 +7,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Xml.Linq;
 using WhiteBoard.Core.Helpers;
 using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services;
@@ -246,10 +247,32 @@ namespace WhiteBoard.Core.Tools
                 if (!_pathPoints.Last().Equals(snapped))
                     _pathPoints.Add(snapped);
 
+                Point? fromOffset = null;
+                Point? toOffset = null;
+
+                if(_fromNode.Visual is FrameworkElement fromFe)
+                {
+                    var fromLeft = Canvas.GetLeft(fromFe);
+                    var fromTop = Canvas.GetTop(fromFe);
+                    var firstPoint = _pathPoints.First();
+                    fromOffset = new Point(firstPoint.X - fromLeft, firstPoint.Y - fromTop);
+                }
+
+                if (toNode?.Visual is FrameworkElement toFe)
+                {
+                    var toLeft = Canvas.GetLeft(toFe);
+                    var toTop = Canvas.GetTop(toFe);
+                    var lastPoint = _pathPoints.Last();
+                    toOffset = new Point(lastPoint.X - toLeft, lastPoint.Y - toTop);
+                }
+
                 var connection = new BPMNConnection(_fromNode, toNode, _pathPoints)
                 {
+                    FromOffset = fromOffset,
+                    ToOffset = toOffset,
                     CreatedAt = DateTime.Now
                 };
+
                 connection.SetStroke(_drawingPreferences.SelectedColor);
                 if (toConnection != null)
                 {

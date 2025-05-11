@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -7,6 +8,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
+using WhiteBoard.Core.Helpers;
 
 namespace WhiteBoard.Core.Models
 {
@@ -19,6 +21,8 @@ namespace WhiteBoard.Core.Models
         private Polygon? _arrowHead;
         public BPMNNode? From { get; set; }
         public BPMNNode? To { get; set; }
+        public Point? FromOffset { get; set; }
+        public Point? ToOffset { get; set; }
 
         public BPMNConnection? ConnectedToConnection { get; set; }
         public Point? ConnectionIntersectionPoint { get; set; }
@@ -44,6 +48,11 @@ namespace WhiteBoard.Core.Models
         public PathGeometry Geometry => _geometry;
 
         public Ellipse? ConnectionDot { get; set; }
+        public List<Point> OriginalPathPoints { get; set; } = new();
+        public List<BezierSegmentData> OriginalBezierSegments { get; set; } = new();
+
+        public string? StartDirection { get; set; }
+        public string? EndDirection { get; set; }
 
         public BPMNConnection(BPMNNode? from, BPMNNode? to)
         {
@@ -90,21 +99,52 @@ namespace WhiteBoard.Core.Models
         }
         public BPMNConnection(BPMNNode from, BPMNNode? to, PathGeometry bezierGeometry)
     : this(from, to)
-{
+        {
             _figure.Segments.Clear();
             _geometry.Figures.Clear();
 
+            // Inițializează lista de puncte originale și segmente Bezier
+            OriginalPathPoints = new List<Point>();
+            OriginalBezierSegments = new List<BezierSegmentData>();
+
             foreach (var figure in bezierGeometry.Figures)
             {
-                var copy = new PathFigure { StartPoint = figure.StartPoint, IsClosed = false, IsFilled = true };
+                _figure.StartPoint = figure.StartPoint;
+                _figure.Segments.Clear();
+
+                // ✅ Adaugă StartPoint ca primul punct de referință
+                OriginalPathPoints.Add(figure.StartPoint);
+
                 foreach (var seg in figure.Segments)
-                    copy.Segments.Add(seg.Clone()); // clone to avoid shared references
-                _geometry.Figures.Add(copy);
+                {
+                    var segClone = seg.Clone();
+
+                    if (seg is BezierSegment bezier)
+                    {
+                        OriginalBezierSegments.Add(new BezierSegmentData
+                        {
+                            Point1 = bezier.Point1,
+                            Point2 = bezier.Point2,
+                            Point3 = bezier.Point3
+                        });
+
+                        OriginalPathPoints.Add(bezier.Point3);
+                    }
+                    else if (seg is LineSegment line)
+                    {
+                        OriginalPathPoints.Add(line.Point);
+                    }
+
+                    _figure.Segments.Add(segClone);
+                }
+
+                _geometry.Figures.Clear();
+                _geometry.Figures.Add(_figure);
             }
 
-            // adaugă săgeata la capătul curbei
-            if (bezierGeometry.Figures.FirstOrDefault()?.Segments.LastOrDefault() is BezierSegment bezier)
-                SetArrowFromTo(bezier.Point2, bezier.Point3); // Point2 -> control, Point3 -> final
+            // reconstruim săgeata
+            if (bezierGeometry.Figures.FirstOrDefault()?.Segments.LastOrDefault() is BezierSegment lastBezier)
+                SetArrowFromTo(lastBezier.Point2, lastBezier.Point3);
         }
 
         public BPMNConnection(BPMNNode from, BPMNNode? to, IEnumerable<Point> pathPoints, bool addArrow = true)
@@ -118,6 +158,8 @@ namespace WhiteBoard.Core.Models
         {
             var pointList = points.ToList();
             if (pointList.Count < 2) return;
+
+            OriginalPathPoints = pointList;
 
             _figure.StartPoint = pointList[0];
             _figure.Segments.Clear();
@@ -174,7 +216,12 @@ namespace WhiteBoard.Core.Models
                 IsCurved = this.Geometry.Figures.Any(f => f.Segments.OfType<BezierSegment>().Any()),
                 PathPoints = new List<Point>(),
                 StrokeHex = (_path.Stroke as SolidColorBrush)?.Color.ToString(),
-                BezierSegments = new List<BezierSegmentData>()
+                BezierSegments = new List<BezierSegmentData>(),
+                FromOffset = this.FromOffset,
+                ToOffset = this.ToOffset,
+
+                StartDirection = this.StartDirection,
+                EndDirection = this.EndDirection
             };
 
             foreach (var figure in this.Geometry.Figures)
@@ -199,13 +246,78 @@ namespace WhiteBoard.Core.Models
                 }
             }
 
-            if (From?.Visual is FrameworkElement fromEl && fromEl.Tag is string fromId)
-                model.FromId = fromId;
-
-            if (To?.Visual is FrameworkElement toEl && toEl.Tag is string toId)
-                model.ToId = toId;
+            if (From?.Visual is FrameworkElement fromEl)
+                model.FromId = ShapeMetadata.GetShapeId(fromEl);
+            if (To?.Visual is FrameworkElement toEl)
+                model.ToId = ShapeMetadata.GetShapeId(toEl);
 
             return model.PathPoints.Count >= 2 ? model : null;
+        }
+
+        public void RecalculateGeometry()
+        {
+            if (From?.Visual is not FrameworkElement fromFe || To?.Visual is not FrameworkElement toFe)
+                return;
+
+            if (OriginalBezierSegments.Count == 0)
+            {
+                if (OriginalPathPoints.Count < 2) return;
+
+                var fromCurrent = new Point(Canvas.GetLeft(fromFe), Canvas.GetTop(fromFe)) +
+                                  (Vector)(FromOffset ?? new Point(fromFe.ActualWidth / 2, fromFe.ActualHeight / 2));
+                var toCurrent = new Point(Canvas.GetLeft(toFe), Canvas.GetTop(toFe)) +
+                                (Vector)(ToOffset ?? new Point(toFe.ActualWidth / 2, toFe.ActualHeight / 2));
+
+                var fromOriginal = OriginalPathPoints.First();
+                var toOriginal = OriginalPathPoints.Last();
+
+                var deltaFrom = fromCurrent - fromOriginal;
+                var deltaTo = toCurrent - toOriginal;
+
+                var movedPoints = new List<Point>();
+
+                for (int i = 0; i < OriginalPathPoints.Count; i++)
+                {
+                    if (i == 0)
+                        movedPoints.Add(OriginalPathPoints[0] + deltaFrom);
+                    else if (i == OriginalPathPoints.Count - 1)
+                        movedPoints.Add(OriginalPathPoints[^1] + deltaTo);
+                    else
+                        movedPoints.Add(OriginalPathPoints[i]);
+                }
+
+                SetCustomPath(movedPoints, addArrow: true);
+                _path.Data = _geometry; // 💡 important pentru vizual
+                return;
+            }
+
+            if (OriginalBezierSegments.Count > 0)
+            {
+                var fromCurr = GetCanvasPoint(fromFe, FromOffset);
+                var toCurr = GetCanvasPoint(toFe, ToOffset);
+
+                var geometry = BezierHelper.GenerateSmartBezierCore(
+                 fromCurr,
+                 toCurr,
+                 StartDirection,
+                 EndDirection,
+                 out Point lastStart,
+                 out Point lastEnd
+                );
+
+                _geometry.Figures.Clear();
+                foreach (var fig in geometry.Figures)
+                    _geometry.Figures.Add(fig.Clone());
+
+                _path.Data = _geometry;
+                SetArrowFromTo(lastStart, lastEnd);
+            }
+        }
+
+        private Point GetCanvasPoint(FrameworkElement fe, Point? offset)
+        {
+            return new Point(Canvas.GetLeft(fe), Canvas.GetTop(fe)) +
+                   (Vector)(offset ?? new Point(fe.ActualWidth / 2, fe.ActualHeight / 2));
         }
     }
 

@@ -15,8 +15,11 @@ namespace WhiteBoard.Core.Models
         public string? ToId { get; set; }
         public DateTime CreatedAt { get; set; }
         public string? StrokeHex { get; set; }
-
+        public Point? FromOffset { get; set; }
+        public Point? ToOffset { get; set; }
         public List<BezierSegmentData>? BezierSegments { get; set; }
+        public string? StartDirection { get; set; }
+        public string? EndDirection { get; set; }
     }
 
     public class BezierSegmentData

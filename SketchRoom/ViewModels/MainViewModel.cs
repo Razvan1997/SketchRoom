@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using TopBarModule.Events;
 using WhiteBoardModule.Events;
 
 namespace SketchRoom.ViewModels
@@ -21,6 +22,7 @@ namespace SketchRoom.ViewModels
             _dialogService = dialogService;
             _regionManager = regionManager;
             eventAggregator.GetEvent<OpenSaveSketchDialogEvent>().Subscribe(OpenSaveSketchDialog);
+            eventAggregator.GetEvent<OpenSettingsDialogEvent>().Subscribe(OpenSettingsDialog);
             var parameters = new NavigationParameters
                     {
                         { "IsHost", true },
@@ -49,7 +51,7 @@ namespace SketchRoom.ViewModels
                 Owner = Application.Current.MainWindow 
             };
 
-            dialog.ShowDialog();
+            dialog.Show();
         }
 
 
@@ -62,6 +64,12 @@ namespace SketchRoom.ViewModels
         private void OpenSaveSketchDialog()
         {
             var dialog = new SaveSketchDialog();
+            dialog.Show();
+        }
+
+        private void OpenSettingsDialog()
+        {
+            var dialog = new SettingsDialog();
             dialog.Show();
         }
     }

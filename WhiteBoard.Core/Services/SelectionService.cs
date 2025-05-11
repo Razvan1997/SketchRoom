@@ -212,5 +212,9 @@ namespace WhiteBoard.Core.Services
                 }
             }
         }
+        public IEnumerable<BPMNConnection> GetAllConnections()
+        {
+            return _connectorTool.GetAllConnections();
+        }
     }
 }

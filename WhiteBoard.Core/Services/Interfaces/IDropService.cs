@@ -15,11 +15,13 @@ namespace WhiteBoard.Core.Services.Interfaces
         Dictionary<FrameworkElement, BPMNNode> _nodeMap { get; }
         FrameworkElement? HandleDrop(BPMNShapeModel shape, Point dropPos);
         void RegisterNodeWhenReady(FrameworkElement element);
+        void RegisterNodeWhenReadyRestore(FrameworkElement element, string id, Dictionary<string, BPMNNode> nodeMap);
         void SetupConnectorButton(FrameworkElement element);
         void PlaceElementOnCanvas(FrameworkElement element, Point position);
 
         void MoveOverlayImageToWhiteBoard(FrameworkElement element, Point absolutePosition);
         bool TryGetShapeWrapper(FrameworkElement element, out BpmnWhiteBoardElementXaml? wrapper);
         FrameworkElement? HandleDropSavedElements(BPMNShapeModelWithPosition shape, Point dropPos, IInteractiveShape interactiveShape);
+        void TryRegisterNodeImmediate(FrameworkElement element);
     }
 }

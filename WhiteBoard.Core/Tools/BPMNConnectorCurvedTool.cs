@@ -117,21 +117,19 @@ namespace WhiteBoard.Core.Tools
 
             _canvas.Children.Remove(_tempPath);
 
-            PathGeometry geometry;
-            string? endDirection = null;
-            Point end = endPoint;
-
             if (_fromNode != null)
             {
                 var toNode = GetNodeAt(endPoint);
                 if (toNode != null)
                 {
+                    var fromElement = _nodes.FirstOrDefault(x => x.Value == _fromNode).Key;
                     var toElement = _nodes.FirstOrDefault(x => x.Value == toNode).Key;
-                    if (toElement != null)
-                    {
-                        end = endPoint;
-                        endDirection = endDirectionOverride ?? DetectDirectionOnShape(endPoint, toElement);
-                    }
+
+                    if (fromElement == null || toElement == null)
+                        return;
+
+                    var end = endPoint;
+                    var endDirection = endDirectionOverride ?? DetectDirectionOnShape(endPoint, toElement);
 
                     var resultGeometry = GenerateSmartBezierWithInfo(
                         _startPoint.Value,
@@ -140,12 +138,22 @@ namespace WhiteBoard.Core.Tools
                         endDirection
                     );
 
+                    // ⚠️ Calculează offset-urile față de forma de plecare / sosire
+                    var fromOffset = _startPoint.Value - new Point(Canvas.GetLeft(fromElement), Canvas.GetTop(fromElement));
+                    var toOffset = end - new Point(Canvas.GetLeft(toElement), Canvas.GetTop(toElement));
+
                     var connection = new BPMNConnection(_fromNode, toNode, resultGeometry.Geometry)
                     {
-                        CreatedAt = DateTime.Now
+                        CreatedAt = DateTime.Now,
+                        StartDirection = _startDirection,
+                        EndDirection = endDirection,
+                        FromOffset = new Point(fromOffset.X, fromOffset.Y),
+                        ToOffset = new Point(toOffset.X, toOffset.Y)
                     };
+
                     connection.SetStroke(_tempPath.Stroke);
                     connection.SetArrowFromTo(resultGeometry.LastLineStart, resultGeometry.LastLineEnd);
+
                     var command = new AddConnectionCommand(_canvas, connection, _connections);
                     _undoRedoService.ExecuteCommand(command);
                 }
@@ -283,7 +291,10 @@ namespace WhiteBoard.Core.Tools
             var figure = new PathFigure { StartPoint = start };
             figure.Segments.Add(new LineSegment(p1, true));
             figure.Segments.Add(new BezierSegment(control1, control2, p4, true));
-            figure.Segments.Add(new LineSegment(end, true));
+            if ((end - p4).Length > 0.5)
+            {
+                figure.Segments.Add(new LineSegment(end, true));
+            }
 
             return new CurvedPathResult
             {

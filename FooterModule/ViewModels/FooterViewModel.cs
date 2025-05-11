@@ -156,10 +156,10 @@ namespace FooterModule.ViewModels
             var whiteBoard = new WhiteBoardControl(drawingService, preferences);
 
             var shapeFactory = ContainerLocator.Container.Resolve<IGenericShapeFactory>();
-            var nodeMap = HandleSavedElements.RestoreShapes(model.Shapes, whiteBoard, shapeFactory);
-
-            // 🔧 Restaurăm conexiunile
-            HandleSavedElements.RestoreConnections(model.Connections, whiteBoard, nodeMap);
+            HandleSavedElements.RestoreShapes(model.Shapes, whiteBoard, shapeFactory, nodeMap =>
+            {
+                HandleSavedElements.RestoreConnections(model.Connections, whiteBoard, nodeMap);
+            });
 
             _tabService.AssociateToolManager(newTab.Id, new ToolManager());
             _tabService.AssociateDrawingService(newTab.Id, drawingService);

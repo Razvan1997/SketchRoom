@@ -10,6 +10,7 @@ using SketchRoom.Toolkit.Wpf.Controls;
 using WhiteBoard.Core.Services.Interfaces;
 using System.IO;
 using Microsoft.Win32;
+using SketchRoom.Database;
 
 namespace SketchRoom.ViewModels
 {
@@ -26,6 +27,11 @@ namespace SketchRoom.ViewModels
                 "TIFF",
                 "PDF"
             };
+
+            var settings = SettingsStorage.Load();
+            DestinationPath = string.IsNullOrWhiteSpace(settings.GhostPreviewPath)
+                ? ""
+                : settings.GhostPreviewPath;
 
             // Comenzi
             SaveCommand = new DelegateCommand(OnSave);
@@ -77,7 +83,18 @@ namespace SketchRoom.ViewModels
 
             if (whiteboard != null)
             {
+                // ✅ 1. Salvează în calea aleasă de utilizator
                 whiteboard.SaveToFile(path, SelectedFormatType);
+
+                // ✅ 2. Salvează și în ghost preview folder din setări
+                var settings = SettingsStorage.Load();
+                var ghostFolder = string.IsNullOrWhiteSpace(settings.GhostPreviewPath)
+                    ? ""
+                    : settings.GhostPreviewPath;
+
+                var ghostFilePath = Path.Combine(ghostFolder, $"ghost_{DateTime.Now:yyyyMMdd_HHmmss}.{ext}");
+                whiteboard.SaveToFile(ghostFilePath, SelectedFormatType);
+
                 MessageBox.Show("Sketch saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
 

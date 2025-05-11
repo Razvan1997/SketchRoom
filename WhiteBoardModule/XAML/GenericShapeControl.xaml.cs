@@ -602,7 +602,9 @@ namespace WhiteBoardModule.XAML
 
                 return new BPMNShapeModelWithPosition
                 {
-                    Id = Guid.NewGuid(),
+                    Id = Guid.TryParse(ShapeMetadata.GetShapeId(this), out var parsedId)
+                    ? parsedId
+                    : throw new InvalidOperationException("Missing or invalid shape ID."),
                     Type = ShapeType.Image,
                     SvgUri = uri,
                     Left = Canvas.GetLeft(fe),
@@ -633,7 +635,9 @@ namespace WhiteBoardModule.XAML
                     model.ExtraProperties["TextWrapping"] = textBox.TextWrapping.ToString();
                 }
             }
-
+            model.Id = Guid.TryParse(ShapeMetadata.GetShapeId(this), out var parsed)
+                    ? parsed
+                    : throw new InvalidOperationException("Missing or invalid shape ID.");
             return model;
         }
     }

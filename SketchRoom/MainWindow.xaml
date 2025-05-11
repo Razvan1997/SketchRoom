@@ -13,6 +13,7 @@
     prism:ViewModelLocator.AutoWireViewModel="True"
     WindowStartupLocation="CenterScreen"
     WindowState="Maximized"
+    WindowStyle="None"
     mc:Ignorable="d">
 
     <!--  Layered Grid where spinner is on top of content  -->

@@ -148,9 +148,27 @@ namespace WhiteBoard.Core.Tools
                 _snapCanvas.Children.Clear();
                 foreach (var line in snapLines)
                     _snapCanvas.Children.Add(line);
+
+                _selectionService.UpdateSelectionMarkersPosition();
+
+                var allConnections = _selectionService.GetAllConnections();
+                var movedElements = _selectionService.SelectedElements.OfType<FrameworkElement>().ToHashSet();
+                movedElements.Add(fe); // include și forma principală în mișcare
+
+                foreach (var conn in allConnections)
+                {
+                    var fromFe = conn.From?.Visual as FrameworkElement;
+                    var toFe = conn.To?.Visual as FrameworkElement;
+
+                    if ((fromFe != null && movedElements.Contains(fromFe)) ||
+                        (toFe != null && movedElements.Contains(toFe)))
+                    {
+                        conn.RecalculateGeometry();
+                    }
+                }
             }
 
-            _selectionService.UpdateSelectionMarkersPosition();
+            
         }
 
         public void OnMouseUp(Point pos, MouseButtonEventArgs e)

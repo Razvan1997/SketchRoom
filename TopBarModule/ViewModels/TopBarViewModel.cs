@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using TopBarModule.Events;
 
 namespace TopBarModule.ViewModels
 {
@@ -16,6 +17,7 @@ namespace TopBarModule.ViewModels
         public ICommand CloseCommand { get; }
         public ICommand MinimizeCommand { get; }
         public ICommand MaximizeCommand { get; }
+        public DelegateCommand SettingsCommand { get; }
 
         public TopBarViewModel(IEventAggregator eventAggregator, IRegionManager regionManager)
         {
@@ -26,6 +28,7 @@ namespace TopBarModule.ViewModels
             CloseCommand = new DelegateCommand(OnClose);
             MinimizeCommand = new DelegateCommand(OnMinimize);
             MaximizeCommand = new DelegateCommand(OnMaximize);
+            SettingsCommand = new DelegateCommand(OpenSettings);
         }
 
         private void OnClose()
@@ -42,6 +45,10 @@ namespace TopBarModule.ViewModels
         {
             var window = Application.Current.MainWindow!;
             window.WindowState = window.WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+        }
+        private void OpenSettings()
+        {
+            _eventAggregator.GetEvent<OpenSettingsDialogEvent>().Publish();
         }
     }
 }

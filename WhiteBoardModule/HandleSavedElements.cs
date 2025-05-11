@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using System.Windows.Media.Media3D;
+using WhiteBoard.Core.Helpers;
 using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services.Interfaces;
 
@@ -13,42 +15,66 @@ namespace WhiteBoardModule
 {
     public static class HandleSavedElements
     {
-        public static Dictionary<string, BPMNNode> RestoreShapes(
-                List<BPMNShapeModelWithPosition> shapes,
-                WhiteBoardControl whiteboard,
-                IGenericShapeFactory shapeFactory)
+        public static void RestoreShapes(
+    List<BPMNShapeModelWithPosition> shapes,
+    WhiteBoardControl whiteboard,
+    IGenericShapeFactory shapeFactory,
+    Action<Dictionary<string, BPMNNode>> onAllLoaded)
         {
             var dropService = whiteboard._dropService;
             var nodeMap = new Dictionary<string, BPMNNode>();
             var tempElementMap = new Dictionary<FrameworkElement, string>();
+            var visuals = new List<FrameworkElement>();
 
             foreach (var shape in shapes)
             {
-                FrameworkElement? visual = null;
-
-                // 🔄 Formă XAML → recreăm shapeControl
                 var shapeControl = shapeFactory.Create(shape.Type.Value);
-                visual = dropService.HandleDropSavedElements(shape, new Point(shape.Left, shape.Top), shapeControl);
+                var visual = dropService.HandleDropSavedElements(shape, new Point(shape.Left, shape.Top), shapeControl);
 
                 if (visual != null)
                 {
-                    tempElementMap[visual] = shape.Id.ToString();
-
                     dropService.PlaceElementOnCanvas(visual, new Point(shape.Left, shape.Top));
-                    dropService.RegisterNodeWhenReady(visual);
+                    dropService.RegisterNodeWhenReadyRestore(visual, shape.Id.ToString(), nodeMap);
                     dropService.SetupConnectorButton(visual);
+                    visuals.Add(visual);
                 }
             }
 
-            foreach (var kvp in tempElementMap)
+            // Așteaptă să fie toate Loaded
+            int remaining = visuals.Count;
+
+            if (remaining == 0)
             {
-                if (whiteboard._dropService._nodeMap.TryGetValue(kvp.Key, out var node))
-                {
-                    nodeMap[kvp.Value] = node;
-                }
+                onAllLoaded(nodeMap);
+                return;
             }
 
-            return nodeMap;
+            foreach (var v in visuals)
+            {
+                if (v.IsLoaded)
+                {
+                    remaining--;
+                    continue;
+                }
+
+                v.Loaded += (_, _) =>
+                {
+                    if (dropService._nodeMap.TryGetValue(v, out var node) && tempElementMap.TryGetValue(v, out var id))
+                    {
+                        nodeMap[id] = node;
+                    }
+
+                    remaining--;
+                    if (remaining == 0)
+                        onAllLoaded(nodeMap);
+                };
+            }
+
+            // Dacă toate erau deja loaded
+            if (remaining == 0)
+            {
+                onAllLoaded(nodeMap);
+            }
         }
 
         public static void RestoreConnections(
@@ -96,8 +122,15 @@ namespace WhiteBoardModule
 
                     connection = new BPMNConnection(from, to, geometry)
                     {
-                        CreatedAt = connModel.CreatedAt
+                        CreatedAt = connModel.CreatedAt,
+                        FromOffset = connModel.FromOffset,
+                        ToOffset = connModel.ToOffset,
+                        StartDirection = connModel.StartDirection,
+                        EndDirection = connModel.EndDirection
                     };
+
+                    connection.From = from;
+                    connection.To = to;
 
                     // 🎯 reconstrucția săgeții corecte
                     if (endsWithExtraLine)
@@ -110,8 +143,13 @@ namespace WhiteBoardModule
                     // Linie dreaptă
                     connection = new BPMNConnection(from, to, connModel.PathPoints)
                     {
-                        CreatedAt = connModel.CreatedAt
+                        CreatedAt = connModel.CreatedAt,
+                        FromOffset = connModel.FromOffset,
+                        ToOffset = connModel.ToOffset,
                     };
+
+                    connection.From = from;
+                    connection.To = to;
                 }
 
                 // 🖌️ culoarea

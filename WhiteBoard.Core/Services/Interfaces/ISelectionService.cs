@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows;
+using WhiteBoard.Core.Models;
 
 namespace WhiteBoard.Core.Services.Interfaces
 {
@@ -17,5 +18,6 @@ namespace WhiteBoard.Core.Services.Interfaces
         event EventHandler SelectionChanged;
         void DeselectAll(Canvas canvas);
         void UpdateSelectionMarkersPosition();
+        IEnumerable<BPMNConnection> GetAllConnections();
     }
 }
