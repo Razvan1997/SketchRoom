@@ -34,6 +34,7 @@ namespace WhiteBoard.Core.Tools
         private FrameworkElement? _selectedElement;
         private readonly ISnapService _snapService;
         private readonly List<Line> _activeSnapLines = new();
+        public IReadOnlyList<BPMNConnection> SelectedConnections => _selectedConnections;
         public string Name => "Connector";
 
         private bool _isDrawing = false;
@@ -385,10 +386,10 @@ namespace WhiteBoard.Core.Tools
                 _connections.Remove(conn);
 
                 // 👇 Eliminăm nodurile din _nodes care au fost legate de conexiune (doar dacă sunt incluse)
-                if (conn.From?.Visual is FrameworkElement fromEl)
-                    _nodes.Remove(fromEl);
-                if (conn.To?.Visual is FrameworkElement toEl)
-                    _nodes.Remove(toEl);
+                //if (conn.From?.Visual is FrameworkElement fromEl)
+                //    _nodes.Remove(fromEl);
+                //if (conn.To?.Visual is FrameworkElement toEl)
+                //    _nodes.Remove(toEl);
             }
 
             _selectedConnections.Clear();
@@ -414,7 +415,7 @@ namespace WhiteBoard.Core.Tools
                 DeselectAllConnections();
 
             if (_selectedConnections.Contains(conn))
-                _selectedConnections.Remove(conn);
+                _selectedConnections.Remove(conn); 
             else
                 _selectedConnections.Add(conn);
 

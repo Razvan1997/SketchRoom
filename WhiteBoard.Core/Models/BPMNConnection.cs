@@ -291,26 +291,52 @@ namespace WhiteBoard.Core.Models
                 return;
             }
 
-            if (OriginalBezierSegments.Count > 0)
+            if (OriginalBezierSegments.Count > 0 && OriginalPathPoints.Count > 0)
             {
                 var fromCurr = GetCanvasPoint(fromFe, FromOffset);
                 var toCurr = GetCanvasPoint(toFe, ToOffset);
 
-                var geometry = BezierHelper.GenerateSmartBezierCore(
-                 fromCurr,
-                 toCurr,
-                 StartDirection,
-                 EndDirection,
-                 out Point lastStart,
-                 out Point lastEnd
-                );
+                // Calculează delta dintre pozițiile curente și cele originale
+                var deltaFrom = fromCurr - OriginalPathPoints.First();
+                var deltaTo = toCurr - OriginalPathPoints.Last();
+
+                var figure = new PathFigure { StartPoint = fromCurr };
+                Point currentPoint = fromCurr;
+
+                for (int i = 0; i < OriginalBezierSegments.Count; i++)
+                {
+                    var bezier = OriginalBezierSegments[i];
+                    // Pentru primul control point: aplicăm deltaFrom
+                    var p1 = bezier.Point1 + deltaFrom;
+                    var p2 = bezier.Point2 + deltaTo;
+                    var p3 = bezier.Point3 + deltaTo;
+
+                    figure.Segments.Add(new BezierSegment(p1, p2, p3, true));
+                    currentPoint = p3;
+                }
+
+                // Verifică dacă aveam un punct final în plus (linia după bezier)
+                if (OriginalPathPoints.Count > OriginalBezierSegments.Count + 1)
+                {
+                    var lastOriginal = OriginalPathPoints.Last();
+                    var adjustedLast = lastOriginal + deltaTo;
+                    figure.Segments.Add(new LineSegment(adjustedLast, true));
+                }
 
                 _geometry.Figures.Clear();
-                foreach (var fig in geometry.Figures)
-                    _geometry.Figures.Add(fig.Clone());
-
+                _geometry.Figures.Add(figure);
                 _path.Data = _geometry;
-                SetArrowFromTo(lastStart, lastEnd);
+
+                // reconstrucția săgeții
+                if (figure.Segments.LastOrDefault() is LineSegment lastLine)
+                {
+                    SetArrowFromTo(currentPoint, lastLine.Point);
+                }
+                else
+                {
+                    var lastBezier = OriginalBezierSegments.Last();
+                    SetArrowFromTo(lastBezier.Point2 + deltaTo, lastBezier.Point3 + deltaTo);
+                }
             }
         }
 

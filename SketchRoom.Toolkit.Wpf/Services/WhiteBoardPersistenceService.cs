@@ -40,14 +40,14 @@ namespace SketchRoom.Toolkit.Wpf.Services
                 File.Delete(file);
             }
 
-            bool thumbnailSaved = true;
+            bool isFirst = true;
 
             foreach (var tab in _tabService.AllTabs)
             {
                 if (_tabService.GetWhiteBoard(tab.Id) is WhiteBoardControl whiteboard)
                 {
-                    await SaveTabInternalAsync(tab, whiteboard, folder, saveThumbnail: true);
-                    thumbnailSaved = true;
+                    await SaveTabInternalAsync(tab, whiteboard, folder, saveThumbnail: isFirst);
+                    isFirst = false; 
                 }
             }
         }

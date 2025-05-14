@@ -42,9 +42,21 @@ namespace WhiteBoardModule.XAML.Managers
                     if (e.Parameter is Brush fore)
                         SetForeground(fore);
                     break;
+                case ShapeActionType.ChangeFontsize:
+                    if (e.Parameter is double size)
+                        SetFontSize(size);
+                    break;
 
                 default:
                     throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private void SetFontSize(double size)
+        {
+            if (_shapeControl._renderer is IFontSizeChangable changable)
+            {
+                changable.SetFontSize(size);
             }
         }
 

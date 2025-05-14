@@ -104,6 +104,8 @@ namespace SketchRoom.Toolkit.Wpf.Services
 
         private void AddTextAreaItems(ContextMenu menu, object owner)
         {
+            var _prefernces = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
+
             if (owner is IInteractiveShape shape)
             {
                 var changeBackgroundColorMenuItem = new MenuItem
@@ -143,6 +145,17 @@ namespace SketchRoom.Toolkit.Wpf.Services
                     }
                 };
                 menu.Items.Add(changeColorText);
+
+                var changeFontSize = new MenuItem
+                {
+                    Header = "Apply Current Font Size"
+                };
+
+                changeFontSize.Click += (s, e) =>
+                {
+                    shape.RequestChangeCurrentFontSize(_prefernces.FontSize);
+                };
+                menu.Items.Add(changeFontSize);
             }
         }
 

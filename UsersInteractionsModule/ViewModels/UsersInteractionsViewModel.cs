@@ -105,15 +105,15 @@ namespace UsersInteractionsModule.ViewModels
                 Category = "General"
             });
 
-            var tableShape = new GenericShapeControl();
-            tableShape.SetShapePreview(ShapeType.TableShape);
-            AllShapes.Add(new BPMNShapeModel
-            {
-                Name = "Table3x3",
-                Type = ShapeType.TableShape,
-                ShapeContent = tableShape,
-                Category = "Tables"
-            });
+            //var tableShape = new GenericShapeControl();
+            //tableShape.SetShapePreview(ShapeType.TableShape);
+            //AllShapes.Add(new BPMNShapeModel
+            //{
+            //    Name = "Table3x3",
+            //    Type = ShapeType.TableShape,
+            //    ShapeContent = tableShape,
+            //    Category = "Tables"
+            //});
 
             var connectorLabelShape = new GenericShapeControl();
             connectorLabelShape.SetShapePreview(ShapeType.ConnectorShapeLabel);

@@ -75,18 +75,21 @@ namespace WhiteBoardModule.XAML.Shapes.Tables
 
         private void OverlayCanvas_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            var tabService = ContainerLocator.Container.Resolve<IWhiteBoardTabService>();
-            var currentBoard = tabService.GetWhiteBoard(tabService.CurrentTab?.Id ?? Guid.Empty) as WhiteBoardControl;
-
             if (_isDraggingImage && _draggedImage is Border border && border.Child is FrameworkElement child)
             {
                 _draggedImage.ReleaseMouseCapture();
                 _isDraggingImage = false;
 
                 Point posInTable = e.GetPosition(this);
-                if (posInTable.X < 0 || posInTable.Y < 0 || posInTable.X > ActualWidth || posInTable.Y > ActualHeight)
+                bool isOutside = posInTable.X < 0 || posInTable.Y < 0 || posInTable.X > ActualWidth || posInTable.Y > ActualHeight;
+
+                if (isOutside)
                 {
+                    // Elimină din tabel
                     OverlayCanvas?.Children.Remove(border);
+
+                    var tabService = ContainerLocator.Container.Resolve<IWhiteBoardTabService>();
+                    var currentBoard = tabService.GetWhiteBoard(tabService.CurrentTab?.Id ?? Guid.Empty) as WhiteBoardControl;
 
                     if (currentBoard != null)
                     {

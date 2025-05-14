@@ -68,35 +68,43 @@ namespace SketchRoom.ViewModels
                 return;
             }
 
-            var path = DestinationPath;
-
-            // Adaugă extensia dacă lipsește
             var ext = SelectedFormatType.ToLower();
-            if (!Path.GetExtension(path).Equals($".{ext}", StringComparison.OrdinalIgnoreCase))
+            var now = DateTime.Now;
+            var folderName = $"sketch_{now:yyyyMMdd_HHmmss}";
+            var parentDirectory = Path.GetDirectoryName(DestinationPath);
+            if (string.IsNullOrWhiteSpace(parentDirectory))
             {
-                path = Path.ChangeExtension(path, ext);
+                MessageBox.Show("Invalid destination path.");
+                return;
             }
 
-            var whiteboard = ContainerLocator.Container.Resolve<IWhiteBoardTabService>()
-                                  .GetWhiteBoard(ContainerLocator.Container.Resolve<IWhiteBoardTabService>().CurrentTab!.Id)
-                                  as WhiteBoardControl;
+            var exportFolder = Path.Combine(parentDirectory, folderName);
+            Directory.CreateDirectory(exportFolder);
 
-            if (whiteboard != null)
+            var tabService = ContainerLocator.Container.Resolve<IWhiteBoardTabService>();
+            var settings = SettingsStorage.Load();
+
+            foreach (var tab in tabService.AllTabs)
             {
-                // ✅ 1. Salvează în calea aleasă de utilizator
-                whiteboard.SaveToFile(path, SelectedFormatType);
+                var whiteboard = tabService.GetWhiteBoard(tab.Id) as WhiteBoardControl;
+                if (whiteboard == null)
+                    continue;
 
-                // ✅ 2. Salvează și în ghost preview folder din setări
-                var settings = SettingsStorage.Load();
-                var ghostFolder = string.IsNullOrWhiteSpace(settings.GhostPreviewPath)
-                    ? ""
-                    : settings.GhostPreviewPath;
+                var fileName = $"{tab.Name}.{ext}";
+                var fullPath = Path.Combine(exportFolder, fileName);
 
-                var ghostFilePath = Path.Combine(ghostFolder, $"ghost_{DateTime.Now:yyyyMMdd_HHmmss}.{ext}");
-                whiteboard.SaveToFile(ghostFilePath, SelectedFormatType);
+                whiteboard.SaveToFile(fullPath, SelectedFormatType);
 
-                MessageBox.Show("Sketch saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                // Salvează și în ghost preview (dacă setat)
+                if (!string.IsNullOrWhiteSpace(settings.GhostPreviewPath))
+                {
+                    var ghostName = $"ghost_{tab.Name}_{now:yyyyMMdd_HHmmss}.{ext}";
+                    var ghostPath = Path.Combine(settings.GhostPreviewPath, ghostName);
+                    whiteboard.SaveToFile(ghostPath, SelectedFormatType);
+                }
             }
+
+            MessageBox.Show("All tabs saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
 
             CloseWindow();
         }

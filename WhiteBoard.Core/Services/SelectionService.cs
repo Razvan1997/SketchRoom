@@ -20,7 +20,18 @@ namespace WhiteBoard.Core.Services
         private readonly List<UIElement> _selected = new();
         private readonly Dictionary<UIElement, UIElement> _selectionMarkers = new(); // poate fi Path sau Rectangle
         public event EventHandler? SelectionChanged;
-        public IReadOnlyList<UIElement> SelectedElements => _selected.AsReadOnly();
+        public IReadOnlyList<UIElement> SelectedElements
+        {
+            get
+            {
+                var connectorVisuals = _connectorTool.SelectedConnections
+                    .Where(c => c.Visual is UIElement)
+                    .Select(c => c.Visual!)
+                    .ToList();
+
+                return _selected.Concat(connectorVisuals).Distinct().ToList();
+            }
+        }
 
         public SelectionService(BpmnConnectorTool connectorTool)
         {

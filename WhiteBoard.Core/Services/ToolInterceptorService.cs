@@ -49,8 +49,11 @@ namespace WhiteBoard.Core.Services
 
         public void InterceptToolSwitch(MouseButtonEventArgs e)
         {
-            if (IsUserActing)
-                return;
+            if(_selectedToolService.CurrentTool != WhiteBoardTool.Cursor)
+            {
+                if (IsUserActing)
+                    return;
+            }
 
             if (e.OriginalSource is DependencyObject source)
             {
@@ -71,6 +74,8 @@ namespace WhiteBoard.Core.Services
                         case "interactive":
                             if (_selectedToolService.CurrentTool == WhiteBoardTool.None)
                                 _toolManager.SetActive("BpmnTool");
+                            if (_selectedToolService.CurrentTool == WhiteBoardTool.Cursor)
+                                _toolManager.SetNone();
                             return;
 
                         case "Connector":
@@ -116,6 +121,11 @@ namespace WhiteBoard.Core.Services
                     if (_selectedToolService.CurrentTool == WhiteBoardTool.RemoveStroke)
                     {
                         _toolManager.SetActive("RemoveStroke");
+                        return;
+                    }
+                    if(_selectedToolService.CurrentTool == WhiteBoardTool.Pan)
+                    {
+                        _toolManager.SetActive("Pan");
                         return;
                     }
                 }

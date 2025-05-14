@@ -22,7 +22,7 @@ namespace SketchRoom.Toolkit.Wpf.Factory
         {
             return shapeType switch
             {
-                ShapeType.TextInput => new TextElementControl(),
+                //ShapeType.TextInput => new TextElementControl(),
                 _ => throw new NotImplementedException($"Shape {shapeType} not handled.")
             };
         }

@@ -8,6 +8,7 @@ using SketchRoom.Toolkit.Wpf.Services;
 using SketchRoom.ViewModels;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using WhiteBoard.Core.Colaboration.Interfaces;
 using WhiteBoard.Core.Colaboration.Services;
 using WhiteBoard.Core.Factory.Interfaces;
@@ -27,6 +28,7 @@ namespace SketchRoom
             {
                 DataContext = Container.Resolve<MainViewModel>()
             };
+            window.Icon = new BitmapImage(new Uri("pack://application:,,,/Resources/Icon.ico"));
             return window;
         }
 

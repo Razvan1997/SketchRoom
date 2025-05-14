@@ -23,7 +23,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
     /// <summary>
     /// Interaction logic for TextElementControl.xaml
     /// </summary>
-    public partial class TextElementControl : UserControl, ITextInteractiveShape
+    public partial class TextElementControl : UserControl
     {
         private bool _isDragging = false;
         private Point _dragStart;
@@ -179,7 +179,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             {
                 _isRotating = true;
                 _rotateStart = e.GetPosition(canvas);
-                rt.StartRotation(this, _rotateStart);
+                //rt.StartRotation(this, _rotateStart);
                 toolManager.SetActive("RotateTool");
 
                 RotateIcon.CaptureMouse(); // ✅ capturează mouse-ul

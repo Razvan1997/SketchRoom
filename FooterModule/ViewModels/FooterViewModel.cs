@@ -132,9 +132,20 @@ namespace FooterModule.ViewModels
                 DeleteTab(Tabs[0]);
             }
 
+            // Sortează modelul după nume de tip "Sketch-1", "Sketch-2"
+            var sortedModels = models
+                .OrderBy(m =>
+                {
+                    var parts = m.TabName.Split('-');
+                    if (parts.Length == 2 && int.TryParse(parts[1], out int number))
+                        return number;
+                    return int.MaxValue; // dacă nu are format valid, pune-l la final
+                })
+                .ToList();
+
             var addedTabs = new List<FooterTabModel>();
 
-            foreach (var model in models)
+            foreach (var model in sortedModels)
             {
                 var tab = AddTabFromModel(model);
                 addedTabs.Add(tab);
@@ -142,7 +153,7 @@ namespace FooterModule.ViewModels
 
             if (addedTabs.Count > 0)
             {
-                SelectTab(addedTabs[0]);
+                SelectTab(addedTabs[0]); // ✅ Selectează primul tab după sortare
             }
         }
 
@@ -151,7 +162,15 @@ namespace FooterModule.ViewModels
             var newTab = _tabService.CreateNewTab(Tabs.Count + 1);
             newTab.Name = model.TabName;
 
+            var toolManager = new ToolManager();
+            _tabService.AssociateToolManager(newTab.Id, toolManager);
+
+            // 🔥 Setează tab-ul curent ÎNAINTE de a crea WhiteBoardControl
+            _tabService.SetCurrent(newTab);
+
             var drawingService = new DrawingService();
+            _tabService.AssociateDrawingService(newTab.Id, drawingService);
+
             var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
             var whiteBoard = new WhiteBoardControl(drawingService, preferences);
 
@@ -161,10 +180,7 @@ namespace FooterModule.ViewModels
                 HandleSavedElements.RestoreConnections(model.Connections, whiteBoard, nodeMap);
             });
 
-            _tabService.AssociateToolManager(newTab.Id, new ToolManager());
-            _tabService.AssociateDrawingService(newTab.Id, drawingService);
             _tabService.AssociateWhiteBoard(newTab.Id, whiteBoard);
-
             Tabs.Add(newTab);
 
             return newTab;

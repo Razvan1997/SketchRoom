@@ -355,9 +355,20 @@ namespace WhiteBoard.Core.Services
             RegisterNodeWhenReady(element);
             SetupConnectorButton(element);
 
-            if (element is IInteractiveShape shape)
+            if (element is IInteractiveShape shape && shape.Visual is FrameworkElement fe)
             {
-                shape.Select();
+                Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    if (double.IsNaN(fe.Width) || fe.Width == 0)
+                        fe.Width = fe.ActualWidth > 0 ? fe.ActualWidth : 120;
+
+                    if (double.IsNaN(fe.Height) || fe.Height == 0)
+                        fe.Height = fe.ActualHeight > 0 ? fe.ActualHeight : 80;
+
+                    shape.Select();
+
+                    Debug.WriteLine($"[Dispatcher] Width: {fe.Width}, Height: {fe.Height}, Actual: {fe.ActualWidth} x {fe.ActualHeight}");
+                }, System.Windows.Threading.DispatcherPriority.Loaded);
             }
         }
 

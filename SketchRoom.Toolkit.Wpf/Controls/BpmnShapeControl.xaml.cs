@@ -24,7 +24,7 @@ namespace SketchRoom.Toolkit.Wpf
     /// <summary>
     /// Interaction logic for BpmnShapeControl.xaml
     /// </summary>
-    public partial class BpmnShapeControl : UserControl, IInteractiveShape
+    public partial class BpmnShapeControl : UserControl
     {
         public RotateTransform RotateTransform { get; }
         public TranslateTransform TranslateTransform { get; }
@@ -232,7 +232,7 @@ namespace SketchRoom.Toolkit.Wpf
             {
                 _isRotating = true;
                 _rotateStart = e.GetPosition(canvas);
-                rt.StartRotation(this, _rotateStart);
+                //rt.StartRotation(this, _rotateStart);
                 toolManager.SetActive("RotateTool");
                 e.Handled = true;
             }

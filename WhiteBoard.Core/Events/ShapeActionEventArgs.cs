@@ -24,6 +24,7 @@ namespace WhiteBoard.Core.Events
         ChangeStrokeColor,
         ChangeBorderThickness,
         ChangeForegroundColor,
+        ChangeFontsize,
         Rotate,
         // Adaugi aici toate tipurile de acțiuni viitoare
     }

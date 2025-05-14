@@ -16,6 +16,7 @@ using WhiteBoard.Core.Helpers;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using System.ComponentModel.Design;
+using SketchRoom.Models.Enums;
 
 namespace WhiteBoard.Core.Tools
 {
@@ -184,18 +185,23 @@ namespace WhiteBoard.Core.Tools
                     _undoRedoService.ExecuteCommand(moveCommand);
                 }
 
-                var svgUri = ShapeMetadata.GetSvgUri(fe);
-                if (svgUri != null)
+                if (fe is IShapeAddedXaml shape)
                 {
-                    var table = FindTableUnderShape(fe);
-                    if (table != null)
-                    {
-                        var globalPos = fe.TranslatePoint(new Point(0, 0), _canvas);
-                        var tablePos = ((FrameworkElement)table).TranslatePoint(new Point(0, 0), _canvas);
-                        var relative = new Point(globalPos.X - tablePos.X, globalPos.Y - tablePos.Y);
+                    var shapeType = shape.GetShapeType();
 
-                        _canvas.Children.Remove(fe);
-                        table.AddOverlayElement(fe, relative);
+                    // doar SVG-uri sau rich text
+                    if (shapeType == ShapeType.Image || shapeType == ShapeType.ShapeText)
+                    {
+                        var table = FindTableUnderShape(fe);
+                        if (table != null)
+                        {
+                            var globalPos = fe.TranslatePoint(new Point(0, 0), _canvas);
+                            var tablePos = ((FrameworkElement)table).TranslatePoint(new Point(0, 0), _canvas);
+                            var relative = new Point(globalPos.X - tablePos.X, globalPos.Y - tablePos.Y);
+
+                            _canvas.Children.Remove(fe);
+                            table.AddOverlayElement(fe, relative);
+                        }
                     }
                 }
             }

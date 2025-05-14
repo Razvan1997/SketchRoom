@@ -9,7 +9,7 @@ using WhiteBoard.Core.Services.Interfaces;
 
 namespace WhiteBoardModule.XAML.Shapes.General
 {
-    public class TextShapeRenderer : IShapeRenderer, IBackgroundChangable, IForegroundChangable, IRestoreFromShape
+    public class TextShapeRenderer : IShapeRenderer, IBackgroundChangable, IForegroundChangable, IRestoreFromShape, IFontSizeChangable
     {
         private readonly bool _withBindings;
         private readonly IShapeSelectionService _selectionService;
@@ -50,8 +50,6 @@ namespace WhiteBoardModule.XAML.Shapes.General
                 BorderThickness = new Thickness(0),
                 Padding = new Thickness(4),
                 Tag = "interactive",
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
                 IsDocumentEnabled = true,
                 AcceptsReturn = true
             };
@@ -206,7 +204,7 @@ namespace WhiteBoardModule.XAML.Shapes.General
         {
             { "Background", background },
             { "Foreground", foreground },
-            { "Text", textContent }
+            { "TextShape", textContent }
         }
             };
         }
@@ -232,7 +230,7 @@ namespace WhiteBoardModule.XAML.Shapes.General
                 catch { }
             }
 
-            if (extraProperties.TryGetValue("Text", out var text))
+            if (extraProperties.TryGetValue("TextShape", out var text))
             {
                 _richTextBox.Document.Blocks.Clear();
                 var paragraph = new Paragraph(new Run(text))
@@ -242,6 +240,28 @@ namespace WhiteBoardModule.XAML.Shapes.General
                     Foreground = _richTextBox.Foreground
                 };
                 _richTextBox.Document.Blocks.Add(paragraph);
+            }
+        }
+
+        public void SetFontSize(double size)
+        {
+            if (_richTextBox?.Document == null)
+                return;
+
+            foreach (var block in _richTextBox.Document.Blocks)
+            {
+                if (block is Paragraph paragraph)
+                {
+                    foreach (Inline inline in paragraph.Inlines)
+                    {
+                        if (inline is Run run)
+                        {
+                            run.FontSize = size;
+                        }
+                    }
+
+                    paragraph.FontSize = size;
+                }
             }
         }
     }

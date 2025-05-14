@@ -48,7 +48,7 @@ namespace SketchRoom
                 vm.OnLoaded();
             }
 
-            WalkthroughService.Start(this);
+            //WalkthroughService.Start(this);
         }
 
         private void OnGlobalHotkeyPressed()

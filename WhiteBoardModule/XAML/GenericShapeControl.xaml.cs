@@ -215,7 +215,9 @@ namespace WhiteBoardModule.XAML
                         Source = new BitmapImage(uri),
                         Stretch = Stretch.Uniform,
                         HorizontalAlignment = HorizontalAlignment.Center,
-                        VerticalAlignment = VerticalAlignment.Center
+                        VerticalAlignment = VerticalAlignment.Center,
+                        //Width = rawWidth,
+                        //Height = rawHeight
                     };
 
                     var container = new Viewbox
@@ -225,6 +227,8 @@ namespace WhiteBoardModule.XAML
                     };
                     _imageContainer = container;
                     ShapePresenter.Content = container;
+
+                    
                 }
                 return;
             }
@@ -530,6 +534,11 @@ namespace WhiteBoardModule.XAML
         public void RequestChangeForegroundColor(Brush brush)
         {
             ShapeActionRequested?.Invoke(this, new ShapeActionEventArgs(ShapeActionType.ChangeForegroundColor, brush));
+        }
+
+        public void RequestChangeCurrentFontSize(double size)
+        {
+            ShapeActionRequested?.Invoke(this, new ShapeActionEventArgs(ShapeActionType.ChangeFontsize, size));
         }
 
         public void SetForeground(Brush brush)

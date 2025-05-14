@@ -58,5 +58,6 @@ namespace WhiteBoard.Core.Services.Interfaces
 
         void RequestChangeForegroundColor(Brush brush);
         event EventHandler<ShapeActionEventArgs> ShapeActionRequested;
+        void RequestChangeCurrentFontSize(double size);
     }
 }
