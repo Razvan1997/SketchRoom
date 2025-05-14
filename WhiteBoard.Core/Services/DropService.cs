@@ -111,7 +111,7 @@ namespace WhiteBoard.Core.Services
             if (shape.Type == ShapeType.Image && interactiveShape != null)
             {
                 // Setăm tipul și asociem shape-ul
-                interactiveShape.SetShape(ShapeType.Image);
+                interactiveShape.SetShape(ShapeType.Image, shape is BPMNShapeModelWithPosition model ? model.RotationAngle : 0);
                 shape.ShapeContent = interactiveShape;
 
                 // Creăm elementul vizual
@@ -132,7 +132,7 @@ namespace WhiteBoard.Core.Services
             // 3. Pentru forme XAML cu control existent
             if (shape.Type.HasValue && interactiveShape != null)
             {
-                interactiveShape.SetShape(shape.Type.Value);
+                interactiveShape.SetShape(shape.Type.Value, shape is BPMNShapeModelWithPosition model ? model.RotationAngle : 0);
                 shape.ShapeContent = interactiveShape;
 
                 visualElement = CreateXamlElement(interactiveShape, shape, dropPos);
@@ -180,7 +180,7 @@ namespace WhiteBoard.Core.Services
 
             if (type.HasValue)
             {
-                instance.SetShape(type.Value);
+                instance.SetShape(type.Value, shape is BPMNShapeModelWithPosition model ? model.RotationAngle : 0);
             }
 
             AttachEvents(instance);

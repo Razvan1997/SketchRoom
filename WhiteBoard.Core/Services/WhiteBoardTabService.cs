@@ -14,7 +14,7 @@ namespace WhiteBoard.Core.Services
     {
         private readonly Dictionary<Guid, object> _whiteBoards = new();
         private readonly Dictionary<Guid, IToolManager> _toolManagers = new();
-        private readonly List<FooterTabModel> _tabs = new();
+        public readonly List<FooterTabModel> _tabs = new();
         public event Action<FooterTabModel>? TabChanged;
         public FooterTabModel? CurrentTab { get; private set; }
         private readonly Dictionary<Guid, IDrawingService> _drawingServices = new();
@@ -91,6 +91,17 @@ namespace WhiteBoard.Core.Services
         public string GetFolderName()
         {
             return FolderName;
+        }
+
+        public void RemoveTab(FooterTabModel tab)
+        {
+            _tabs.Remove(tab);
+            _whiteBoards.Remove(tab.Id);
+            _toolManagers.Remove(tab.Id);
+            _drawingServices.Remove(tab.Id);
+
+            if (CurrentTab == tab)
+                CurrentTab = null;
         }
     }
 }

@@ -42,7 +42,6 @@ namespace WhiteBoard.Core.Tools
         private readonly UndoRedoService _undoRedoService;
         private readonly Services.Interfaces.ISelectionService _selectionService;
 
-
         public BpmnTool(Canvas canvas, ISnapService snapService, Canvas snapCanvas, IToolManager toolManager, 
             UndoRedoService undoRedoService, Services.Interfaces.ISelectionService selectionService)
         {

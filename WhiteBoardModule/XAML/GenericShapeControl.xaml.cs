@@ -1,4 +1,5 @@
 ﻿using SketchRoom.Models.Enums;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -48,6 +49,7 @@ namespace WhiteBoardModule.XAML
             { ShapeType.ConnectorShapeLabel, ShapeContextType.ConnectorSimpleLabel },
             { ShapeType.ConnectorDoubleLabelLeft, ShapeContextType.ConnectorDouble },
             { ShapeType.ConnectorLabelLeft, ShapeContextType.ConnectorSimpleLabel },
+            { ShapeType.ConnectorDescriptionShape, ShapeContextType.DescriptionShapeConnector },
         };
 
         private readonly IContextMenuService _contextMenuService;
@@ -73,6 +75,7 @@ namespace WhiteBoardModule.XAML
             InitializeComponent();
             _eventAggregator = ContainerLocator.Container.Resolve<IEventAggregator>();
             _eventAggregator.GetEvent<TableResizedEvent>().Subscribe(OnTableResize);
+            _eventAggregator.GetEvent<SimpleLinesResizedEvent>().Subscribe(OnSimpleLinesResize);
             _contextMenuService = ContainerLocator.Container.Resolve<IContextMenuService>();
 
             this.MouseLeftButtonDown += OnMouseLeftButtonDown;
@@ -118,6 +121,22 @@ namespace WhiteBoardModule.XAML
 
             this.RenderTransform = _transformGroup;
             this.RenderTransformOrigin = new Point(0.5, 0.5);
+        }
+
+        private void OnSimpleLinesResize(SimpleLinesResizeInfo info)
+        {
+            if (IsPreview || SourceTableId != info.SourceId)
+                return;
+
+            this.Width = info.NewSize.Width;
+            this.Height = info.NewSize.Height;
+
+            if (info.IsLastRowExpanded && info.VerticalOffset > 0)
+            {
+                // Se extinde ultimul rând → urcăm forma
+                double top = Canvas.GetTop(this);
+                Canvas.SetTop(this, top - info.VerticalOffset);
+            }
         }
 
         private void RotateIcon_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -190,7 +209,7 @@ namespace WhiteBoardModule.XAML
             _renderer?.SetInitialSize(width, height);
         }
 
-        public void SetShape(ShapeType shape)
+        public void SetShape(ShapeType shape, double rotationAngle = 0)
         {
             _shapeType = shape;
             if (shape != ShapeType.Image)
@@ -272,12 +291,18 @@ namespace WhiteBoardModule.XAML
             else
             {
                 ShapePresenter.Content = _renderer.Render();
+                if (_renderer is SimpleLinesRenderer simpleLines)
+                {
+                    SourceTableId = simpleLines.Id;
+                }
             }
 
             if (_contextMap.TryGetValue(shape, out var contextType))
             {
                 SetupContextMenu(contextType);
             }
+
+            ApplyRotation(rotationAngle);
         }
 
         public void SetShapePreview(ShapeType shape)
@@ -296,6 +321,11 @@ namespace WhiteBoardModule.XAML
         {
             Canvas.SetLeft(this, pos.X);
             Canvas.SetTop(this, pos.Y);
+        }
+
+        public void ApplyRotation(double angle)
+        {
+            _rotateTransform.Angle = angle;
         }
 
         public void Select()
@@ -628,7 +658,7 @@ namespace WhiteBoardModule.XAML
                 throw new InvalidOperationException("Renderer is missing.");
 
             var model = Renderer.ExportData(this);
-
+            model.RotationAngle = (_transformGroup?.Children.OfType<RotateTransform>().FirstOrDefault()?.Angle) ?? 0;
             if (this.Content is Grid grid)
             {
                 var textBox = grid.Children
@@ -644,6 +674,8 @@ namespace WhiteBoardModule.XAML
                     model.ExtraProperties["TextWrapping"] = textBox.TextWrapping.ToString();
                 }
             }
+            model.ExtraProperties ??= new Dictionary<string, string>();
+            model.ExtraProperties["RotationAngle"] = model.RotationAngle.ToString(CultureInfo.InvariantCulture);
             model.Id = Guid.TryParse(ShapeMetadata.GetShapeId(this), out var parsed)
                     ? parsed
                     : throw new InvalidOperationException("Missing or invalid shape ID.");

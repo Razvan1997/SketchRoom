@@ -52,47 +52,47 @@ namespace WhiteBoard.Core.Tools
 
         public void OnMouseDown(Point pos, MouseButtonEventArgs e )
         {
-            var hit = VisualTreeHelper.HitTest(_canvas, pos);
+            //var hit = VisualTreeHelper.HitTest(_canvas, pos);
 
-            if (hit?.VisualHit is DependencyObject visualHit)
-            {
-                // Ignoră dacă ai dat click pe un Thumb sau RotateIcon
-                if (IsInsideThumbOrRotate(visualHit))
-                {
-                    _toolManager.SetActive("RotateTool");
-                    return;
-                }
+            //if (hit?.VisualHit is DependencyObject visualHit)
+            //{
+            //    // Ignoră dacă ai dat click pe un Thumb sau RotateIcon
+            //    if (IsInsideThumbOrRotate(visualHit))
+            //    {
+            //        _toolManager.SetActive("RotateTool");
+            //        return;
+            //    }
 
-                var existingText = FindParentTextElement(visualHit);
-                if (existingText != null)
-                {
-                    existingText.Select();
-                    existingText.FocusText();
+            //    var existingText = FindParentTextElement(visualHit);
+            //    if (existingText != null)
+            //    {
+            //        existingText.Select();
+            //        existingText.FocusText();
 
-                    _draggedShape = existingText;
-                    _startPoint = pos;
-                    return;
-                }
-            }
+            //        _draggedShape = existingText;
+            //        _startPoint = pos;
+            //        return;
+            //    }
+            //}
 
-            var shape = _shapeFactory.CreateShape(ShapeType.TextInput);
-            shape.SetShape(ShapeType.TextInput);
-            shape.SetPosition(pos);
-            _canvas.Children.Add(shape.Visual);
+            //var shape = _shapeFactory.CreateShape(ShapeType.TextInput);
+            //shape.SetShape(ShapeType.TextInput);
+            //shape.SetPosition(pos);
+            //_canvas.Children.Add(shape.Visual);
 
-            if (shape is ITextInteractiveShape textShape)
-            {
-                textShape.SetPreferences(); // ✅ nou
-                // stilul e aplicat și la creare + ulterior
-                textShape.Select();
-                textShape.FocusText();
+            //if (shape is ITextInteractiveShape textShape)
+            //{
+            //    textShape.SetPreferences(); // ✅ nou
+            //    // stilul e aplicat și la creare + ulterior
+            //    textShape.Select();
+            //    textShape.FocusText();
 
-                _draggedShape = textShape;
-                _startPoint = pos;
-                _selectedToolService.CurrentTool = WhiteBoardTool.None;
-                _textShapes.Add(textShape);
-            }
-            _isDrawing = true;
+            //    _draggedShape = textShape;
+            //    _startPoint = pos;
+            //    _selectedToolService.CurrentTool = WhiteBoardTool.None;
+            //    _textShapes.Add(textShape);
+            //}
+            //_isDrawing = true;
         }
 
         public void OnMouseMove(Point pos, MouseEventArgs e)

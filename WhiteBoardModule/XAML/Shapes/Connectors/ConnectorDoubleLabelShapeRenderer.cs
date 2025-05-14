@@ -156,10 +156,10 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 Name = "ConnectorLabelText"
             };
 
-            labelBox.GotFocus += (s, e) =>
-            {
-                labelBox.Foreground = preferences.SelectedColor;
-            };
+            //labelBox.GotFocus += (s, e) =>
+            //{
+            //    labelBox.Foreground = preferences.SelectedColor;
+            //};
 
             if (_withBindings)
             {

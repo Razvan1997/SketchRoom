@@ -16,6 +16,7 @@ namespace SketchRoom.Models.Enums
         WhiteBoardArea,
         TextArea,
         ConnectorDouble,
-        ConnectorSimpleLabel
+        ConnectorSimpleLabel,
+        DescriptionShapeConnector
     }
 }

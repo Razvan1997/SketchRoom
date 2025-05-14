@@ -12,7 +12,7 @@ using WhiteBoard.Core.Services.Interfaces;
 
 namespace WhiteBoardModule.XAML.Shapes.Containers
 {
-    public class HorizontalPoolLineTwoRender : IShapeRenderer
+    public class HorizontalPoolLineTwoRender : IShapeRenderer, IRestoreFromShape
     {
         private readonly bool _withBindings;
         private readonly IShapeSelectionService _selectionService;
@@ -137,6 +137,7 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
             var poolBox = new TextBox
             {
                 Text = "Pool",
+                Name = "PoolTextBox",
                 FontWeight = FontWeights.Bold,
                 FontSize = preferences.FontSize,
                 Foreground = Brushes.White,
@@ -172,6 +173,7 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 var laneBox = new TextBox
                 {
                     Text = $"Lane {i + 1}",
+                    Name = $"Lane{i + 1}TextBox",
                     FontWeight = preferences.FontWeight,
                     FontSize = preferences.FontSize,
                     Foreground = Brushes.White,
@@ -224,7 +226,7 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 Grid.SetColumn(contentBorder, 2);
                 grid.Children.Add(contentBorder);
             }
-
+            _renderedGrid = grid;
             return grid;
         }
 
@@ -240,29 +242,47 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
 
         public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
         {
-            if (control is not FrameworkElement fe)
-                return null;
-
-            if (fe is not Grid grid)
+            if (control is not FrameworkElement fe || _renderedGrid == null)
                 return null;
 
             var position = new Point(Canvas.GetLeft(fe), Canvas.GetTop(fe));
             var size = new Size(fe.Width, fe.Height);
+            var extra = new Dictionary<string, string>();
 
-            string poolText = "";
-            var laneTexts = new List<string>();
-
-            foreach (var child in grid.Children)
+            foreach (var child in _renderedGrid.Children)
             {
-                if (child is Border border && border.Child is TextBox tb)
+                if (child is Border border)
                 {
-                    int column = Grid.GetColumn(border);
+                    int col = Grid.GetColumn(border);
                     int row = Grid.GetRow(border);
 
-                    if (column == 0)
-                        poolText = tb.Text;
-                    else if (column == 1)
-                        laneTexts.Add(tb.Text);
+                    if (border.Child is TextBox tb)
+                    {
+                        string? prefix = tb.Name switch
+                        {
+                            "PoolTextBox" => "Pool",
+                            "Lane1TextBox" => "Lane1",
+                            "Lane2TextBox" => "Lane2",
+                            "Lane3TextBox" => "Lane3",
+                            _ => null
+                        };
+
+                        if (prefix == null) continue;
+
+                        extra[$"{prefix}Name"] = tb.Text;
+
+                        if (tb.Foreground is SolidColorBrush fg)
+                            extra[$"{prefix}Foreground"] = fg.Color.ToString();
+
+                        if (border.Background is SolidColorBrush bg)
+                            extra[$"{prefix}Background"] = bg.Color.ToString();
+                    }
+                    else if (col == 2 && row >= 0 && row <= 2)
+                    {
+                        string key = $"Lane{row + 1}ContentBackground";
+                        if (border.Background is SolidColorBrush bg)
+                            extra[key] = bg.Color.ToString();
+                    }
                 }
             }
 
@@ -276,13 +296,7 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 Name = fe.Name,
                 Category = "Pool",
                 SvgUri = null,
-                ExtraProperties = new Dictionary<string, string>
-        {
-            { "PoolName", poolText },
-            { "Lane1", laneTexts.ElementAtOrDefault(0) ?? "" },
-            { "Lane2", laneTexts.ElementAtOrDefault(1) ?? "" },
-            { "Lane3", laneTexts.ElementAtOrDefault(2) ?? "" }
-        }
+                ExtraProperties = extra
             };
         }
 
@@ -292,19 +306,39 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
 
             foreach (var child in _renderedGrid.Children.OfType<Border>())
             {
+                int col = Grid.GetColumn(child);
+                int row = Grid.GetRow(child);
+
                 if (child.Child is TextBox tb)
                 {
-                    if (tb.Name == "PoolTextBox" && extraProperties.TryGetValue("PoolName", out var poolText))
-                        tb.Text = poolText;
+                    string? prefix = tb.Name switch
+                    {
+                        "PoolTextBox" => "Pool",
+                        "Lane1TextBox" => "Lane1",
+                        "Lane2TextBox" => "Lane2",
+                        "Lane3TextBox" => "Lane3",
+                        _ => null
+                    };
 
-                    if (tb.Name == "Lane1TextBox" && extraProperties.TryGetValue("Lane1", out var lane1))
-                        tb.Text = lane1;
+                    if (prefix == null) continue;
 
-                    if (tb.Name == "Lane2TextBox" && extraProperties.TryGetValue("Lane2", out var lane2))
-                        tb.Text = lane2;
+                    if (extraProperties.TryGetValue($"{prefix}Name", out var text))
+                        tb.Text = text;
 
-                    if (tb.Name == "Lane3TextBox" && extraProperties.TryGetValue("Lane3", out var lane3))
-                        tb.Text = lane3;
+                    if (extraProperties.TryGetValue($"{prefix}Foreground", out var fg) &&
+                        ColorConverter.ConvertFromString(fg) is Color fgColor)
+                        tb.Foreground = new SolidColorBrush(fgColor);
+
+                    if (extraProperties.TryGetValue($"{prefix}Background", out var bg) &&
+                        ColorConverter.ConvertFromString(bg) is Color bgColor)
+                        child.Background = new SolidColorBrush(bgColor);
+                }
+                else if (col == 2 && row >= 0 && row <= 2)
+                {
+                    string key = $"Lane{row + 1}ContentBackground";
+                    if (extraProperties.TryGetValue(key, out var bg) &&
+                        ColorConverter.ConvertFromString(bg) is Color bgColor)
+                        child.Background = new SolidColorBrush(bgColor);
                 }
             }
         }

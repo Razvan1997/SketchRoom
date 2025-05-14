@@ -51,33 +51,46 @@
     </UserControl.Resources>
 
     <Grid x:Name="RootLayout">
-        <StackPanel>
-            <!--  Search  -->
-            <Grid
-                Height="30"
-                Margin="0,0,0,10"
-                Background="#404040"
-                ClipToBounds="True">
 
-                <TextBox
-                    Padding="8,4,30,4"
-                    VerticalContentAlignment="Center"
-                    Background="Transparent"
-                    BorderBrush="#555"
-                    BorderThickness="1"
-                    FontSize="14"
-                    Foreground="White"
-                    Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <!--  Search bar  -->
+            <RowDefinition Height="*" />
+            <!--  ScrollViewer + ItemsControl  -->
+        </Grid.RowDefinitions>
 
-                <!--  Icon de căutare în partea dreaptă  -->
-                <svgc:SvgViewbox
-                    Width="16"
-                    Height="16"
-                    Margin="0,0,10,0"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    Source="pack://application:,,,/SketchRoom.Toolkit.Wpf;component/Resources/search.svg" />
-            </Grid>
+        <!--  Search  -->
+        <Grid
+            Height="30"
+            Margin="0,0,0,10"
+            Background="#404040"
+            ClipToBounds="True">
+
+            <TextBox
+                Padding="8,4,30,4"
+                VerticalContentAlignment="Center"
+                Background="Transparent"
+                BorderBrush="#555"
+                BorderThickness="1"
+                FontSize="14"
+                Foreground="White"
+                Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+            <!--  Icon de căutare în partea dreaptă  -->
+            <svgc:SvgViewbox
+                Width="16"
+                Height="16"
+                Margin="0,0,10,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Source="pack://application:,,,/SketchRoom.Toolkit.Wpf;component/Resources/search.svg" />
+        </Grid>
+
+        <ScrollViewer
+            Grid.Row="1"
+            CanContentScroll="True"
+            HorizontalScrollBarVisibility="Disabled"
+            VerticalScrollBarVisibility="Auto">
 
             <ItemsControl ItemsSource="{Binding GroupedFilteredShapes}">
                 <ItemsControl.ItemTemplate>
@@ -188,9 +201,8 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
+        </ScrollViewer>
 
-
-        </StackPanel>
 
         <!--<Canvas
             x:Name="PopupHost"

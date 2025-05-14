@@ -17,6 +17,7 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
 {
     public class ListContainerRenderer : IShapeRenderer, IRestoreFromShape
     {
+        private StackPanel? _renderedStack;
         private readonly bool _withBindings;
         private readonly IShapeSelectionService _selectionService;
         public event EventHandler<ConnectionPointEventArgs>? ConnectionPointClicked;
@@ -128,6 +129,8 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 Child = stack
             };
 
+            _renderedBorder = border;
+            _renderedStack = stack;
             return border;
         }
 
@@ -238,7 +241,7 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
 
         public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
         {
-            if (control is not FrameworkElement fe)
+            if (control is not FrameworkElement fe || _renderedStack == null)
                 return null;
 
             var position = new Point(Canvas.GetLeft(fe), Canvas.GetTop(fe));
@@ -246,23 +249,28 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
 
             var extraProps = new Dictionary<string, string>();
 
-            if (fe is Border border && border.Child is StackPanel stack)
+            // Titlu
+            if (_renderedStack.Children[0] is TextBox titleBox)
             {
-                // Titlu
-                if (stack.Children[0] is TextBox titleBox)
-                {
-                    extraProps["Title"] = titleBox.Text;
-                }
+                extraProps["Title"] = titleBox.Text;
+                if (titleBox.Foreground is SolidColorBrush fg)
+                    extraProps["TitleForeground"] = fg.Color.ToString();
+            }
 
-                // Items
-                if (stack.Children.OfType<StackPanel>().FirstOrDefault(p => p.Name == "ItemsPanel") is StackPanel itemsPanel)
+            // Items
+            if (_renderedStack.Children.OfType<StackPanel>().FirstOrDefault(p => p.Name == "ItemsPanel") is StackPanel itemsPanel)
+            {
+                int index = 1;
+                foreach (var item in itemsPanel.Children.OfType<Grid>())
                 {
-                    int index = 1;
-                    foreach (var item in itemsPanel.Children.OfType<Grid>())
+                    var textBox = item.Children.OfType<TextBox>().FirstOrDefault();
+                    if (textBox != null)
                     {
-                        var textBox = item.Children.OfType<TextBox>().FirstOrDefault();
-                        if (textBox != null)
-                            extraProps[$"Item{index++}"] = textBox.Text;
+                        extraProps[$"Item{index}"] = textBox.Text;
+                        if (textBox.Foreground is SolidColorBrush fg)
+                            extraProps[$"Item{index}Foreground"] = fg.Color.ToString();
+
+                        index++;
                     }
                 }
             }
@@ -286,14 +294,20 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
             if (_renderedBorder?.Child is not StackPanel stack)
                 return;
 
-            // Restore titlu
-            if (stack.Children[0] is TextBox titleBox &&
-                extraProperties.TryGetValue("Title", out var title))
+            // Titlu
+            if (stack.Children[0] is TextBox titleBox)
             {
-                titleBox.Text = title;
+                if (extraProperties.TryGetValue("Title", out var title))
+                    titleBox.Text = title;
+
+                if (extraProperties.TryGetValue("TitleForeground", out var fgStr) &&
+                    ColorConverter.ConvertFromString(fgStr) is Color fgColor)
+                {
+                    titleBox.Foreground = new SolidColorBrush(fgColor);
+                }
             }
 
-            // Restore itemi
+            // Items
             if (stack.Children.OfType<StackPanel>().FirstOrDefault(p => p.Name == "ItemsPanel") is StackPanel itemsPanel)
             {
                 itemsPanel.Children.Clear();
@@ -301,6 +315,19 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 while (extraProperties.TryGetValue($"Item{i}", out var itemText))
                 {
                     var item = CreateItem(ContainerLocator.Container.Resolve<IDrawingPreferencesService>(), itemText, false);
+
+                    // aplică foreground dacă există
+                    if (item is Grid grid)
+                    {
+                        var textBox = grid.Children.OfType<TextBox>().FirstOrDefault();
+                        if (textBox != null &&
+                            extraProperties.TryGetValue($"Item{i}Foreground", out var itemFgStr) &&
+                            ColorConverter.ConvertFromString(itemFgStr) is Color itemFgColor)
+                        {
+                            textBox.Foreground = new SolidColorBrush(itemFgColor);
+                        }
+                    }
+
                     itemsPanel.Children.Add(item);
                     i++;
                 }

@@ -10,6 +10,7 @@ using WhiteBoard.Core.Services.Interfaces;
 using SketchRoom.Models.Enums;
 using System.Windows.Controls.Primitives;
 using WhiteBoard.Core.Models;
+using WhiteBoardModule.Events;
 
 namespace WhiteBoardModule.XAML.Shapes.Containers
 {
@@ -20,12 +21,38 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
         private readonly IContextMenuService _contextMenuService;
         private Grid? _outerGrid;
         private Border? _lastRightClickedBorder;
-
+        private readonly IEventAggregator _eventAggregator;
+        public Guid Id { get; } = Guid.NewGuid();
+        private double _lastPublishedHeight;
         public SimpleLinesRenderer(bool withBindings = false)
         {
             _withBindings = withBindings;
             _selectionService = ContainerLocator.Container.Resolve<IShapeSelectionService>();
             _contextMenuService = ContainerLocator.Container.Resolve<IContextMenuService>();
+            _eventAggregator = ContainerLocator.Container.Resolve<IEventAggregator>();
+        }
+
+        private void PublishSizeChanged(bool isLastRowExpanded = false)
+        {
+            if (_outerGrid == null) return;
+
+            double totalHeight = _outerGrid.RowDefinitions
+                .Where(rd => rd.Height.IsAbsolute)
+                .Sum(rd => rd.Height.Value);
+
+            double totalWidth = _outerGrid.ActualWidth;
+            double delta = totalHeight - _lastPublishedHeight;
+            _lastPublishedHeight = totalHeight;
+
+            var info = new SimpleLinesResizeInfo
+            {
+                NewSize = new Size(totalWidth, totalHeight),
+                SourceId = this.Id,
+                VerticalOffset = delta,
+                IsLastRowExpanded = isLastRowExpanded
+            };
+
+            _eventAggregator.GetEvent<SimpleLinesResizedEvent>().Publish(info);
         }
 
         public UIElement CreatePreview()
@@ -171,6 +198,11 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
 
             aboveRow.Height = new GridLength(aboveNew);
             belowRow.Height = new GridLength(belowNew);
+
+            // Detectăm dacă modificăm ultimul rând (adică separatorul de dinaintea ultimului Border)
+            bool isLastRowExpanded = (aboveRowIndex + 2 == _outerGrid.RowDefinitions.Count - 1) && deltaY > 0;
+
+            PublishSizeChanged(isLastRowExpanded);
         }
 
         public void AddLine()

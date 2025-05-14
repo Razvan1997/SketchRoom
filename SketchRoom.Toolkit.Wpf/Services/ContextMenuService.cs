@@ -1,15 +1,9 @@
 ﻿using SketchRoom.Models.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-using System.Windows;
-using WhiteBoard.Core.Services.Interfaces;
-using System.Windows.Media;
 using SketchRoom.Toolkit.Wpf.Controls;
-using System.Windows.Shapes;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using WhiteBoard.Core.Services.Interfaces;
 
 namespace SketchRoom.Toolkit.Wpf.Services
 {
@@ -51,6 +45,9 @@ namespace SketchRoom.Toolkit.Wpf.Services
                     AddConnectorDoubleItems(contextMenu, owner);
                     break;
                 case ShapeContextType.ConnectorSimpleLabel:
+                    AddConnectorDoubleItems(contextMenu, owner);
+                    break;
+                case ShapeContextType.DescriptionShapeConnector:
                     AddConnectorDoubleItems(contextMenu, owner);
                     break;
             }

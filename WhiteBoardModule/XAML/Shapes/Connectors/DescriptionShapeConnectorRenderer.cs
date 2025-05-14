@@ -13,7 +13,7 @@ using WhiteBoard.Core.Models;
 
 namespace WhiteBoardModule.XAML.Shapes.Connectors
 {
-    public class DescriptionShapeConnectorRenderer : IShapeRenderer, IRestoreFromShape
+    public class DescriptionShapeConnectorRenderer : IShapeRenderer, IRestoreFromShape, IStrokeChangable, IForegroundChangable
     {
         private readonly bool _withBindings;
         private Grid? RenderedElement;
@@ -153,23 +153,33 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
 
         public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
         {
-            if (control is not FrameworkElement fe || fe.Tag is not Dictionary<string, object> tag)
+            if (control is not FrameworkElement fe)
                 return null;
 
             var position = new Point(Canvas.GetLeft(fe), Canvas.GetTop(fe));
             var size = new Size(fe.Width, fe.Height);
 
-            string? text = null, textColor = null, lineColor = null;
-
-            if (tag.TryGetValue("DescriptionText", out var txtObj) && txtObj is TextBox txt)
+            var angle = 0.0;
+            if (fe.RenderTransform is TransformGroup tg &&
+                tg.Children.OfType<RotateTransform>().FirstOrDefault() is RotateTransform rt)
             {
-                text = txt.Text;
-                textColor = (txt.Foreground as SolidColorBrush)?.Color.ToString();
+                angle = rt.Angle;
             }
 
-            if (tag.TryGetValue("Line", out var lineObj) && lineObj is Rectangle line)
+            string? text = null, textColor = null, lineColor = null;
+
+            if (RenderedElement?.Tag is Dictionary<string, object> tag)
             {
-                lineColor = (line.Fill as SolidColorBrush)?.Color.ToString();
+                if (tag.TryGetValue("DescriptionText", out var txtObj) && txtObj is TextBox txt)
+                {
+                    text = txt.Text;
+                    textColor = (txt.Foreground as SolidColorBrush)?.Color.ToString();
+                }
+
+                if (tag.TryGetValue("Line", out var lineObj) && lineObj is Rectangle line)
+                {
+                    lineColor = (line.Fill as SolidColorBrush)?.Color.ToString();
+                }
             }
 
             return new BPMNShapeModelWithPosition
@@ -182,6 +192,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 Name = fe.Name,
                 Category = "Connector",
                 SvgUri = null,
+                RotationAngle = angle,
                 ExtraProperties = new Dictionary<string, string>
         {
             { "DescriptionText", text ?? "" },
@@ -213,6 +224,25 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
             {
                 line.Fill = ShapeStyleRestorer.ConvertToBrush(lineColor);
             }
+        }
+
+        public void SetForeground(Brush brush)
+        {
+            if (RenderedElement?.Tag is not Dictionary<string, object> tag) return;
+
+            if (tag.TryGetValue("DescriptionText", out var txtObj) && txtObj is TextBox label)
+                label.Foreground = brush;
+        }
+
+        public void SetStroke(Brush brush)
+        {
+            if (RenderedElement?.Tag is not Dictionary<string, object> tag) return;
+
+            if (tag.TryGetValue("Line", out var lineObj) && lineObj is Rectangle line)
+                line.Fill = brush;
+
+            if (tag.TryGetValue("Diamond", out var diamondObj) && diamondObj is Polygon diamond)
+                diamond.Fill = brush;
         }
     }
 }

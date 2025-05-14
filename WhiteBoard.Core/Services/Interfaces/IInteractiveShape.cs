@@ -45,7 +45,7 @@ namespace WhiteBoard.Core.Services.Interfaces
 
         bool EnableConnectors { get; set; }
 
-        void SetShape(ShapeType shape);
+        void SetShape(ShapeType shape, double rotationAngle);
 
         /// <summary>
         /// Eveniment declanșat la click pentru a finaliza o conexiune într-o zonă generală (ex: Border).

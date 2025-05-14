@@ -127,9 +127,14 @@ namespace FooterModule.ViewModels
 
         private void OnTabsRestored(List<SavedWhiteBoardModel> models)
         {
-            if (Tabs.Count == 1 && Tabs[0].Name.StartsWith("Sketch"))
+            var internalTabs = _tabService.AllTabs.ToList();
+
+            var placeholder = internalTabs.FirstOrDefault(t => t.Name == "Sketch-1");
+
+            if (placeholder != null && internalTabs.Count == 1)
             {
-                DeleteTab(Tabs[0]);
+                _tabService.RemoveTab(placeholder); 
+                Tabs.Remove(placeholder);
             }
 
             // Sortează modelul după nume de tip "Sketch-1", "Sketch-2"

@@ -185,22 +185,29 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
 
         public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
         {
-            if (control is not FrameworkElement fe || fe.Tag is not Dictionary<string, object> tag)
+            if (control is not FrameworkElement fe)
                 return null;
 
             var position = new Point(Canvas.GetLeft(fe), Canvas.GetTop(fe));
             var size = new Size(fe.Width, fe.Height);
 
-            string? labelText = null, borderColor = null;
+            string? labelText = null, borderColor = null, background = null, foregroundText = null, fontSizeText = null;
 
-            if (tag.TryGetValue("SideLabel", out var labelObj) && labelObj is TextBox label)
+            if (_renderedGrid?.Tag is Dictionary<string, object> tag)
             {
-                labelText = label.Text;
-            }
+                if (tag.TryGetValue("SideLabel", out var labelObj) && labelObj is TextBox label)
+                {
+                    labelText = label.Text;
+                    foregroundText = (label.Foreground as SolidColorBrush)?.Color.ToString();
+                    fontSizeText = label.FontSize.ToString();
+                }
 
-            if (tag.TryGetValue("ContainerBorder", out var borderObj) && borderObj is Border border)
-            {
-                borderColor = (border.BorderBrush as SolidColorBrush)?.Color.ToString();
+                if (tag.TryGetValue("ContainerBorder", out var borderObj) && borderObj is Border border)
+                {
+                    borderColor = (border.BorderBrush as SolidColorBrush)?.Color.ToString();
+                    background = (border.Background as SolidColorBrush)?.Color.ToString();
+                }
+               
             }
 
             return new BPMNShapeModelWithPosition
@@ -214,10 +221,13 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 Category = "Container",
                 SvgUri = null,
                 ExtraProperties = new Dictionary<string, string>
-        {
-            { "SideLabelText", labelText ?? "" },
-            { "BorderColor", borderColor ?? "" }
-        }
+                {
+                    { "SideLabelText", labelText ?? "" },
+                    { "BorderColor", borderColor ?? "" },
+                    { "BackgroundColor", background ?? "" },
+                    { "ForegroundText", foregroundText ?? "" },
+                    { "FontSizeText", fontSizeText ?? "" },
+                }
             };
         }
 
@@ -230,12 +240,18 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
             {
                 if (extraProperties.TryGetValue("SideLabelText", out var labelText))
                     label.Text = labelText;
+                if (extraProperties.TryGetValue("ForegroundText", out var foreground))
+                    label.Foreground = ShapeStyleRestorer.ConvertToBrush(foreground);
+                if (extraProperties.TryGetValue("FontSizeText", out var fontSize))
+                    label.FontSize = Convert.ToDouble(fontSize);
             }
 
             if (tag.TryGetValue("ContainerBorder", out var borderObj) && borderObj is Border border)
             {
                 if (extraProperties.TryGetValue("BorderColor", out var color))
                     border.BorderBrush = ShapeStyleRestorer.ConvertToBrush(color);
+                if (extraProperties.TryGetValue("BackgroundColor", out var colorBack))
+                    border.Background = ShapeStyleRestorer.ConvertToBrush(colorBack);
             }
         }
     }

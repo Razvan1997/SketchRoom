@@ -54,6 +54,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
         private Point? _lastRightClickCanvasPosition = null;
         private readonly IClipboardService _clipboardService;
         private readonly IDrawingService _drawingService;
+        private IDrawingTool? _previousTool;
         public WhiteBoardControl(IDrawingService drawingService, IDrawingPreferencesService drawingPreferences)
         {
             InitializeComponent();
@@ -218,13 +219,19 @@ namespace SketchRoom.Toolkit.Wpf.Controls
         private void OnCanvasLeftClickStart(object sender, MouseButtonEventArgs e)
         {
             var logicalPos = GetLogicalPosition(e);
-
             _toolInterceptorService.InterceptToolSwitch(e);
-            var afterInterceptTool = _toolManager.ActiveTool?.Name;
 
-            if (Keyboard.Modifiers == ModifierKeys.Control)
+            if (Keyboard.Modifiers == ModifierKeys.Control && e.LeftButton == MouseButtonState.Pressed)
             {
+                // Salvează tool-ul curent și activează pan temporar
+                _previousTool = _toolManager.ActiveTool;
                 _toolManager.SetActive("Pan");
+                _isPanning = true;
+                _lastPanPoint = e.GetPosition(this);
+                Cursor = Cursors.Hand;
+                DrawingCanvas.CaptureMouse();
+                e.Handled = true;
+                return;
             }
 
             DeselectAllTexts();
@@ -300,8 +307,18 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                 _isPanning = false;
                 Cursor = _previousCursor ?? Cursors.Arrow;
                 DrawingCanvas.ReleaseMouseCapture();
+
+                // ✅ Revino la tool-ul anterior
+                if (_previousTool != null)
+                {
+                    _toolManager.SetActive(_previousTool.Name);
+                    _previousTool = null;
+                }
+
+                e.Handled = true;
                 return;
             }
+
             _host.HandleMouseUp(logicalPos, e);
         }
 
