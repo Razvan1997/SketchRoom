@@ -272,7 +272,14 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
             var extraProps = new Dictionary<string, string>();
 
             if (_headerTextBox != null)
+            {
                 extraProps["EntityName"] = _headerTextBox.Text;
+
+                if (_headerTextBox.Background is SolidColorBrush brush)
+                {
+                    extraProps["EntityName_Background"] = brush.Color.ToString(); 
+                }
+            }
 
             int index = 1;
 
@@ -359,6 +366,20 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 TextAlignment = TextAlignment.Center
             };
+
+            if (extraProperties.TryGetValue("EntityName_Background", out var bgColor))
+            {
+                try
+                {
+                    var brush = (SolidColorBrush)new BrushConverter().ConvertFromString(bgColor);
+                    _headerTextBox.Background = brush;
+                }
+                catch
+                {
+                    // fallback la culoarea implicită
+                    _headerTextBox.Background = new SolidColorBrush(Color.FromRgb(45, 45, 48));
+                }
+            }
 
             Grid.SetRow(_headerTextBox, 0);
             Grid.SetColumnSpan(_headerTextBox, 2);

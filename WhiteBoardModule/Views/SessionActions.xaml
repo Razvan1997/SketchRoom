@@ -91,7 +91,7 @@
 
             <!--  Font Size ComboBox  -->
 
-            <StackPanel Grid.Column="0" Orientation="Horizontal">
+            <!--<StackPanel Grid.Column="0" Orientation="Horizontal">
                 <svgc:SvgViewbox
                     Width="24"
                     Height="24"
@@ -117,14 +117,14 @@
                         </i:EventTrigger>
                     </i:Interaction.Triggers>
                 </svgc:SvgViewbox>
-            </StackPanel>
+            </StackPanel>-->
 
-            <Border
+            <!--<Border
                 Grid.Column="1"
                 Width="1"
                 Height="30"
                 HorizontalAlignment="Center"
-                Background="#2D2D30" />
+                Background="#2D2D30" />-->
 
             <StackPanel Grid.Column="2" Orientation="Horizontal">
                 <TextBlock
@@ -188,7 +188,7 @@
                     SelectedColor="{Binding SelectedColor}" />
             </StackPanel>
 
-            <Border
+            <!--<Border
                 Grid.Column="7"
                 Width="1"
                 Height="30"
@@ -206,7 +206,7 @@
                     Width="24"
                     Height="24"
                     Source="pack://application:,,,/WhiteBoardModule;component/Resources/delete.svg" />
-            </StackPanel>
+            </StackPanel>-->
 
             <Border
                 Grid.Column="9"
@@ -243,7 +243,7 @@
                 ButtonText="{Binding ActionLabel}"
                 IsButtonEnabled="{Binding IsSessionActive}" />-->
 
-            <Border
+            <!--<Border
                 Grid.Column="11"
                 Width="1"
                 Height="30"
@@ -263,7 +263,7 @@
                         Height="24"
                         Source="pack://application:,,,/WhiteBoardModule;component/Resources/apply-background.svg" />
                 </ToggleButton>
-            </StackPanel>
+            </StackPanel>-->
 
             <StackPanel
                 Grid.Column="14"

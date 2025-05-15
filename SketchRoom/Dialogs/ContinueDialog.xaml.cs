@@ -91,6 +91,9 @@ namespace SketchRoom.Dialogs
         {
             if (sender is Border border && border.DataContext is StackPreviewItem selectedItem)
             {
+                //LoadingOverlayHelper.Show();
+                //await Task.Delay(50);
+
                 var tabService = ContainerLocator.Container.Resolve<IWhiteBoardTabService>();
                 tabService.SetFolderName(selectedItem.FolderName);
 
@@ -117,6 +120,8 @@ namespace SketchRoom.Dialogs
                     var eventAggregator = ContainerLocator.Container.Resolve<IEventAggregator>();
                     eventAggregator.GetEvent<TabsRestoredEvent>().Publish(restoredTabs);
                 }
+
+                //LoadingOverlayHelper.Hide();
 
                 this.Close();
             }

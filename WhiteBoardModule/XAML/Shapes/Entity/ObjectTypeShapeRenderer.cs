@@ -17,7 +17,10 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
         private readonly bool _withBindings;
         private static readonly List<string> _types = new() { "string", "int", "bool", "float", "object" };
         private static readonly List<string> _access = new() { "public", "private", "protected", "internal" };
-
+        private Border? _mainBorder;
+        private StackPanel? _mainStack;
+        private TextBox? _titleBox;
+        private StackPanel? _fieldPanel;
         public ObjectTypeShapeRenderer(bool withBindings = false)
         {
             _withBindings = withBindings;
@@ -72,13 +75,13 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
         {
             var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
 
-            var mainStack = new StackPanel
+            _mainStack = new StackPanel
             {
                 Orientation = Orientation.Vertical,
                 Background = Brushes.Transparent
             };
 
-            var titleBox = new TextBox
+            _titleBox = new TextBox
             {
                 Text = "Object:Type",
                 FontWeight = FontWeights.Bold,
@@ -93,17 +96,15 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
                 HorizontalContentAlignment = HorizontalAlignment.Center
             };
 
-            mainStack.Children.Add(titleBox);
+            _mainStack.Children.Add(_titleBox);
 
-            var fieldPanel = new StackPanel { Name = "FieldsPanel" };
+            _fieldPanel = new StackPanel { Name = "FieldsPanel" };
 
-            // Adaugă câteva default
             for (int i = 0; i < 3; i++)
-                fieldPanel.Children.Add(CreateFieldRow(preferences, fieldPanel));
+                _fieldPanel.Children.Add(CreateFieldRow(preferences, _fieldPanel));
 
-            mainStack.Children.Add(fieldPanel);
+            _mainStack.Children.Add(_fieldPanel);
 
-            // Buton + jos
             var addButton = new Button
             {
                 Content = "+",
@@ -117,26 +118,24 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
 
             addButton.Click += (s, e) =>
             {
-                fieldPanel.Children.Add(CreateFieldRow(preferences, fieldPanel));
+                _fieldPanel.Children.Add(CreateFieldRow(preferences, _fieldPanel));
             };
 
-            mainStack.Children.Add(addButton);
+            _mainStack.Children.Add(addButton);
 
-            // Încapsulare în Border stil Entity
+            _mainBorder = new Border
+            {
+                BorderBrush = Brushes.DeepSkyBlue,
+                BorderThickness = new Thickness(1.5),
+                Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(6),
+                Child = _mainStack
+            };
+
             return new Grid
             {
-                Children =
-            {
-                new Border
-                {
-                    BorderBrush = Brushes.DeepSkyBlue,
-                    BorderThickness = new Thickness(1.5),
-                    Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
-                    CornerRadius = new CornerRadius(6),
-                    Padding = new Thickness(6),
-                    Child = mainStack
-                }
-            }
+                Children = { _mainBorder }
             };
         }
 
@@ -248,52 +247,43 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
 
         public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
         {
-            if (control is not FrameworkElement fe)
-                return null;
-
-            var border = fe as Border ?? fe.FindName("border") as Border;
-            if (border == null)
-                return null;
-
-            var mainStack = border.Child as StackPanel;
-            if (mainStack == null)
+            if (_mainStack == null || _fieldPanel == null || control is not FrameworkElement fe)
                 return null;
 
             var extra = new Dictionary<string, string>();
 
-            // Titlul (Object:Type)
-            if (mainStack.Children[0] is TextBox titleBox)
+            if (_titleBox != null)
             {
-                extra["ObjectTitle"] = titleBox.Text;
+                extra["ObjectTitle"] = _titleBox.Text;
+
+                if (_titleBox.Background is SolidColorBrush bg)
+                {
+                    extra["ObjectTitle_Background"] = bg.Color.ToString();
+                }
             }
 
-            // Fields
-            if (mainStack.Children.OfType<StackPanel>().FirstOrDefault(p => p.Name == "FieldsPanel") is StackPanel fieldPanel)
+            int index = 1;
+            foreach (var row in _fieldPanel.Children.OfType<DockPanel>())
             {
-                int index = 1;
-                foreach (var child in fieldPanel.Children.OfType<DockPanel>())
+                var textBoxes = row.Children.OfType<TextBox>().ToList();
+                var comboBoxes = row.Children.OfType<ComboBox>().ToList();
+
+                if (textBoxes.Count >= 2)
                 {
-                    var parts = child.Children.OfType<UIElement>().ToList();
-
-                    var fieldBox = parts.OfType<TextBox>().ElementAtOrDefault(0);
-                    var valueBox = parts.OfType<TextBox>().ElementAtOrDefault(1);
-                    var typeBox = parts.OfType<ComboBox>().FirstOrDefault(c => c.ItemsSource == _types);
-                    var accessBox = parts.OfType<ComboBox>().FirstOrDefault(c => c.ItemsSource == _access);
-
-                    if (fieldBox != null)
-                        extra[$"Field{index}_Name"] = fieldBox.Text;
-
-                    if (valueBox != null)
-                        extra[$"Field{index}_Value"] = valueBox.Text;
-
-                    if (typeBox != null)
-                        extra[$"Field{index}_Type"] = typeBox.SelectedItem?.ToString() ?? "";
-
-                    if (accessBox != null)
-                        extra[$"Field{index}_Access"] = accessBox.SelectedItem?.ToString() ?? "";
-
-                    index++;
+                    extra[$"Field{index}_Name"] = textBoxes[0].Text;
+                    extra[$"Field{index}_Value"] = textBoxes[1].Text;
                 }
+
+                var typeBox = comboBoxes.FirstOrDefault(cb => cb.ItemsSource == _types);
+                var accessBox = comboBoxes.FirstOrDefault(cb => cb.ItemsSource == _access);
+
+                if (typeBox != null)
+                    extra[$"Field{index}_Type"] = typeBox.SelectedItem?.ToString() ?? "";
+
+                if (accessBox != null)
+                    extra[$"Field{index}_Access"] = accessBox.SelectedItem?.ToString() ?? "";
+
+                index++;
             }
 
             return new BPMNShapeModelWithPosition
@@ -312,67 +302,58 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
 
         public void Restore(Dictionary<string, string> extraProperties)
         {
-            if (extraProperties == null || extraProperties.Count == 0)
+            if (_titleBox == null || _fieldPanel == null || extraProperties == null)
                 return;
 
-            // Caută Border-ul principal
-            if (VisualTreeHelper.GetChildrenCount(Application.Current.MainWindow) == 0)
-                return;
+            // Restaurare titlu
+            if (extraProperties.TryGetValue("ObjectTitle", out var title))
+                _titleBox.Text = title;
 
-            var border = FindDescendant<Border>(Application.Current.MainWindow, b => b.Child is StackPanel panel && panel.Children.OfType<TextBox>().Any(tb => tb.Text == "Object:Type"));
-            if (border == null)
-                return;
-
-            if (border.Child is not StackPanel mainStack)
-                return;
-
-            // Actualizează titlul
-            if (mainStack.Children[0] is TextBox titleBox && extraProperties.TryGetValue("ObjectTitle", out var title))
+            if (extraProperties.TryGetValue("ObjectTitle_Background", out var bgColor))
             {
-                titleBox.Text = title;
+                try
+                {
+                    _titleBox.Background = (SolidColorBrush)new BrushConverter().ConvertFromString(bgColor);
+                }
+                catch
+                {
+                    _titleBox.Background = new SolidColorBrush(Color.FromRgb(45, 45, 48)); // fallback
+                }
             }
 
-            // Găsește și curăță FieldsPanel
-            if (mainStack.Children.OfType<StackPanel>().FirstOrDefault(p => p.Name == "FieldsPanel") is StackPanel fieldPanel)
+            // Curăță și reconstruiește câmpurile
+            _fieldPanel.Children.Clear();
+            var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
+
+            int index = 1;
+            while (extraProperties.TryGetValue($"Field{index}_Name", out var fieldName))
             {
-                fieldPanel.Children.Clear();
+                var fieldValue = extraProperties.TryGetValue($"Field{index}_Value", out var val) ? val : "";
+                var type = extraProperties.TryGetValue($"Field{index}_Type", out var t) ? t : _types[0];
+                var access = extraProperties.TryGetValue($"Field{index}_Access", out var a) ? a : _access[0];
 
-                var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
+                var row = CreateFieldRow(preferences, _fieldPanel);
 
-                int index = 1;
-                while (extraProperties.ContainsKey($"Field{index}_Name"))
+                if (row is DockPanel dock)
                 {
-                    string fieldName = extraProperties[$"Field{index}_Name"];
-                    string fieldValue = extraProperties.TryGetValue($"Field{index}_Value", out var v) ? v : "";
-                    string type = extraProperties.TryGetValue($"Field{index}_Type", out var t) ? t : _types[0];
-                    string access = extraProperties.TryGetValue($"Field{index}_Access", out var a) ? a : _access[0];
+                    var textBoxes = dock.Children.OfType<TextBox>().ToList();
+                    var comboBoxes = dock.Children.OfType<ComboBox>().ToList();
 
-                    var row = CreateFieldRow(preferences, fieldPanel);
-
-                    if (row is DockPanel dock)
+                    if (textBoxes.Count >= 2)
                     {
-                        var textBoxes = dock.Children.OfType<TextBox>().ToList();
-                        var comboBoxes = dock.Children.OfType<ComboBox>().ToList();
-
-                        if (textBoxes.Count >= 2)
-                        {
-                            textBoxes[0].Text = fieldName;
-                            textBoxes[1].Text = fieldValue;
-                        }
-
-                        var typeBox = comboBoxes.FirstOrDefault(cb => cb.ItemsSource == _types);
-                        var accessBox = comboBoxes.FirstOrDefault(cb => cb.ItemsSource == _access);
-
-                        if (typeBox != null)
-                            typeBox.SelectedItem = _types.Contains(type) ? type : _types[0];
-
-                        if (accessBox != null)
-                            accessBox.SelectedItem = _access.Contains(access) ? access : _access[0];
+                        textBoxes[0].Text = fieldName;
+                        textBoxes[1].Text = fieldValue;
                     }
 
-                    fieldPanel.Children.Add(row);
-                    index++;
+                    comboBoxes.FirstOrDefault(cb => cb.ItemsSource == _types)!.SelectedItem =
+                        _types.Contains(type) ? type : _types[0];
+
+                    comboBoxes.FirstOrDefault(cb => cb.ItemsSource == _access)!.SelectedItem =
+                        _access.Contains(access) ? access : _access[0];
                 }
+
+                _fieldPanel.Children.Add(row);
+                index++;
             }
         }
 

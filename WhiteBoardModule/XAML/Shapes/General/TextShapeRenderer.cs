@@ -177,18 +177,23 @@ namespace WhiteBoardModule.XAML.Shapes.General
 
         public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
         {
-            if (control is not FrameworkElement fe)
+            if (control is not FrameworkElement fe || _richTextBox == null)
                 return null;
 
-            var background = (_richTextBox?.Background as SolidColorBrush)?.Color.ToString() ?? "#00FFFFFF";
-            var foreground = (_richTextBox?.Foreground as SolidColorBrush)?.Color.ToString() ?? "#FF000000";
+            var background = (_richTextBox.Background as SolidColorBrush)?.Color.ToString() ?? "#00FFFFFF";
 
-            string textContent = "";
-            if (_richTextBox?.Document != null)
-            {
-                var range = new TextRange(_richTextBox.Document.ContentStart, _richTextBox.Document.ContentEnd);
-                textContent = range.Text.Trim();
-            }
+            // Extrage din primul Run
+            var firstRun = _richTextBox.Document?.Blocks
+                .OfType<Paragraph>()
+                .SelectMany(p => p.Inlines.OfType<Run>())
+                .FirstOrDefault();
+
+            var foreground = firstRun?.Foreground is SolidColorBrush fg ? fg.Color.ToString() : "#FF000000";
+            var fontSize = firstRun?.FontSize ?? 14;
+            var fontWeight = firstRun?.FontWeight.ToString() ?? "Normal";
+
+            var range = new TextRange(_richTextBox.Document.ContentStart, _richTextBox.Document.ContentEnd);
+            var textContent = range.Text.Trim();
 
             return new BPMNShapeModelWithPosition
             {
@@ -204,6 +209,8 @@ namespace WhiteBoardModule.XAML.Shapes.General
         {
             { "Background", background },
             { "Foreground", foreground },
+            { "FontSize", fontSize.ToString() },
+            { "FontWeight", fontWeight },
             { "TextShape", textContent }
         }
             };
@@ -214,30 +221,46 @@ namespace WhiteBoardModule.XAML.Shapes.General
             if (_richTextBox == null)
                 return;
 
+            // Background
             if (extraProperties.TryGetValue("Background", out var bgColor))
             {
                 try { _richTextBox.Background = (Brush)new BrushConverter().ConvertFromString(bgColor); }
                 catch { _richTextBox.Background = Brushes.Transparent; }
             }
 
+            // Foreground
+            Brush? foreground = Brushes.Black;
             if (extraProperties.TryGetValue("Foreground", out var fgColor))
             {
-                try
-                {
-                    var brush = (Brush)new BrushConverter().ConvertFromString(fgColor);
-                    SetForeground(brush); // actualizează și pe Run-uri
-                }
+                try { foreground = (Brush)new BrushConverter().ConvertFromString(fgColor); }
                 catch { }
             }
 
+            // Font size
+            double fontSize = 14;
+            if (extraProperties.TryGetValue("FontSize", out var sizeStr) && double.TryParse(sizeStr, out var parsedSize))
+            {
+                fontSize = parsedSize;
+            }
+
+            // Font weight
+            FontWeight fontWeight = FontWeights.Normal;
+            if (extraProperties.TryGetValue("FontWeight", out var weightStr))
+            {
+                try { fontWeight = (FontWeight)new FontWeightConverter().ConvertFromString(weightStr)!; }
+                catch { }
+            }
+
+            // Text
             if (extraProperties.TryGetValue("TextShape", out var text))
             {
                 _richTextBox.Document.Blocks.Clear();
                 var paragraph = new Paragraph(new Run(text))
                 {
                     TextAlignment = TextAlignment.Center,
-                    FontSize = 14,
-                    Foreground = _richTextBox.Foreground
+                    FontSize = fontSize,
+                    FontWeight = fontWeight,
+                    Foreground = foreground
                 };
                 _richTextBox.Document.Blocks.Add(paragraph);
             }

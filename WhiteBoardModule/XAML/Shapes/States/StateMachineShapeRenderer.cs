@@ -18,7 +18,10 @@ namespace WhiteBoardModule.XAML.Shapes.States
     {
         private readonly bool _withBindings;
         private readonly ObservableCollection<TransitionModel> _transitions = new();
-
+        private TextBox? _nameBox;
+        private TextBox? _entryBox;
+        private TextBox? _exitBox;
+        private StackPanel? _transitionsPanel;
         public bool IsStartState { get; set; } = false;
 
         public StateMachineShapeRenderer(bool withBindings = false)
@@ -141,6 +144,7 @@ namespace WhiteBoardModule.XAML.Shapes.States
                 };
                 _transitions.Add(transition);
                 transitionsPanel.Children.Add(CreateTransitionRow(transition, transitionsPanel));
+
             };
 
             // Add Start State marker (visual indicator)
@@ -166,6 +170,11 @@ namespace WhiteBoardModule.XAML.Shapes.States
             mainStack.Children.Add(new Rectangle { Height = 1, Fill = Brushes.Gray, Margin = new Thickness(0, 4, 0, 4) });
             mainStack.Children.Add(transitionsPanel);
             mainStack.Children.Add(addTransitionBtn);
+
+            _nameBox = nameBox;
+            _entryBox = entryBox;
+            _exitBox = exitBox;
+            _transitionsPanel = transitionsPanel;
 
             return new Grid
             {
@@ -263,15 +272,32 @@ namespace WhiteBoardModule.XAML.Shapes.States
 
         public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
         {
-            if (control is not FrameworkElement fe)
+            if (control is not FrameworkElement fe ||
+                _nameBox == null || _entryBox == null || _exitBox == null || _transitionsPanel == null)
                 return null;
 
             var extra = new Dictionary<string, string>
-    {
-        { "IsStartState", IsStartState.ToString() },
-        { "Transitions", string.Join(";", _transitions.Select(t =>
-            $"{t.Trigger}|{t.Condition}|{t.Action}|{t.TargetState}")) }
-    };
+            {
+                ["StateName"] = _nameBox.Text,
+                ["EntryAction"] = _entryBox.Text,
+                ["ExitAction"] = _exitBox.Text,
+                ["IsStartState"] = IsStartState.ToString()
+            };
+
+            int i = 1;
+            foreach (var row in _transitionsPanel.Children.OfType<DockPanel>())
+            {
+                var textBoxes = row.Children.OfType<TextBox>().ToList();
+
+                if (textBoxes.Count >= 4)
+                {
+                    extra[$"T{i}_Trigger"] = textBoxes[0].Text;
+                    extra[$"T{i}_Condition"] = textBoxes[1].Text;
+                    extra[$"T{i}_Action"] = textBoxes[2].Text;
+                    extra[$"T{i}_Target"] = textBoxes[3].Text;
+                    i++;
+                }
+            }
 
             return new BPMNShapeModelWithPosition
             {
@@ -289,30 +315,33 @@ namespace WhiteBoardModule.XAML.Shapes.States
 
         public void Restore(Dictionary<string, string> extraProperties)
         {
+            if (_nameBox == null || _entryBox == null || _exitBox == null || _transitionsPanel == null)
+                return;
+
+            _nameBox.Text = extraProperties.TryGetValue("StateName", out var name) ? name : "State";
+            _entryBox.Text = extraProperties.TryGetValue("EntryAction", out var entry) ? entry : "entry /";
+            _exitBox.Text = extraProperties.TryGetValue("ExitAction", out var exit) ? exit : "exit /";
+
             if (extraProperties.TryGetValue("IsStartState", out var isStart))
-            {
-                IsStartState = bool.TryParse(isStart, out var parsed) && parsed;
-            }
+                IsStartState = bool.TryParse(isStart, out var b) && b;
 
-            if (extraProperties.TryGetValue("Transitions", out var transitionsStr))
-            {
-                _transitions.Clear();
+            _transitions.Clear();
+            _transitionsPanel.Children.Clear();
 
-                var transitions = transitionsStr.Split(';');
-                foreach (var t in transitions)
+            int i = 1;
+            while (extraProperties.ContainsKey($"T{i}_Trigger"))
+            {
+                var t = new TransitionModel
                 {
-                    var parts = t.Split('|');
-                    if (parts.Length == 4)
-                    {
-                        _transitions.Add(new TransitionModel
-                        {
-                            Trigger = parts[0],
-                            Condition = parts[1],
-                            Action = parts[2],
-                            TargetState = parts[3]
-                        });
-                    }
-                }
+                    Trigger = extraProperties[$"T{i}_Trigger"],
+                    Condition = extraProperties.TryGetValue($"T{i}_Condition", out var c) ? c : "",
+                    Action = extraProperties.TryGetValue($"T{i}_Action", out var a) ? a : "",
+                    TargetState = extraProperties.TryGetValue($"T{i}_Target", out var tgt) ? tgt : ""
+                };
+
+                _transitions.Add(t);
+                _transitionsPanel.Children.Add(CreateTransitionRow(t, _transitionsPanel));
+                i++;
             }
         }
     }

@@ -105,7 +105,7 @@
                     Height="24"
                     Source="pack://application:,,,/WhiteBoardModule;component/Resources/curved-arrow.svg" />
             </ToggleButton>
-            <ToggleButton
+            <!--<ToggleButton
                 Command="{Binding SelectToolCommand}"
                 CommandParameter="{x:Static enums:WhiteBoardTool.TextEdit}"
                 IsChecked="{Binding SelectedTool, Mode=TwoWay, Converter={StaticResource EnumEqualityConverter}, ConverterParameter={x:Static enums:WhiteBoardTool.TextEdit}}"
@@ -114,7 +114,7 @@
                     Width="24"
                     Height="24"
                     Source="pack://application:,,,/WhiteBoardModule;component/Resources/text-edit.svg" />
-            </ToggleButton>
+            </ToggleButton>-->
 
             <ToggleButton
                 Command="{Binding SelectToolCommand}"

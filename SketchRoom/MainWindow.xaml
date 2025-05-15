@@ -76,5 +76,7 @@
                 <ContentControl prism:RegionManager.RegionName="FooterRegion" />
             </Border>
         </Grid>
+
+        
     </Grid>
 </Window>

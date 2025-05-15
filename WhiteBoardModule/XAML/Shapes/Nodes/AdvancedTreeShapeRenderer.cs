@@ -14,13 +14,18 @@ using System.Drawing;
 using System.Windows.Ink;
 using SketchRoom.Models.Enums;
 using WhiteBoard.Core.Models;
+using ColorConverter = System.Windows.Media.ColorConverter;
+using Color = System.Windows.Media.Color;
 
 namespace WhiteBoardModule.XAML.Shapes.Nodes
 {
     public class AdvancedTreeShapeRenderer : IShapeRenderer, IRestoreFromShape
     {
         private readonly List<StackPanel> _nodes = new();
-
+        private StackPanel? _rootNode;
+        private StackPanel? _rootPanel;
+        private bool _isRestoring = false;
+        private Border? _container;
         public AdvancedTreeShapeRenderer(bool withBindings = false)
         {
             // Constructor păstrat
@@ -40,27 +45,40 @@ namespace WhiteBoardModule.XAML.Shapes.Nodes
 
         public UIElement Render()
         {
-            var rootPanel = new StackPanel();
+            var localNodes = new List<StackPanel>();
+            _rootPanel = new StackPanel();
+
             var container = new Border
             {
                 BorderBrush = Brushes.DeepSkyBlue,
                 BorderThickness = new Thickness(1.5),
-                Background = new SolidColorBrush(System.Windows.Media.Color.FromRgb(30, 30, 30)),
+                Background = new SolidColorBrush(Color.FromRgb(30, 30, 30)),
                 CornerRadius = new CornerRadius(6),
                 Padding = new Thickness(4),
-                Child = rootPanel
+                Child = _rootPanel,
+                Tag = localNodes
             };
 
-            var rootNode = CreateNode("Solution", 0, true);
-            rootPanel.Children.Add(rootNode);
+            _container = container; // ✅ salvezi pentru Restore()
+            _rootNode = CreateNode("Solution", 0, true, localNodes);
+            _rootPanel.Children.Add(_rootNode);
+
             return container;
         }
 
-        private StackPanel CreateNode(string name, int level, bool isRoot = false)
+        private StackPanel CreateNode(string name, int level, bool isRoot, List<StackPanel> targetList)
         {
-            var nodeContainer = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 6) };
+            var nodeContainer = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Margin = new Thickness(0, 6, 0, 6)
+            };
 
-            var canvas = new Canvas { Width = 20, IsHitTestVisible = false };
+            var canvas = new Canvas
+            {
+                Width = 20,
+                IsHitTestVisible = false
+            };
 
             var contentLayout = new StackPanel();
 
@@ -70,13 +88,15 @@ namespace WhiteBoardModule.XAML.Shapes.Nodes
                 Height = 14,
                 Stretch = Stretch.Uniform,
                 Margin = new Thickness(2),
-                Source = new Uri("pack://application:,,,/WhiteBoardModule;component/SVG/folder.svg"),
+                Source = new Uri("pack://application:,,,/WhiteBoardModule;component/SVG/folder.svg")
             };
+
             var color = GetRandomColor();
+
             var bulletContainer = new Border
             {
                 Child = bullet,
-                Background = new SolidColorBrush(color) // va fi moștenită ca currentColor
+                Background = new SolidColorBrush(color)
             };
 
             var nameBox = new TextBox
@@ -119,13 +139,15 @@ namespace WhiteBoardModule.XAML.Shapes.Nodes
             contentPanel.Children.Add(addBtn);
             contentPanel.Children.Add(removeBtn);
 
-            var childrenPanel = new StackPanel { Margin = new Thickness(0, 0, 0, 0) };
+            var childrenPanel = new StackPanel();
+
             contentLayout.Children.Add(contentPanel);
             contentLayout.Children.Add(childrenPanel);
 
             nodeContainer.Children.Add(canvas);
             nodeContainer.Children.Add(contentLayout);
 
+            // Metadata
             var metadata = new TreeNodeMetadata
             {
                 Canvas = canvas,
@@ -133,14 +155,16 @@ namespace WhiteBoardModule.XAML.Shapes.Nodes
                 ChildrenPanel = childrenPanel,
                 LineColor = color
             };
-            nodeContainer.Tag = metadata;
-            _nodes.Add(nodeContainer);
 
+            nodeContainer.Tag = metadata;
+            targetList.Add(nodeContainer); // ✅ adaugă doar în lista primită
+
+            // Evenimente
             addBtn.Click += (s, e) =>
             {
-                var child = CreateNode("Child", level + 1);
+                var child = CreateNode("Child", level + 1, false, targetList);
                 childrenPanel.Children.Add(child);
-                RedrawAllConnections();
+                RedrawAllConnections(targetList);
             };
 
             removeBtn.Click += (s, e) =>
@@ -148,19 +172,20 @@ namespace WhiteBoardModule.XAML.Shapes.Nodes
                 if (nodeContainer.Parent is Panel parent)
                 {
                     parent.Children.Remove(nodeContainer);
-                    _nodes.Remove(nodeContainer);
-                    RedrawAllConnections();
+                    targetList.Remove(nodeContainer);
+                    RedrawAllConnections(targetList);
                 }
             };
 
             return nodeContainer;
         }
 
-        private void RedrawAllConnections()
+        private void RedrawAllConnections(List<StackPanel> nodeList)
         {
-            foreach (var node in _nodes)
+            foreach (var node in nodeList)
             {
-                if (node.Tag is not TreeNodeMetadata metadata) continue;
+                if (node.Tag is not TreeNodeMetadata metadata)
+                    continue;
 
                 metadata.Bullet.Dispatcher.InvokeAsync(() =>
                 {
@@ -256,7 +281,39 @@ namespace WhiteBoardModule.XAML.Shapes.Nodes
             if (control is not FrameworkElement fe)
                 return null;
 
-            // Poți genera un ID sau un nume default
+            var container = FindTaggedBorder(fe);
+
+            if (container?.Tag is not List<StackPanel> nodeList)
+                return null;
+
+            var extra = new Dictionary<string, string>();
+
+            for (int i = 0; i < nodeList.Count; i++)
+            {
+                if (nodeList[i].Tag is not TreeNodeMetadata meta)
+                    continue;
+
+                var contentPanel = ((StackPanel)((StackPanel)nodeList[i].Children[1]).Children[0]);
+                var nameBox = contentPanel.Children.OfType<TextBox>().FirstOrDefault();
+
+                int parentIndex = -1;
+                for (int j = 0; j < nodeList.Count; j++)
+                {
+                    if (nodeList[j].Tag is TreeNodeMetadata parentMeta &&
+                        parentMeta.ChildrenPanel.Children.Contains(nodeList[i]))
+                    {
+                        parentIndex = j;
+                        break;
+                    }
+                }
+
+                extra[$"Node{i}_Text"] = nameBox?.Text ?? $"Node{i}";
+                extra[$"Node{i}_Color"] = meta.LineColor.ToString();
+                extra[$"Node{i}_Parent"] = parentIndex.ToString();
+            }
+
+            extra["NodeCount"] = nodeList.Count.ToString();
+
             return new BPMNShapeModelWithPosition
             {
                 Type = ShapeType.AdvancedTreeShapeRenderer,
@@ -267,34 +324,90 @@ namespace WhiteBoardModule.XAML.Shapes.Nodes
                 Name = fe.Name ?? "AdvancedTree",
                 Category = "Nodes",
                 SvgUri = null,
-                ExtraProperties = new Dictionary<string, string>
-{
-    { "NodeCount", _nodes.Count.ToString() }
-}
+                ExtraProperties = extra
             };
         }
 
         public void Restore(Dictionary<string, string> extraProperties)
         {
-            if (!extraProperties.TryGetValue("NodeCount", out var countStr) || !int.TryParse(countStr, out var count))
+            if (!extraProperties.TryGetValue("NodeCount", out var cStr) || !int.TryParse(cStr, out var count))
                 return;
 
-            if (_nodes.Count == 0)
+            if (_rootPanel == null || _container == null)
                 return;
 
-            // presupunem că primul nod e deja adăugat în Render()
-            var root = _nodes.FirstOrDefault();
-            if (root?.Tag is not TreeNodeMetadata metadata)
-                return;
+            _isRestoring = true;
+            _rootPanel.Children.Clear();
 
-            var childrenPanel = metadata.ChildrenPanel;
+            // ✅ Golește lista existentă, dacă a fost deja creată anterior
+            if (_container.Tag is List<StackPanel> existingList)
+                existingList.Clear();
+            else
+                _container.Tag = new List<StackPanel>();
+
+            var nodeList = (List<StackPanel>)_container.Tag;
+
+            // 🔹 Creează root-ul
+            var rootText = extraProperties.TryGetValue("Node0_Text", out var rootT) ? rootT : "Solution";
+            var rootColor = extraProperties.TryGetValue("Node0_Color", out var colorStr) &&
+                            ColorConverter.ConvertFromString(colorStr) is Color parsedColor
+                                ? parsedColor
+                                : GetRandomColor();
+
+            _rootNode = CreateNode(rootText, 0, true, nodeList);
+            if (_rootNode.Tag is TreeNodeMetadata rootMeta)
+                rootMeta.LineColor = parsedColor;
+
+            _rootPanel.Children.Add(_rootNode);
+
+            // 🔹 Creează nodurile copil
+            var allNodes = new List<StackPanel> { _rootNode };
+
             for (int i = 1; i < count; i++)
             {
-                var child = CreateNode($"Child {i}", 1);
-                childrenPanel.Children.Add(child);
+                var text = extraProperties.TryGetValue($"Node{i}_Text", out var t) ? t : $"Node{i}";
+                var color = extraProperties.TryGetValue($"Node{i}_Color", out var c) &&
+                            ColorConverter.ConvertFromString(c) is Color col ? col : GetRandomColor();
+
+                var node = CreateNode(text, 1, false, nodeList);
+                if (node.Tag is TreeNodeMetadata meta)
+                    meta.LineColor = color;
+
+                allNodes.Add(node);
             }
 
-            RedrawAllConnections();
+            // 🔹 Refă legăturile părinte-copil
+            for (int i = 1; i < count; i++)
+            {
+                if (!extraProperties.TryGetValue($"Node{i}_Parent", out var pStr) || !int.TryParse(pStr, out var parentIdx))
+                    continue;
+
+                if (parentIdx >= 0 && parentIdx < allNodes.Count &&
+                    allNodes[parentIdx].Tag is TreeNodeMetadata parentMeta)
+                {
+                    parentMeta.ChildrenPanel.Children.Add(allNodes[i]);
+                }
+            }
+
+            RedrawAllConnections(nodeList);
+            _isRestoring = false;
+        }
+
+        private Border? FindTaggedBorder(DependencyObject parent)
+        {
+            if (parent is Border border && border.Tag is List<StackPanel>)
+                return border;
+
+            int count = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                var result = FindTaggedBorder(child);
+                if (result != null)
+                    return result;
+            }
+
+            return null;
         }
 
         private class TreeNodeMetadata

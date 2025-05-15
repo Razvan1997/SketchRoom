@@ -16,7 +16,9 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
     public class UmlClassShapeRenderer : IShapeRenderer, IRestoreFromShape
     {
         private readonly bool _withBindings;
-
+        private TextBox? _titleBox;
+        private StackPanel? _fieldsPanel;
+        private StackPanel? _methodsPanel;
         public UmlClassShapeRenderer(bool withBindings = false)
         {
             _withBindings = withBindings;
@@ -59,7 +61,7 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
         {
             var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
 
-            var titleBox = new TextBox
+            _titleBox = new TextBox
             {
                 Text = "Classname",
                 FontWeight = FontWeights.Bold,
@@ -74,12 +76,12 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
                 HorizontalContentAlignment = HorizontalAlignment.Center
             };
 
-            var fieldsPanel = new StackPanel { Name = "FieldsPanel" };
-            var methodsPanel = new StackPanel { Name = "MethodsPanel" };
+            _fieldsPanel = new StackPanel { Name = "FieldsPanel" };
+            _methodsPanel = new StackPanel { Name = "MethodsPanel" };
 
-            fieldsPanel.Children.Add(CreateLineRow(true, fieldsPanel));
-            fieldsPanel.Children.Add(CreateLineRow(true, fieldsPanel));
-            methodsPanel.Children.Add(CreateLineRow(false, methodsPanel));
+            _fieldsPanel.Children.Add(CreateLineRow(true, _fieldsPanel));
+            _fieldsPanel.Children.Add(CreateLineRow(true, _fieldsPanel));
+            _methodsPanel.Children.Add(CreateLineRow(false, _methodsPanel));
 
             var separator = new Rectangle
             {
@@ -108,16 +110,16 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
             addButton.Click += (s, e) =>
             {
                 if (fieldRadio.IsChecked == true)
-                    fieldsPanel.Children.Add(CreateLineRow(true, fieldsPanel));
+                    _fieldsPanel.Children.Add(CreateLineRow(true, _fieldsPanel));
                 else
-                    methodsPanel.Children.Add(CreateLineRow(false, methodsPanel));
+                    _methodsPanel.Children.Add(CreateLineRow(false, _methodsPanel));
             };
 
             var mainStack = new StackPanel();
-            mainStack.Children.Add(titleBox);
-            mainStack.Children.Add(fieldsPanel);
+            mainStack.Children.Add(_titleBox);
+            mainStack.Children.Add(_fieldsPanel);
             mainStack.Children.Add(separator);
-            mainStack.Children.Add(methodsPanel);
+            mainStack.Children.Add(_methodsPanel);
             mainStack.Children.Add(togglePanel);
             mainStack.Children.Add(addButton);
 
@@ -230,50 +232,40 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
 
         public BPMNShapeModelWithPosition? ExportData(IInteractiveShape control)
         {
-            if (control is not FrameworkElement fe)
+            if (_titleBox == null || _fieldsPanel == null || _methodsPanel == null || control is not FrameworkElement fe)
                 return null;
 
-            var border = fe as Border ?? fe.FindName("border") as Border;
-            if (border?.Child is not StackPanel mainStack)
-                return null;
-
-            var extra = new Dictionary<string, string>();
-
-            if (mainStack.Children[0] is TextBox titleBox)
-                extra["ClassName"] = titleBox.Text;
-
-            if (mainStack.Children.OfType<StackPanel>().FirstOrDefault(p => p.Name == "FieldsPanel") is StackPanel fieldsPanel)
+            var extra = new Dictionary<string, string>
             {
-                int i = 1;
-                foreach (var row in fieldsPanel.Children.OfType<DockPanel>())
+                ["ClassName"] = _titleBox.Text
+            };
+
+            if (_titleBox.Background is SolidColorBrush bg)
+                extra["ClassName_Background"] = bg.Color.ToString();
+
+            int i = 1;
+            foreach (var row in _fieldsPanel.Children.OfType<DockPanel>())
+            {
+                var tbs = row.Children.OfType<TextBox>().ToList();
+                if (tbs.Count >= 2)
                 {
-                    var elements = row.Children.OfType<UIElement>().ToList();
-
-                    var name = elements.OfType<TextBox>().ElementAtOrDefault(0)?.Text ?? "";
-                    var type = elements.OfType<TextBox>().ElementAtOrDefault(1)?.Text ?? "";
-
-                    extra[$"Field{i}_Name"] = name;
-                    extra[$"Field{i}_Type"] = type;
-                    i++;
+                    extra[$"Field{i}_Name"] = tbs[0].Text;
+                    extra[$"Field{i}_Type"] = tbs[1].Text;
                 }
+                i++;
             }
 
-            if (mainStack.Children.OfType<StackPanel>().FirstOrDefault(p => p.Name == "MethodsPanel") is StackPanel methodsPanel)
+            int j = 1;
+            foreach (var row in _methodsPanel.Children.OfType<DockPanel>())
             {
-                int j = 1;
-                foreach (var row in methodsPanel.Children.OfType<DockPanel>())
+                var tbs = row.Children.OfType<TextBox>().ToList();
+                if (tbs.Count >= 3)
                 {
-                    var elements = row.Children.OfType<UIElement>().ToList();
-
-                    var name = elements.OfType<TextBox>().ElementAtOrDefault(0)?.Text ?? "";
-                    var parameters = elements.OfType<TextBox>().ElementAtOrDefault(1)?.Text ?? "";
-                    var type = elements.OfType<TextBox>().ElementAtOrDefault(2)?.Text ?? "";
-
-                    extra[$"Method{j}_Name"] = name;
-                    extra[$"Method{j}_Params"] = parameters;
-                    extra[$"Method{j}_Type"] = type;
-                    j++;
+                    extra[$"Method{j}_Name"] = tbs[0].Text;
+                    extra[$"Method{j}_Params"] = tbs[1].Text;
+                    extra[$"Method{j}_Type"] = tbs[2].Text;
                 }
+                j++;
             }
 
             return new BPMNShapeModelWithPosition
@@ -290,80 +282,71 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
             };
         }
 
-        public void Restore(Dictionary<string, string> extraProperties)
+        public void Restore(Dictionary<string, string> extra)
         {
-            if (extraProperties == null || extraProperties.Count == 0)
+            if (_titleBox == null || _fieldsPanel == null || _methodsPanel == null)
                 return;
 
-            // Găsește Border-ul cu StackPanel-ul principal
-            var border = VisualTreeHelper.GetChildrenCount(Application.Current.MainWindow) > 0
-                ? FindDescendant<Border>(Application.Current.MainWindow, b => b.Child is StackPanel stack &&
-                    stack.Children.OfType<TextBox>().Any(t => t.Text == "Classname"))
-                : null;
+            if (extra.TryGetValue("ClassName", out var name))
+                _titleBox.Text = name;
 
-            if (border?.Child is not StackPanel mainStack)
-                return;
-
-            var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
-
-            // Restaurează numele clasei
-            if (mainStack.Children[0] is TextBox titleBox && extraProperties.TryGetValue("ClassName", out var className))
+            if (extra.TryGetValue("ClassName_Background", out var bgColor))
             {
-                titleBox.Text = className;
-            }
-
-            // Găsește panourile
-            var fieldsPanel = mainStack.Children.OfType<StackPanel>().FirstOrDefault(p => p.Name == "FieldsPanel");
-            var methodsPanel = mainStack.Children.OfType<StackPanel>().FirstOrDefault(p => p.Name == "MethodsPanel");
-
-            if (fieldsPanel != null)
-            {
-                fieldsPanel.Children.Clear();
-                int i = 1;
-                while (extraProperties.TryGetValue($"Field{i}_Name", out var name))
+                try
                 {
-                    var type = extraProperties.TryGetValue($"Field{i}_Type", out var t) ? t : "type";
-
-                    var row = CreateLineRow(true, fieldsPanel);
-                    if (row is DockPanel dock)
-                    {
-                        var tbs = dock.Children.OfType<TextBox>().ToList();
-                        if (tbs.Count >= 2)
-                        {
-                            tbs[0].Text = name;
-                            tbs[1].Text = type;
-                        }
-                    }
-
-                    fieldsPanel.Children.Add(row);
-                    i++;
+                    _titleBox.Background = (SolidColorBrush)new BrushConverter().ConvertFromString(bgColor);
+                }
+                catch
+                {
+                    _titleBox.Background = new SolidColorBrush(Color.FromRgb(45, 45, 48));
                 }
             }
 
-            if (methodsPanel != null)
+            _fieldsPanel.Children.Clear();
+            _methodsPanel.Children.Clear();
+
+            var prefs = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
+
+            int i = 1;
+            while (extra.TryGetValue($"Field{i}_Name", out var fname))
             {
-                methodsPanel.Children.Clear();
-                int j = 1;
-                while (extraProperties.TryGetValue($"Method{j}_Name", out var name))
+                var ftype = extra.TryGetValue($"Field{i}_Type", out var t) ? t : "type";
+                var row = CreateLineRow(true, _fieldsPanel);
+
+                if (row is DockPanel dock)
                 {
-                    var parameters = extraProperties.TryGetValue($"Method{j}_Params", out var p) ? p : "()";
-                    var type = extraProperties.TryGetValue($"Method{j}_Type", out var t) ? t : "type";
-
-                    var row = CreateLineRow(false, methodsPanel);
-                    if (row is DockPanel dock)
+                    var tbs = dock.Children.OfType<TextBox>().ToList();
+                    if (tbs.Count >= 2)
                     {
-                        var tbs = dock.Children.OfType<TextBox>().ToList();
-                        if (tbs.Count >= 3)
-                        {
-                            tbs[0].Text = name;
-                            tbs[1].Text = parameters;
-                            tbs[2].Text = type;
-                        }
+                        tbs[0].Text = fname;
+                        tbs[1].Text = ftype;
                     }
-
-                    methodsPanel.Children.Add(row);
-                    j++;
                 }
+
+                _fieldsPanel.Children.Add(row);
+                i++;
+            }
+
+            int j = 1;
+            while (extra.TryGetValue($"Method{j}_Name", out var mname))
+            {
+                var mparams = extra.TryGetValue($"Method{j}_Params", out var p) ? p : "()";
+                var mtype = extra.TryGetValue($"Method{j}_Type", out var t) ? t : "type";
+                var row = CreateLineRow(false, _methodsPanel);
+
+                if (row is DockPanel dock)
+                {
+                    var tbs = dock.Children.OfType<TextBox>().ToList();
+                    if (tbs.Count >= 3)
+                    {
+                        tbs[0].Text = mname;
+                        tbs[1].Text = mparams;
+                        tbs[2].Text = mtype;
+                    }
+                }
+
+                _methodsPanel.Children.Add(row);
+                j++;
             }
         }
 

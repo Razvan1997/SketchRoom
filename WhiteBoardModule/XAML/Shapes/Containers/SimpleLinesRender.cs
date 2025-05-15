@@ -11,6 +11,8 @@ using SketchRoom.Models.Enums;
 using System.Windows.Controls.Primitives;
 using WhiteBoard.Core.Models;
 using WhiteBoardModule.Events;
+using System.Globalization;
+using System.Windows.Input;
 
 namespace WhiteBoardModule.XAML.Shapes.Containers
 {
@@ -24,6 +26,7 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
         private readonly IEventAggregator _eventAggregator;
         public Guid Id { get; } = Guid.NewGuid();
         private double _lastPublishedHeight;
+        private const double MaxRowHeight = 150;
         public SimpleLinesRenderer(bool withBindings = false)
         {
             _withBindings = withBindings;
@@ -172,7 +175,9 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 Background = Brushes.Transparent,
                 Cursor = System.Windows.Input.Cursors.SizeNS,
                 Opacity = 0,
-                IsHitTestVisible = true
+                IsHitTestVisible = true,
+                FocusVisualStyle = null,
+                IsTabStop = false
             };
 
             separator.DragDelta += (s, e) => ResizeRows(insertAtRow, e.VerticalChange);
@@ -186,23 +191,45 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
         private void ResizeRows(int aboveRowIndex, double deltaY)
         {
             if (_outerGrid == null) return;
+            if (aboveRowIndex < 0) return;
 
-            if (aboveRowIndex < 0 || aboveRowIndex + 2 >= _outerGrid.RowDefinitions.Count)
-                return;
+            var rowCount = _outerGrid.RowDefinitions.Count;
 
             var aboveRow = _outerGrid.RowDefinitions[aboveRowIndex];
-            var belowRow = _outerGrid.RowDefinitions[aboveRowIndex + 2];
+            RowDefinition? belowRow = (aboveRowIndex + 2 < rowCount) ? _outerGrid.RowDefinitions[aboveRowIndex + 2] : null;
 
-            double aboveNew = Math.Max(aboveRow.ActualHeight + deltaY, 30);
-            double belowNew = Math.Max(belowRow.ActualHeight - deltaY, 30);
+            // Rezize doar aboveRow dacă belowRow nu există (adică e ultimul rând logic)
+            if (belowRow == null)
+            {
+                double newHeight = Math.Max(30, Math.Min(aboveRow.ActualHeight + deltaY, MaxRowHeight));
 
-            aboveRow.Height = new GridLength(aboveNew);
-            belowRow.Height = new GridLength(belowNew);
+                if (Math.Abs(newHeight - aboveRow.ActualHeight) < 0.1)
+                    return;
 
-            // Detectăm dacă modificăm ultimul rând (adică separatorul de dinaintea ultimului Border)
-            bool isLastRowExpanded = (aboveRowIndex + 2 == _outerGrid.RowDefinitions.Count - 1) && deltaY > 0;
+                aboveRow.Height = new GridLength(newHeight);
 
-            PublishSizeChanged(isLastRowExpanded);
+                // Considerăm că ultimul rând a fost extins
+                bool isLastRowExpanded = deltaY > 0;
+                PublishSizeChanged(isLastRowExpanded);
+            }
+            else
+            {
+                double newAbove = aboveRow.ActualHeight + deltaY;
+                double newBelow = belowRow.ActualHeight - deltaY;
+
+                double aboveNew = Math.Max(30, Math.Min(newAbove, MaxRowHeight));
+                double belowNew = Math.Max(30, Math.Min(newBelow, MaxRowHeight));
+
+                if (Math.Abs(aboveNew - aboveRow.ActualHeight) < 0.1 &&
+                    Math.Abs(belowNew - belowRow.ActualHeight) < 0.1)
+                    return;
+
+                aboveRow.Height = new GridLength(aboveNew);
+                belowRow.Height = new GridLength(belowNew);
+
+                bool isLastRowExpanded = (aboveRowIndex + 2 == rowCount - 1) && deltaY > 0;
+                PublishSizeChanged(isLastRowExpanded);
+            }
         }
 
         public void AddLine()
@@ -283,17 +310,33 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
             var extraProps = new Dictionary<string, string>();
 
             int lineIndex = 1;
+            int rowIndex = 0;
 
             foreach (var border in _outerGrid.Children.OfType<Border>())
             {
-                if (border.Child is TextBox tb)
+                // Text
+                string text = border.Child switch
                 {
-                    extraProps[$"Line{lineIndex++}"] = tb.Text;
-                }
-                else if (border.Child is TextBlock txt)
-                {
-                    extraProps[$"Line{lineIndex++}"] = txt.Text;
-                }
+                    TextBox tb => tb.Text,
+                    TextBlock txt => txt.Text,
+                    _ => string.Empty
+                };
+
+                // Culoare (Background)
+                string color = (border.Background as SolidColorBrush)?.Color.ToString() ?? "#FFFFFFFF";
+
+                // Înălțimea rândului corespunzător
+                int row = Grid.GetRow(border);
+                double height = row < _outerGrid.RowDefinitions.Count
+                    ? _outerGrid.RowDefinitions[row].Height.Value
+                    : 50;
+
+                // Salvăm
+                extraProps[$"Line{lineIndex}"] = text;
+                extraProps[$"Line{lineIndex}_Color"] = color;
+                extraProps[$"Line{lineIndex}_Height"] = height.ToString(CultureInfo.InvariantCulture);
+
+                lineIndex++;
             }
 
             return new BPMNShapeModelWithPosition
@@ -323,26 +366,30 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
             int lineIndex = 1;
             while (extraProperties.TryGetValue($"Line{lineIndex}", out var text))
             {
-                AddRestoredLine(text);
+                string color = extraProperties.TryGetValue($"Line{lineIndex}_Color", out var c) ? c : "#FFFFFFFF";
+                double height = extraProperties.TryGetValue($"Line{lineIndex}_Height", out var h) && double.TryParse(h, out var parsedH)
+                    ? parsedH
+                    : 50;
+
+                AddRestoredLine(text, color, height);
                 lineIndex++;
             }
 
             UpdateCornerRadius();
         }
 
-        private void AddRestoredLine(string text)
+        private void AddRestoredLine(string text, string color, double height)
         {
             if (_outerGrid == null)
                 return;
 
             int insertAtRow = _outerGrid.RowDefinitions.Count;
 
-            // Row for Border
-            _outerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(50) });
+            _outerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(height) });
 
             var border = new Border
             {
-                Background = Brushes.White,
+                Background = (SolidColorBrush)(new BrushConverter().ConvertFrom(color) ?? Brushes.White),
                 BorderThickness = new Thickness(0),
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Stretch
@@ -387,16 +434,18 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
             Grid.SetRow(border, insertAtRow);
             _outerGrid.Children.Add(border);
 
-            // Row for separator (Thumb)
+            // Row for separator
             _outerGrid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1) });
 
             var separator = new Thumb
             {
                 Height = 1,
                 Background = Brushes.Transparent,
-                Cursor = System.Windows.Input.Cursors.SizeNS,
+                Cursor = Cursors.SizeNS,
                 Opacity = 0,
-                IsHitTestVisible = true
+                IsHitTestVisible = true,
+                FocusVisualStyle = null,
+                IsTabStop = false
             };
 
             separator.DragDelta += (s, e) => ResizeRows(insertAtRow, e.VerticalChange);
