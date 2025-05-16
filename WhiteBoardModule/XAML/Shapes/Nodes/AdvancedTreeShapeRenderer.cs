@@ -56,10 +56,11 @@ namespace WhiteBoardModule.XAML.Shapes.Nodes
                 CornerRadius = new CornerRadius(6),
                 Padding = new Thickness(4),
                 Child = _rootPanel,
-                Tag = localNodes
+                Tag = localNodes // ✅ TAG pe container
             };
 
-            _container = container; // ✅ salvezi pentru Restore()
+            _container = container;
+
             _rootNode = CreateNode("Solution", 0, true, localNodes);
             _rootPanel.Children.Add(_rootNode);
 
@@ -182,17 +183,18 @@ namespace WhiteBoardModule.XAML.Shapes.Nodes
 
         private void RedrawAllConnections(List<StackPanel> nodeList)
         {
-            foreach (var node in nodeList)
+            Application.Current.Dispatcher.InvokeAsync(() =>
             {
-                if (node.Tag is not TreeNodeMetadata metadata)
-                    continue;
-
-                metadata.Bullet.Dispatcher.InvokeAsync(() =>
+                foreach (var node in nodeList)
                 {
+                    if (node.Tag is not TreeNodeMetadata metadata) continue;
+
+                    // 🔧 Asigură-te că layout-ul este complet
                     metadata.Bullet.UpdateLayout();
+                    metadata.Canvas.UpdateLayout();
                     RedrawConnectionsForNode(metadata);
-                }, DispatcherPriority.Render);
-            }
+                }
+            }, DispatcherPriority.ApplicationIdle); // 🟢 Așteaptă până când totul este randat
         }
 
         private void RedrawConnectionsForNode(TreeNodeMetadata meta)
@@ -333,35 +335,41 @@ namespace WhiteBoardModule.XAML.Shapes.Nodes
             if (!extraProperties.TryGetValue("NodeCount", out var cStr) || !int.TryParse(cStr, out var count))
                 return;
 
-            if (_rootPanel == null || _container == null)
+            if (_container == null)
+                return;
+
+            var container = _container;
+            var nodeList = container.Tag as List<StackPanel>;
+            if (nodeList == null)
+            {
+                nodeList = new List<StackPanel>();
+                container.Tag = nodeList;
+            }
+            else
+            {
+                nodeList.Clear(); // ❗️IMPORTANT: curățăm lista DOAR a acestei instanțe
+            }
+
+            if (_rootPanel == null)
                 return;
 
             _isRestoring = true;
             _rootPanel.Children.Clear();
 
-            // ✅ Golește lista existentă, dacă a fost deja creată anterior
-            if (_container.Tag is List<StackPanel> existingList)
-                existingList.Clear();
-            else
-                _container.Tag = new List<StackPanel>();
-
-            var nodeList = (List<StackPanel>)_container.Tag;
-
-            // 🔹 Creează root-ul
+            // Creează nodurile
             var rootText = extraProperties.TryGetValue("Node0_Text", out var rootT) ? rootT : "Solution";
             var rootColor = extraProperties.TryGetValue("Node0_Color", out var colorStr) &&
                             ColorConverter.ConvertFromString(colorStr) is Color parsedColor
                                 ? parsedColor
                                 : GetRandomColor();
 
+            var allNodes = new List<StackPanel>();
             _rootNode = CreateNode(rootText, 0, true, nodeList);
             if (_rootNode.Tag is TreeNodeMetadata rootMeta)
                 rootMeta.LineColor = parsedColor;
 
             _rootPanel.Children.Add(_rootNode);
-
-            // 🔹 Creează nodurile copil
-            var allNodes = new List<StackPanel> { _rootNode };
+            allNodes.Add(_rootNode);
 
             for (int i = 1; i < count; i++)
             {
@@ -376,7 +384,6 @@ namespace WhiteBoardModule.XAML.Shapes.Nodes
                 allNodes.Add(node);
             }
 
-            // 🔹 Refă legăturile părinte-copil
             for (int i = 1; i < count; i++)
             {
                 if (!extraProperties.TryGetValue($"Node{i}_Parent", out var pStr) || !int.TryParse(pStr, out var parentIdx))

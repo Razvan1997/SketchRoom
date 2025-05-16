@@ -1,6 +1,7 @@
 ﻿using SketchRoom.Database;
 using SketchRoom.Toolkit.Wpf.Controls;
 using SketchRoom.Toolkit.Wpf.Services;
+using SketchRoom.Windows;
 using System.Configuration;
 using System.Data;
 using System.IO;

@@ -4,6 +4,7 @@ using SketchRoom.Toolkit.Wpf.Controls;
 using SketchRoom.Toolkit.Wpf.Services;
 using SketchRoom.ViewModels;
 using SketchRoom.Windows;
+using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Input;
@@ -28,6 +29,7 @@ namespace SketchRoom
             string description = WalkthroughTexts.ShapesControlDescription;
             Walkthrough.SetDescription(UserInteractions, description);
             Loaded += MainWindow_Loaded;
+            this.Closing += Window_Closing;
         }
 
         protected override void OnSourceInitialized(EventArgs e)
@@ -71,19 +73,30 @@ namespace SketchRoom
             base.OnClosed(e);
         }
 
-        protected override async void OnClosing(System.ComponentModel.CancelEventArgs e)
+        private async void Window_Closing(object sender, CancelEventArgs e)
         {
-            base.OnClosing(e);
+            e.Cancel = true; // oprește închiderea temporar
 
-            var tabService = ContainerLocator.Container.Resolve<IWhiteBoardTabService>();
-
-            if (string.IsNullOrWhiteSpace(tabService.GetFolderName()))
+            try
             {
-                tabService.SetFolderName("UnnamedSketch_" + DateTime.Now.Ticks);
+                var tabService = ContainerLocator.Container.Resolve<IWhiteBoardTabService>();
+
+                if (string.IsNullOrWhiteSpace(tabService.GetFolderName()))
+                    tabService.SetFolderName("UnnamedSketch_" + DateTime.Now.Ticks);
+
+                var persistence = new WhiteBoardPersistenceService(tabService);
+                await persistence.SaveAllTabsAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Eroare la salvare: " + ex.Message);
             }
 
-            var persistence = new WhiteBoardPersistenceService(tabService);
-            await persistence.SaveAllTabsAsync();
+            Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                this.Closing -= Window_Closing;
+                this.Close();
+            }), System.Windows.Threading.DispatcherPriority.Background);
         }
     }
 }

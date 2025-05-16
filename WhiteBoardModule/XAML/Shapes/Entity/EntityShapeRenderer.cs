@@ -461,7 +461,13 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
                     Height = 12,
                     Fill = Brushes.DodgerBlue,
                     Visibility = Visibility.Collapsed,
-                    Cursor = Cursors.Cross
+                    Cursor = Cursors.Cross,
+                    Tag = "Connector"
+                };
+                left.MouseLeftButtonDown += (s, e) =>
+                {
+                    ConnectionPointClicked?.Invoke(this, new ConnectionPointEventArgs("Left", left, e));
+                    e.Handled = true;
                 };
                 Grid.SetColumn(left, 0);
                 rowGrid.Children.Add(left);
@@ -472,7 +478,13 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
                     Height = 12,
                     Fill = Brushes.DodgerBlue,
                     Visibility = Visibility.Collapsed,
-                    Cursor = Cursors.Cross
+                    Cursor = Cursors.Cross,
+                    Tag = "Connector"
+                };
+                right.MouseLeftButtonDown += (s, e) =>
+                {
+                    ConnectionPointClicked?.Invoke(this, new ConnectionPointEventArgs("Right", right, e));
+                    e.Handled = true;
                 };
                 Grid.SetColumn(right, 5);
                 rowGrid.Children.Add(right);

@@ -1,4 +1,5 @@
-﻿using SketchRoom.Toolkit.Wpf.Controls;
+﻿using FooterModule.ViewModels;
+using SketchRoom.Toolkit.Wpf.Controls;
 using SketchRoom.Toolkit.Wpf.Services;
 using SketchRoom.Windows;
 using System.IO;
@@ -8,6 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services;
 using WhiteBoard.Core.Services.Interfaces;
@@ -91,42 +93,49 @@ namespace SketchRoom.Dialogs
         {
             if (sender is Border border && border.DataContext is StackPreviewItem selectedItem)
             {
-                //LoadingOverlayHelper.Show();
-                //await Task.Delay(50);
+                LoadingOverlayHelper.Show(); // 🔁 async fire-and-forget
 
-                var tabService = ContainerLocator.Container.Resolve<IWhiteBoardTabService>();
-                tabService.SetFolderName(selectedItem.FolderName);
+                // Lasă spinnerul să se afișeze fluent
+                await Task.Delay(150); // esențial pentru UX fluid
 
-                var folderPath = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "SketchRoom", "SavedTabs", selectedItem.FolderName);
-
-                var jsonFiles = Directory.GetFiles(folderPath, "tab_*.json");
-                Array.Sort(jsonFiles); // ordonează pentru consistență
-
-                var restoredTabs = new List<SavedWhiteBoardModel>();
-
-                foreach (var jsonFile in jsonFiles)
+                var restoredTabs = await Task.Run(() =>
                 {
-                    var json = await File.ReadAllTextAsync(jsonFile);
-                    var model = JsonSerializer.Deserialize<SavedWhiteBoardModel>(json);
-                    if (model != null)
-                        restoredTabs.Add(model);
-                }
+                    var folderPath = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                        "SketchRoom", "SavedTabs", selectedItem.FolderName);
+
+                    var jsonFiles = Directory.GetFiles(folderPath, "tab_*.json");
+                    Array.Sort(jsonFiles);
+
+                    var loaded = new List<SavedWhiteBoardModel>();
+
+                    foreach (var jsonFile in jsonFiles)
+                    {
+                        try
+                        {
+                            var json = File.ReadAllText(jsonFile);
+                            var model = JsonSerializer.Deserialize<SavedWhiteBoardModel>(json);
+                            if (model != null)
+                                loaded.Add(model);
+                        }
+                        catch { }
+                    }
+
+                    return loaded;
+                });
 
                 if (restoredTabs.Count > 0)
                 {
-                    // Trimite tab-urile la FooterViewModel
-                    var eventAggregator = ContainerLocator.Container.Resolve<IEventAggregator>();
-                    eventAggregator.GetEvent<TabsRestoredEvent>().Publish(restoredTabs);
+                    var ea = ContainerLocator.Container.Resolve<IEventAggregator>();
+                    ea.GetEvent<TabsRestoredEvent>().Publish(new TabsRestoredPayload
+                    {
+                        Tabs = restoredTabs,
+                        FolderName = selectedItem.FolderName
+                    });
                 }
-
-                //LoadingOverlayHelper.Hide();
-
                 this.Close();
             }
         }
-
         private void Cancel_Click(object sender, RoutedEventArgs e) => Close();
 
         private async void Create_Click(object sender, RoutedEventArgs e)

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
 using WhiteBoard.Core.Helpers;
@@ -165,6 +166,12 @@ namespace WhiteBoardModule
 
                 if (connection.Visual is FrameworkElement fe)
                     fe.Tag = "Connector";
+
+                connection.Clicked += (s, e) =>
+                {
+                    bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+                    whiteboard.BpmnConnectorToolPublic?.OnConnectionClicked((BPMNConnection)s, ctrl);
+                };
 
                 whiteboard._connections.Add(connection);
                 canvas.Children.Add(connection.Visual);

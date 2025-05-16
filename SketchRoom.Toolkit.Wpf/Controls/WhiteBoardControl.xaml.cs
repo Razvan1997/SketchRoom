@@ -55,6 +55,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
         private readonly IClipboardService _clipboardService;
         private readonly IDrawingService _drawingService;
         private IDrawingTool? _previousTool;
+        public BpmnConnectorTool? BpmnConnectorToolPublic => _connectorTool;
         public WhiteBoardControl(IDrawingService drawingService, IDrawingPreferencesService drawingPreferences)
         {
             InitializeComponent();
@@ -92,7 +93,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             var eraserTool = new EraserTool(drawingService, DrawingCanvas);
             var bpmnTool = new BpmnTool(DrawingCanvas, _snapService, SnapGridCanvas, _toolManager, undoRedoService, _selectionService);
 
-            var connectorCurvedTool = new BpmnConnectorCurvedTool(DrawingCanvas, _connections, _nodes, this, _toolManager, _snapService, undoRedoService);
+            var connectorCurvedTool = new BpmnConnectorCurvedTool(DrawingCanvas, _connections, _nodes, this, _toolManager, _snapService, undoRedoService, _drawingPreferencesService);
 
             var rotateTool = new RotateTool(DrawingCanvas);
             _selectionService.SelectionChanged += OnSelectionChanged;

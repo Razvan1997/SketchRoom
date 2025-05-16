@@ -115,8 +115,15 @@ namespace SketchRoom.Toolkit.Wpf.Services
                 NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals
             };
 
-            var json = JsonSerializer.Serialize(model, options);
-            await File.WriteAllTextAsync(filePath, json);
+            try
+            {
+                var json = JsonSerializer.Serialize(model, options);
+                await File.WriteAllTextAsync(filePath, json);
+            }
+            catch (IOException ex)
+            {
+                MessageBox.Show($"Eroare la scrierea fișierului: {ex.Message}");
+            }
 
             if (saveThumbnail)
             {

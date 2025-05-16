@@ -18,13 +18,10 @@ namespace SketchRoom.Toolkit.Wpf.Factory
             return new BpmnShapeControl(uri);
         }
 
-        public IInteractiveShape CreateShape(ShapeType shapeType)
+        public IInteractiveShape CreateShape(ShapeType type)
         {
-            return shapeType switch
-            {
-                //ShapeType.TextInput => new TextElementControl(),
-                _ => throw new NotImplementedException($"Shape {shapeType} not handled.")
-            };
+            var _shapeFactory = ContainerLocator.Container.Resolve<IGenericShapeFactory>();
+            return _shapeFactory.Create(type);
         }
     }
 }

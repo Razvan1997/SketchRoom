@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using WhiteBoard.Core.Colaboration.Interfaces;
 using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services;
@@ -40,8 +41,11 @@ namespace FooterModule.ViewModels
             AddTabCommand = new DelegateCommand(AddTab);
             DeleteTabCommand = new DelegateCommand<FooterTabModel>(DeleteTab);
             RenameTabCommand = new DelegateCommand<FooterTabModel>(RenameTab);
-            
-            _eventAggregator.GetEvent<TabsRestoredEvent>().Subscribe(OnTabsRestored);
+
+            _eventAggregator.GetEvent<TabsRestoredEvent>().Subscribe(async payload =>
+            {
+                await RestoreTabsAsync(payload);
+            });
 
             AddTab();
         }
@@ -125,41 +129,56 @@ namespace FooterModule.ViewModels
             }
         }
 
-        private void OnTabsRestored(List<SavedWhiteBoardModel> models)
+        private async Task RestoreTabsAsync(TabsRestoredPayload payload)
         {
-            var internalTabs = _tabService.AllTabs.ToList();
+            var ea = ContainerLocator.Container.Resolve<IEventAggregator>();
+            await Task.Delay(50);
 
-            var placeholder = internalTabs.FirstOrDefault(t => t.Name == "Sketch-1");
-
-            if (placeholder != null && internalTabs.Count == 1)
+            await Task.Run(async () =>
             {
-                _tabService.RemoveTab(placeholder); 
-                Tabs.Remove(placeholder);
-            }
+                _tabService.SetFolderName(payload.FolderName);
+                var internalTabs = _tabService.AllTabs.ToList();
+                var placeholder = internalTabs.FirstOrDefault(t => t.Name == "Sketch-1");
 
-            // Sortează modelul după nume de tip "Sketch-1", "Sketch-2"
-            var sortedModels = models
-                .OrderBy(m =>
+                if (placeholder != null && internalTabs.Count == 1)
                 {
-                    var parts = m.TabName.Split('-');
-                    if (parts.Length == 2 && int.TryParse(parts[1], out int number))
-                        return number;
-                    return int.MaxValue; // dacă nu are format valid, pune-l la final
-                })
-                .ToList();
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        _tabService.RemoveTab(placeholder);
+                        Tabs.Remove(placeholder);
+                    });
+                }
 
-            var addedTabs = new List<FooterTabModel>();
+                var sorted = payload.Tabs
+                    .OrderBy(m =>
+                    {
+                        var parts = m.TabName.Split('-');
+                        return (parts.Length == 2 && int.TryParse(parts[1], out int n)) ? n : int.MaxValue;
+                    })
+                    .ToList();
 
-            foreach (var model in sortedModels)
-            {
-                var tab = AddTabFromModel(model);
-                addedTabs.Add(tab);
-            }
+                var addedTabs = new List<FooterTabModel>();
 
-            if (addedTabs.Count > 0)
-            {
-                SelectTab(addedTabs[0]); // ✅ Selectează primul tab după sortare
-            }
+                foreach (var model in sorted)
+                {
+                    FooterTabModel? tab = null;
+
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        tab = AddTabFromModel(model);
+                        addedTabs.Add(tab);
+                    }, DispatcherPriority.Background);
+
+                    await Application.Current.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);
+                }
+
+                if (addedTabs.Count > 0)
+                {
+                    await Application.Current.Dispatcher.InvokeAsync(() => SelectTab(addedTabs[0]));
+                }
+            });
+            await Task.Delay(100); // 🧘‍♂️ scurt delay înainte să semnalăm că s-a terminat
+            ea.GetEvent<SpinnerEvent>().Publish(false);
         }
 
         private FooterTabModel AddTabFromModel(SavedWhiteBoardModel model)

@@ -7,5 +7,11 @@ using WhiteBoard.Core.Models;
 
 namespace WhiteBoardModule.Events
 {
-    public class TabsRestoredEvent : PubSubEvent<List<SavedWhiteBoardModel>> { }
+    public class TabsRestoredEvent : PubSubEvent<TabsRestoredPayload> { }
+
+    public class TabsRestoredPayload
+    {
+        public List<SavedWhiteBoardModel> Tabs { get; set; } = [];
+        public string FolderName { get; set; } = string.Empty;
+    }
 }

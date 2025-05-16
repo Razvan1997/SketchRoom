@@ -30,7 +30,7 @@ namespace WhiteBoard.Core.Tools
         private Point? _startPoint;
         private bool _isDrawing = false;
         private string? _startDirection;
-
+        private readonly IDrawingPreferencesService _drawingPreferences;
         public bool IsDrawing => _isDrawing;
         public string Name => "ConnectorCurved";
 
@@ -41,7 +41,8 @@ namespace WhiteBoard.Core.Tools
             UIElement focusTarget,
             IToolManager toolManager,
             ISnapService snapService,
-            UndoRedoService undoRedoService)
+            UndoRedoService undoRedoService,
+            IDrawingPreferencesService drawingPreferences)
         {
             _canvas = canvas;
             _connections = connections;
@@ -49,6 +50,7 @@ namespace WhiteBoard.Core.Tools
             _snapService = snapService;
             _toolManager = toolManager;
             _undoRedoService = undoRedoService;
+            _drawingPreferences = drawingPreferences;
         }
         private BPMNConnection? GetConnectionAt(Point pos, double threshold = 8)
         {
@@ -74,7 +76,7 @@ namespace WhiteBoard.Core.Tools
 
                 _tempPath = new Path
                 {
-                    Stroke = Brushes.MediumSlateBlue,
+                    Stroke = _drawingPreferences.SelectedColor,
                     StrokeThickness = 2,
                     StrokeStartLineCap = PenLineCap.Round,
                     StrokeEndLineCap = PenLineCap.Round,
@@ -216,7 +218,7 @@ namespace WhiteBoard.Core.Tools
 
             _tempPath = new Path
             {
-                Stroke = Brushes.MediumSlateBlue,
+                Stroke = _drawingPreferences.SelectedColor,
                 StrokeThickness = 2,
                 StrokeStartLineCap = PenLineCap.Round,
                 StrokeEndLineCap = PenLineCap.Round,
@@ -243,7 +245,7 @@ namespace WhiteBoard.Core.Tools
 
             _tempPath = new Path
             {
-                Stroke = Brushes.MediumSlateBlue,
+                Stroke = _drawingPreferences.SelectedColor,
                 StrokeThickness = 2,
                 StrokeStartLineCap = PenLineCap.Round,
                 StrokeEndLineCap = PenLineCap.Round,

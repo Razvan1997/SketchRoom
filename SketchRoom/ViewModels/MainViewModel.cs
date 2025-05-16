@@ -2,6 +2,7 @@
 using Prism.Events;
 using SketchRoom.Database;
 using SketchRoom.Dialogs;
+using SketchRoom.Windows;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,6 +30,17 @@ namespace SketchRoom.ViewModels
                         { "IsParticipant", false },
                         { "SessionCode", null }
                     };
+
+            eventAggregator.GetEvent<SpinnerEvent>().Subscribe(show =>
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    if (show)
+                        LoadingOverlayHelper.Show();
+                    else
+                        LoadingOverlayHelper.Hide();
+                });
+            });
 
             _regionManager.RequestNavigate("ContentRegion", "WhiteBoardView");
         }
