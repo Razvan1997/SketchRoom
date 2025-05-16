@@ -59,5 +59,15 @@ namespace WhiteBoard.Core.Models
                 return new Rect(new Point(minX, minY), new Point(maxX, maxY));
             }
         }
+        public FreeDrawStrokeExportModel Export()
+        {
+            return new FreeDrawStrokeExportModel
+            {
+                Points = this.Points.ToList(),
+                StrokeColorHex = (this.Color as SolidColorBrush)?.Color.ToString(),
+                StrokeThickness = this.Thickness
+            };
+        }
+
     }
 }

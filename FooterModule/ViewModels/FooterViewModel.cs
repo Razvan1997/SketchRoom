@@ -202,6 +202,14 @@ namespace FooterModule.ViewModels
             HandleSavedElements.RestoreShapes(model.Shapes, whiteBoard, shapeFactory, nodeMap =>
             {
                 HandleSavedElements.RestoreConnections(model.Connections, whiteBoard, nodeMap);
+
+                if (drawingService is DrawingService concrete)
+                {
+                    foreach (var stroke in model.FreeDrawStrokes)
+                    {
+                        concrete.RestoreStroke(stroke);
+                    }
+                }
             });
 
             _tabService.AssociateWhiteBoard(newTab.Id, whiteBoard);

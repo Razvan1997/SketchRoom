@@ -174,5 +174,22 @@ namespace WhiteBoard.Core.Services
 
         public IEnumerable<WhiteBoardElement> GetElements() => _strokes;
         public FreeDrawStroke? GetExternalPreviewStroke() => _externalStrokePreview;
+
+        public FreeDrawStroke RestoreStroke(FreeDrawStrokeExportModel model)
+        {
+            var stroke = new FreeDrawStroke
+            {
+                Color = (SolidColorBrush)new BrushConverter().ConvertFromString(model.StrokeColorHex ?? "#FFFFFF"),
+                Thickness = model.StrokeThickness
+            };
+
+            foreach (var pt in model.Points)
+                stroke.AddPoint(pt);
+
+            _strokes.Add(stroke);
+            _canvas?.Children.Add(stroke.Visual);
+
+            return stroke;
+        }
     }
 }

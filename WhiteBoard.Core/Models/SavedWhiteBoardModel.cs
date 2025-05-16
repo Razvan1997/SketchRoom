@@ -15,6 +15,14 @@ namespace WhiteBoard.Core.Models
         public string FolderName { get; set; }        // Numele folderului din SavedTabs (ex: "Airport", "Home")
         public List<BPMNShapeModelWithPosition> Shapes { get; set; } = new(); // Formele desenate
         public List<BPMNConnectionExportModel> Connections { get; set; } = new();
+        public List<FreeDrawStrokeExportModel> FreeDrawStrokes { get; set; } = new();
+    }
+
+    public class FreeDrawStrokeExportModel
+    {
+        public List<Point> Points { get; set; } = new();
+        public string? StrokeColorHex { get; set; }
+        public double StrokeThickness { get; set; }
     }
 
     public class BPMNShapeModelWithPosition : BPMNShapeModel

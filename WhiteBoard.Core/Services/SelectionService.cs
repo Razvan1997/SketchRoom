@@ -55,29 +55,32 @@ namespace WhiteBoard.Core.Services
         {
             ClearSelection(canvas);
 
-            var allConnections = _connectorTool.GetAllConnections().Select(c => c.Visual).ToHashSet();
+            var allConnections = _connectorTool.GetAllConnections().ToList();
+            var selectionGeometry = new RectangleGeometry(bounds);
 
             foreach (UIElement element in canvas.Children.OfType<UIElement>().ToList())
             {
-                if (element is FrameworkElement fe)
-                {
-                    var isConnector = fe.Tag?.ToString() == "Connector";
-                    var isInteractive = fe.Tag?.ToString() == "interactive";
-                    var isConnection = _connectorTool.GetAllConnections().Any(c => c.Visual == fe);
-                    var isShapeInMap = _connectorTool.GetAllConnections().Any(c => c.From?.Visual == fe || c.To?.Visual == fe);
+                bool isShapeOrConnection = allConnections.Any(c => c.Visual == element) ||
+                                           allConnections.Any(c => c.From?.Visual == element || c.To?.Visual == element) ||
+                                           (element is FrameworkElement f && f.Tag?.ToString() == "interactive");
 
-                    if (!isConnector && !isInteractive && !isConnection && !isShapeInMap)
-                        continue;
-                }
-                Rect elementRect;
+                if (!isShapeOrConnection)
+                    continue;
+
                 UIElement? marker = null;
 
+                // Detectează dacă elementul este un Path (conexiune directă)
                 if (element is Path path && path.Data != null)
                 {
-                    elementRect = path.Data.GetRenderBounds(new Pen(path.Stroke, path.StrokeThickness));
+                    var pen = new Pen(path.Stroke, path.StrokeThickness);
+                    var widenedGeometry = path.Data.GetWidenedPathGeometry(pen);
 
-                    if (!bounds.IntersectsWith(elementRect))
+                    if (!widenedGeometry.FillContainsWithDetail(selectionGeometry).HasFlag(IntersectionDetail.Intersects))
                         continue;
+
+                    var conn = FindConnectionByPath(path);
+                    if (conn != null)
+                        _connectorTool.AddToSelection(conn);
 
                     marker = new Path
                     {
@@ -88,14 +91,17 @@ namespace WhiteBoard.Core.Services
                         IsHitTestVisible = false
                     };
                 }
+                // Detectează dacă elementul este un Canvas care conține un Path (conexiune)
                 else if (element is Canvas canvasWrapper)
                 {
                     var path2 = canvasWrapper.Children.OfType<Path>().FirstOrDefault();
                     if (path2 != null && path2.Data != null)
                     {
-                        elementRect = path2.Data.GetRenderBounds(new Pen(path2.Stroke, path2.StrokeThickness));
+                        var pen = new Pen(path2.Stroke, path2.StrokeThickness);
+                        var widenedGeometry = path2.Data.GetWidenedPathGeometry(pen);
 
-                        if (!bounds.IntersectsWith(elementRect))
+                        if (!selectionGeometry.FillContainsWithDetail(widenedGeometry).HasFlag(IntersectionDetail.FullyContains) &&
+                        !selectionGeometry.FillContainsWithDetail(widenedGeometry).HasFlag(IntersectionDetail.Intersects))
                             continue;
 
                         var conn = FindConnectionByVisual(canvasWrapper);
@@ -115,32 +121,30 @@ namespace WhiteBoard.Core.Services
                         Canvas.SetTop(marker, 0);
                     }
                 }
+                // Detectează shape-uri (entități)
                 else if (element is FrameworkElement shapeFe)
                 {
                     if (!shapeFe.IsLoaded || shapeFe.ActualWidth == 0 || shapeFe.ActualHeight == 0)
                         continue;
 
-                    if (VisualTreeHelper.GetParent(shapeFe) is Visual parent)
+                    var transform = shapeFe.TransformToAncestor(canvas);
+                    var transformedBounds = transform.TransformBounds(new Rect(0, 0, shapeFe.ActualWidth, shapeFe.ActualHeight));
+
+                    if (!bounds.IntersectsWith(transformedBounds))
+                        continue;
+
+                    marker = new Rectangle
                     {
-                        var transform = shapeFe.TransformToAncestor(parent);
-                        var transformedBounds = transform.TransformBounds(new Rect(0, 0, shapeFe.ActualWidth, shapeFe.ActualHeight));
+                        Width = transformedBounds.Width,
+                        Height = transformedBounds.Height,
+                        Stroke = Brushes.DeepSkyBlue,
+                        StrokeThickness = 2,
+                        StrokeDashArray = new DoubleCollection { 4, 2 },
+                        IsHitTestVisible = false
+                    };
 
-                        if (!bounds.IntersectsWith(transformedBounds))
-                            continue;
-
-                        marker = new Rectangle
-                        {
-                            Width = transformedBounds.Width,
-                            Height = transformedBounds.Height,
-                            Stroke = Brushes.DeepSkyBlue,
-                            StrokeThickness = 2,
-                            StrokeDashArray = new DoubleCollection { 4, 2 },
-                            IsHitTestVisible = false
-                        };
-
-                        Canvas.SetLeft(marker, transformedBounds.Left);
-                        Canvas.SetTop(marker, transformedBounds.Top);
-                    }
+                    Canvas.SetLeft(marker, transformedBounds.Left);
+                    Canvas.SetTop(marker, transformedBounds.Top);
                 }
 
                 if (marker != null)
@@ -163,6 +167,14 @@ namespace WhiteBoard.Core.Services
             }
 
             SelectionChanged?.Invoke(this, EventArgs.Empty);
+        }
+
+        private BPMNConnection? FindConnectionByPath(Path path)
+        {
+            return _connectorTool.GetAllConnections()
+                .FirstOrDefault(c =>
+                    c.Visual is Canvas canvas &&
+                    canvas.Children.OfType<Path>().Any(p => ReferenceEquals(p, path)));
         }
 
         public void ClearSelection(Canvas canvas)

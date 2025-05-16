@@ -102,6 +102,15 @@ namespace SketchRoom.Toolkit.Wpf.Services
                 }
             }
 
+            var drawingService = _tabService.GetDrawingService(tab.Id);
+            if (drawingService is IDrawingService concrete)
+            {
+                foreach (var stroke in concrete.RecentStrokes)
+                {
+                    model.FreeDrawStrokes.Add(stroke.Export());
+                }
+            }
+
             if (model.Shapes.Count == 0)
                 return;
 

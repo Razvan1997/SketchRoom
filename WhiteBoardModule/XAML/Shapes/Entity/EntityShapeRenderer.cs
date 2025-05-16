@@ -95,6 +95,15 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
             return border;
         }
 
+        private void AttachContextMenuEvents(UIElement element, Grid rowGrid)
+        {
+            element.PreviewMouseRightButtonDown += (s, e) =>
+            {
+                _lastRightClickedRow = rowGrid;
+                e.Handled = false;
+            };
+        }
+
         private void AddStyledDataRow(Grid grid, int rowIndex, string columnName, string columnType, bool isPreview)
         {
             var rowGrid = new Grid
@@ -236,10 +245,14 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
             if (_entityGrid == null)
                 return;
 
-            int newRow = _entityGrid.RowDefinitions.Count - 1;
+            // Inserăm înainte de ultimul rând (care e AddRow dacă există)
+            int insertAt = _entityGrid.RowDefinitions.Count;
 
-            _entityGrid.RowDefinitions.Insert(newRow, new RowDefinition { Height = GridLength.Auto });
-            AddStyledDataRow(_entityGrid, newRow, "", "VARCHAR", isPreview: false);
+            // Dacă ultimul copil e de tip AddRow (nu ai în cod explicit, dar poți adăuga), ajustează
+            // insertAt--;
+
+            _entityGrid.RowDefinitions.Insert(insertAt, new RowDefinition { Height = GridLength.Auto });
+            AddStyledDataRow(_entityGrid, insertAt, "", "VARCHAR", isPreview: false);
         }
 
         public void RemoveRowAt(UIElement targetRow)
@@ -247,9 +260,30 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
             if (_entityGrid == null || targetRow == null)
                 return;
 
-            if (_entityGrid.Children.Contains(targetRow))
+            Grid? rowToRemove = _entityGrid.Children
+                .OfType<Grid>()
+                .FirstOrDefault(r => ReferenceEquals(r, targetRow));
+
+            if (rowToRemove != null)
             {
-                _entityGrid.Children.Remove(targetRow);
+                _entityGrid.Children.Remove(rowToRemove);
+
+                // Reindexăm RowDefinitions
+                int index = Grid.GetRow(rowToRemove);
+                if (index >= 0 && index < _entityGrid.RowDefinitions.Count)
+                {
+                    _entityGrid.RowDefinitions.RemoveAt(index);
+                }
+
+                // Reindexăm restul rândurilor
+                foreach (var child in _entityGrid.Children.OfType<UIElement>())
+                {
+                    int oldRow = Grid.GetRow(child);
+                    if (oldRow > index)
+                    {
+                        Grid.SetRow(child, oldRow - 1);
+                    }
+                }
             }
         }
 
@@ -418,6 +452,7 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
                 };
                 Grid.SetColumn(nameBox, 1);
                 rowGrid.Children.Add(nameBox);
+                AttachContextMenuEvents(nameBox, rowGrid);
 
                 // Type
                 var typeBox = new ComboBox
@@ -429,6 +464,7 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
                 };
                 Grid.SetColumn(typeBox, 2);
                 rowGrid.Children.Add(typeBox);
+                AttachContextMenuEvents(typeBox, rowGrid);
 
                 // PK
                 var pkCheck = new CheckBox
@@ -439,6 +475,9 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
                     HorizontalAlignment = HorizontalAlignment.Center,
                     Foreground = Brushes.White
                 };
+
+                AttachContextMenuEvents(pkCheck, rowGrid);
+
                 Grid.SetColumn(pkCheck, 3);
                 rowGrid.Children.Add(pkCheck);
 
@@ -453,7 +492,7 @@ namespace WhiteBoardModule.XAML.Shapes.Entity
                 };
                 Grid.SetColumn(nullableCheck, 4);
                 rowGrid.Children.Add(nullableCheck);
-
+                AttachContextMenuEvents(nullableCheck, rowGrid);
                 // Connectors (optional if you want them to show too)
                 var left = new Rectangle
                 {

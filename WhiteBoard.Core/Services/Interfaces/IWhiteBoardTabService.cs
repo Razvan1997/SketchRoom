@@ -26,5 +26,6 @@ namespace WhiteBoard.Core.Services.Interfaces
         void SetFolderName(string name);
         string GetFolderName();
         void RemoveTab(FooterTabModel tab);
+        IDrawingService? GetDrawingService(Guid tabId);
     }
 }
