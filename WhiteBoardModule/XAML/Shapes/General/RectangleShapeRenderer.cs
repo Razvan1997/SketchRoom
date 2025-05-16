@@ -130,10 +130,10 @@ namespace WhiteBoardModule.XAML.Shapes.General
                 Category = "General",
                 SvgUri = null,
                 ExtraProperties = new Dictionary<string, string>
-        {
-            { "Fill", fillColor ?? "#00FFFFFF" },      // Transparent fallback
-            { "Stroke", strokeColor ?? "#FFFFFFFF" }   // White fallback
-        }
+                {
+                    { "Fill", fillColor ?? "#00FFFFFF" },      // Transparent fallback
+                    { "Stroke", strokeColor ?? "#FFFFFFFF" }   // White fallback
+                }
             };
         }
 
@@ -153,6 +153,16 @@ namespace WhiteBoardModule.XAML.Shapes.General
                 try { _rectangle.Stroke = (SolidColorBrush)(new BrushConverter().ConvertFromString(strokeHex)); }
                 catch { _rectangle.Stroke = Brushes.White; }
             }
+
+            _rectangle.PreviewMouseLeftButtonDown += (s, e) =>
+            {
+                var pos = e.GetPosition(_rectangle);
+
+                if (IsMouseOverMargin(_rectangle, pos))
+                    _selectionService.Select(ShapePart.Margin, _rectangle);
+                else
+                    _selectionService.Select(ShapePart.Border, _rectangle);
+            };
         }
     }
 }

@@ -185,7 +185,7 @@ namespace SketchRoom.Toolkit.Wpf.Services
             encoder.Save(stream);
         }
 
-        public async Task<List<SavedWhiteBoardModel>> LoadAllTabsAsync()
+        public List<SavedWhiteBoardModel> LoadAllTabsSync()
         {
             var list = new List<SavedWhiteBoardModel>();
 
@@ -195,12 +195,17 @@ namespace SketchRoom.Toolkit.Wpf.Services
             foreach (var dir in Directory.GetDirectories(_basePath))
             {
                 var jsonFiles = Directory.GetFiles(dir, "tab_*.json");
+
                 foreach (var jsonPath in jsonFiles)
                 {
-                    var json = await File.ReadAllTextAsync(jsonPath);
-                    var model = JsonSerializer.Deserialize<SavedWhiteBoardModel>(json);
-                    if (model != null)
-                        list.Add(model);
+                    try
+                    {
+                        var json = File.ReadAllText(jsonPath);
+                        var model = JsonSerializer.Deserialize<SavedWhiteBoardModel>(json);
+                        if (model != null)
+                            list.Add(model);
+                    }
+                    catch {  }
                 }
             }
 

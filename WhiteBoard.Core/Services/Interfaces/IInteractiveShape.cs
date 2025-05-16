@@ -9,6 +9,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using WhiteBoard.Core.Events;
+using WhiteBoard.Core.Models;
 
 namespace WhiteBoard.Core.Services.Interfaces
 {

@@ -10,6 +10,8 @@ using System.Windows.Shapes;
 using System.Windows;
 using WhiteBoard.Core.Services.Interfaces;
 using WhiteBoard.Core.Models;
+using SketchRoom.Models.Enums;
+using System.Windows.Input;
 
 namespace WhiteBoardModule.XAML.Shapes.Connectors
 {
@@ -17,9 +19,12 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
     {
         private readonly bool _withBindings;
         private Grid? RenderedElement;
+        private readonly IShapeSelectionService _selectionService;
         public DescriptionShapeConnectorRenderer(bool withBindings = false)
+
         {
             _withBindings = withBindings;
+            _selectionService = ContainerLocator.Container.Resolve<IShapeSelectionService>();
         }
 
         public UIElement CreatePreview()
@@ -64,7 +69,27 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 Child = grid
             };
         }
+        private bool IsMouseOver(UIElement element, MouseEventArgs e)
+        {
+            var pos = e.GetPosition(element);
+            var rect = new Rect(0, 0, element.RenderSize.Width, element.RenderSize.Height);
+            return rect.Contains(pos);
+        }
+        private void AdjustSizeToContent(TextBox textBox)
+        {
+            var formattedText = new FormattedText(
+                textBox.Text,
+                System.Globalization.CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                new Typeface(textBox.FontFamily, textBox.FontStyle, textBox.FontWeight, textBox.FontStretch),
+                textBox.FontSize,
+                Brushes.Black,
+                new NumberSubstitution(),
+                1);
 
+            // Adaugă puțin padding ca să nu fie tăiat textul
+            textBox.Height = formattedText.Height + 10;
+        }
         public UIElement Render()
         {
             var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
@@ -85,6 +110,17 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 MinWidth = 80,
                 Height = 24,
                 Name = "ConnectorDescriptionText"
+            };
+            textBox.LayoutUpdated += (s, e) => AdjustSizeToContent(textBox);
+            textBox.PreviewMouseLeftButtonDown += (s, e) =>
+            {
+                var pos = e.GetPosition(textBox);
+
+                if (IsMouseOver(textBox, e))
+                {
+                    _selectionService.Select(ShapePart.Text, textBox);
+                    return;
+                }
             };
 
             if (_withBindings)
@@ -166,7 +202,7 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 angle = rt.Angle;
             }
 
-            string? text = null, textColor = null, lineColor = null;
+            string? text = null, textColor = null, lineColor = null, fontWeight = null, fontSize = null;
 
             if (RenderedElement?.Tag is Dictionary<string, object> tag)
             {
@@ -174,6 +210,8 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 {
                     text = txt.Text;
                     textColor = (txt.Foreground as SolidColorBrush)?.Color.ToString();
+                    fontWeight = txt.FontWeight.ToString();
+                    fontSize = txt.FontSize.ToString();
                 }
 
                 if (tag.TryGetValue("Line", out var lineObj) && lineObj is Rectangle line)
@@ -194,11 +232,13 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 SvgUri = null,
                 RotationAngle = angle,
                 ExtraProperties = new Dictionary<string, string>
-        {
-            { "DescriptionText", text ?? "" },
-            { "TextColor", textColor ?? "" },
-            { "LineColor", lineColor ?? "" }
-        }
+                {
+                     { "DescriptionText", text ?? "" },
+                     { "TextColor", textColor ?? "" },
+                     { "LineColor", lineColor ?? "" },
+                     { "FontWeight", fontWeight ?? "Normal" },
+                     { "FontSize", fontSize ?? "" }
+                }
             };
         }
 
@@ -217,6 +257,25 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
 
                 if (extraProperties.TryGetValue("TextColor", out var color))
                     textBox.Foreground = ShapeStyleRestorer.ConvertToBrush(color);
+
+                if (extraProperties.TryGetValue("FontWeight", out var fwStr))
+                {
+                    try
+                    {
+                        var converter = new FontWeightConverter();
+                        var weight = (FontWeight)converter.ConvertFromString(fwStr);
+                        textBox.FontWeight = weight;
+                    }
+                    catch
+                    {
+                        textBox.FontWeight = FontWeights.Normal;
+                    }
+                }
+                if (extraProperties.TryGetValue("FontSize", out var fontSizeStr) &&
+                    double.TryParse(fontSizeStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var fontSize))
+                {
+                    textBox.FontSize = fontSize;
+                }
             }
 
             if (tag.TryGetValue("Line", out var lineObj) && lineObj is Rectangle line &&

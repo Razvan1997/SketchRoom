@@ -32,6 +32,7 @@ namespace WhiteBoard.Core.Services
         private readonly IZOrderService _zOrderService;
         private IInteractiveShape? _lastClickedShape;
         private readonly IShapeRendererFactory _rendererFactory;
+        private readonly IShapeSelectionService _shapeSelectionService;
 
         public DropService(
             Canvas drawingCanvas,
@@ -44,7 +45,8 @@ namespace WhiteBoard.Core.Services
             UndoRedoService undoRedoService,
             IDrawingPreferencesService drawingPreferencesService,
             IZOrderService zOrderService,
-            IShapeRendererFactory rendererFactory)
+            IShapeRendererFactory rendererFactory,
+            IShapeSelectionService shapeSelectionService)
         {
             _drawingCanvas = drawingCanvas;
             _factory = factory;
@@ -56,7 +58,7 @@ namespace WhiteBoard.Core.Services
             _undoRedoService = undoRedoService;
             _drawingPreferncesService = drawingPreferencesService;
             _zOrderService = zOrderService;
-
+            _shapeSelectionService = shapeSelectionService;
             if (_drawingPreferncesService is INotifyPropertyChanged notifier)
                 notifier.PropertyChanged += OnPreferencesChanged;
             _rendererFactory = rendererFactory;
@@ -134,12 +136,11 @@ namespace WhiteBoard.Core.Services
             {
                 interactiveShape.SetShape(shape.Type.Value, shape is BPMNShapeModelWithPosition model ? model.RotationAngle : 0);
                 shape.ShapeContent = interactiveShape;
-
                 visualElement = CreateXamlElement(interactiveShape, shape, dropPos);
                 visualElement.Tag = "interactive";
                 ShapeMetadata.SetShapeId(visualElement, shape.Id.ToString());
 
-                ShapeStyleRestorer.ApplyStyle(shape, visualElement);
+                ShapeStyleRestorer.ApplyStyle(shape, visualElement, _shapeSelectionService);
             }
 
             // 4. Autofocus pentru ShapeText

@@ -289,6 +289,26 @@
                         Foreground="White"
                         Text="Save sketch" />
                 </Border>
+                <Border
+                    Width="200"
+                    Height="30"
+                    Margin="4,0"
+                    Background="SteelBlue"
+                    CornerRadius="2"
+                    Cursor="Hand"
+                    ToolTip="Save sketch">
+                    <i:Interaction.Triggers>
+                        <i:EventTrigger EventName="MouseLeftButtonUp">
+                            <prism:InvokeCommandAction Command="{Binding OpenContinueDialogCommand}" />
+                        </i:EventTrigger>
+                    </i:Interaction.Triggers>
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontWeight="SemiBold"
+                        Foreground="White"
+                        Text="Open another sketches" />
+                </Border>
             </StackPanel>
         </Grid>
     </Border>

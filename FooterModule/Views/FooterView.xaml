@@ -60,25 +60,9 @@
                         CornerRadius="4">
                         <TextBlock
                             AllowDrop="True"
-                            Drop="Tab_Drop"
                             Foreground="White"
                             MouseLeftButtonDown="Tab_Click"
-                            MouseRightButtonDown="Tab_RightClick"
-                            PreviewMouseLeftButtonDown="Tab_MouseLeftButtonDown"
-                            PreviewMouseMove="Tab_PreviewMouseMove"
                             Text="{Binding Name}" />
-                        <Border.ContextMenu>
-                            <ContextMenu Style="{StaticResource DarkContextMenuStyle}">
-                                <MenuItem
-                                    Command="{Binding DataContext.RenameTabCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                    CommandParameter="{Binding}"
-                                    Header="Rename" />
-                                <MenuItem
-                                    Command="{Binding DataContext.DeleteTabCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                    CommandParameter="{Binding}"
-                                    Header="Delete" />
-                            </ContextMenu>
-                        </Border.ContextMenu>
                     </Border>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>

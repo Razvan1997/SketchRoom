@@ -671,6 +671,7 @@ namespace WhiteBoardModule.XAML
                     model.ExtraProperties["Text"] = textBox.Text;
                     model.ExtraProperties["FontSize"] = textBox.FontSize.ToString();
                     model.ExtraProperties["Foreground"] = textBox.Foreground.ToString();
+                    model.ExtraProperties["FontWeight"] = textBox.FontWeight.ToString();
                     model.ExtraProperties["TextWrapping"] = textBox.TextWrapping.ToString();
                 }
             }

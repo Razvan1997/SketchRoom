@@ -118,6 +118,7 @@ namespace WhiteBoardModule.ViewModels
 
         private readonly DrawingStateService.DrawingStateService _stateService;
         public ICommand OpenSaveSketchDialogCommand { get; }
+        public ICommand OpenContinueDialogCommand { get; }
         private readonly IEventAggregator _eventAggregator;
         public SessionActionsViewModel(
             IEventAggregator eventAggregator,
@@ -130,6 +131,11 @@ namespace WhiteBoardModule.ViewModels
             OpenSaveSketchDialogCommand = new DelegateCommand(() =>
             {
                 _eventAggregator.GetEvent<OpenSaveSketchDialogEvent>().Publish();
+            });
+
+            OpenContinueDialogCommand = new DelegateCommand(() =>
+            {
+                _eventAggregator.GetEvent<OpenContinueDialogEvent>().Publish();
             });
 
             WhiteBoard.Core.Events.ShapeSelectionEventBus.Subscribe(OnShapeSelected);

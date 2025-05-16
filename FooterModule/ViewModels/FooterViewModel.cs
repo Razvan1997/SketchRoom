@@ -47,6 +47,11 @@ namespace FooterModule.ViewModels
                 await RestoreTabsAsync(payload);
             });
 
+            _eventAggregator.GetEvent<ClearAllTabsEvent>().Subscribe(() =>
+            {
+                RemoveAllTabsExceptSketch1();
+            });
+
             AddTab();
         }
 
@@ -117,6 +122,19 @@ namespace FooterModule.ViewModels
             }
         }
 
+        public void RemoveAllTabsExceptSketch1()
+        {
+            var allTabs = _tabService.AllTabs.ToList();
+
+            foreach (var tab in allTabs)
+            {
+                _tabService.RemoveTab(tab);
+                Tabs.Remove(tab);
+            }
+
+            AddTab();
+        }
+
         public void ReorderTabs(FooterTabModel dragged, FooterTabModel target)
         {
             int oldIndex = Tabs.IndexOf(dragged);
@@ -137,17 +155,14 @@ namespace FooterModule.ViewModels
             await Task.Run(async () =>
             {
                 _tabService.SetFolderName(payload.FolderName);
-                var internalTabs = _tabService.AllTabs.ToList();
-                var placeholder = internalTabs.FirstOrDefault(t => t.Name == "Sketch-1");
-
-                if (placeholder != null && internalTabs.Count == 1)
+                await Application.Current.Dispatcher.InvokeAsync(() =>
                 {
-                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    foreach (var existingTab in _tabService.AllTabs.ToList())
                     {
-                        _tabService.RemoveTab(placeholder);
-                        Tabs.Remove(placeholder);
-                    });
-                }
+                        _tabService.RemoveTab(existingTab);
+                        Tabs.Remove(existingTab);
+                    }
+                });
 
                 var sorted = payload.Tabs
                     .OrderBy(m =>

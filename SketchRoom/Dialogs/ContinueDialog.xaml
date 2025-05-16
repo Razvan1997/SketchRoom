@@ -166,6 +166,15 @@
                         Click="Create_Click"
                         Content="Create"
                         Style="{StaticResource DarkFlatButtonStyle}" />
+
+                    <Button
+                        x:Name="CancelButton"
+                        Width="100"
+                        Height="30"
+                        Margin="20,0,0,0"
+                        Click="Close_Click"
+                        Content="Cancel"
+                        Style="{StaticResource DarkFlatButtonStyle}" />
                 </StackPanel>
             </Grid>
         </Grid>

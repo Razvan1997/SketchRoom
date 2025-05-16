@@ -1,7 +1,9 @@
 ﻿using SketchRoom.Models.Enums;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using WhiteBoard.Core.Models;
@@ -13,9 +15,11 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
     {
         private readonly bool _withBindings;
         private StackPanel? _stackPanel;
+        private readonly IShapeSelectionService _selectionService;
         public ConnectorDoubleLabelShapeRenderer(bool withBindings = false)
         {
             _withBindings = withBindings;
+            _selectionService = ContainerLocator.Container.Resolve<IShapeSelectionService>();
         }
 
         public UIElement CreatePreview()
@@ -112,7 +116,21 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 Child = preview
             };
         }
+        private void AdjustSizeToContent(TextBox textBox)
+        {
+            var formattedText = new FormattedText(
+                textBox.Text,
+                System.Globalization.CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                new Typeface(textBox.FontFamily, textBox.FontStyle, textBox.FontWeight, textBox.FontStretch),
+                textBox.FontSize,
+                Brushes.Black,
+                new NumberSubstitution(),
+                1);
 
+            // Adaugă puțin padding ca să nu fie tăiat textul
+            textBox.Height = formattedText.Height + 10;
+        }
         public UIElement Render()
         {
             var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
@@ -130,6 +148,17 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 HorizontalAlignment = HorizontalAlignment.Left,
                 Margin = new Thickness(0, 0, 0, -10),
                 MinWidth = 60
+            };
+            sourceBox.LayoutUpdated += (s, e) => AdjustSizeToContent(sourceBox);
+            sourceBox.PreviewMouseLeftButtonDown += (s, e) =>
+            {
+                var pos = e.GetPosition(sourceBox);
+
+                if (IsMouseOver(sourceBox, e))
+                {
+                    _selectionService.Select(ShapePart.Text, sourceBox);
+                    return;
+                }
             };
 
             if (_withBindings)
@@ -155,11 +184,23 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 Height = 24,
                 Name = "ConnectorLabelText"
             };
-
+            labelBox.LayoutUpdated += (s, e) => AdjustSizeToContent(labelBox);
             //labelBox.GotFocus += (s, e) =>
             //{
             //    labelBox.Foreground = preferences.SelectedColor;
             //};
+
+            labelBox.PreviewMouseLeftButtonDown += (s, e) =>
+            {
+                var pos = e.GetPosition(labelBox);
+
+                if (IsMouseOver(labelBox, e))
+                {
+                    _selectionService.Select(ShapePart.Text, labelBox);
+                    return;
+                }
+            };
+            
 
             if (_withBindings)
             {
@@ -294,6 +335,8 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
             string? labelText = null, sourceText = null;
             string? labelColor = null, sourceColor = null;
             string? lineColor = null;
+            string? labelFontSize = null, labelFontWeight = null;
+            string? sourceFontSize = null, sourceFontWeight = null;
 
             if (_stackPanel.Tag is Dictionary<string, object> tag)
             {
@@ -301,12 +344,16 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 {
                     labelText = label.Text;
                     labelColor = (label.Foreground as SolidColorBrush)?.Color.ToString();
+                    labelFontSize = label.FontSize.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    labelFontWeight = label.FontWeight.ToString();
                 }
 
                 if (tag.TryGetValue("SourceLabel", out var srcObj) && srcObj is TextBox source)
                 {
                     sourceText = source.Text;
                     sourceColor = (source.Foreground as SolidColorBrush)?.Color.ToString();
+                    sourceFontSize = source.FontSize.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    sourceFontWeight = source.FontWeight.ToString();
                 }
 
                 if (tag.TryGetValue("LeftLine", out var leftObj) && leftObj is Rectangle line)
@@ -326,18 +373,23 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 Category = "Connector",
                 SvgUri = null,
                 ExtraProperties = new Dictionary<string, string>
-        {
-            { "LabelText", labelText ?? "" },
-            { "LabelColor", labelColor ?? "" },
-            { "SourceText", sourceText ?? "" },
-            { "SourceColor", sourceColor ?? "" },
-            { "LineColor", lineColor ?? "" }
-        }
+                {
+                    { "LabelText", labelText ?? "" },
+                    { "LabelColor", labelColor ?? "" },
+                    { "LabelFontSize", labelFontSize ?? "" },
+                    { "LabelFontWeight", labelFontWeight ?? "" },
+                    { "SourceText", sourceText ?? "" },
+                    { "SourceColor", sourceColor ?? "" },
+                    { "SourceFontSize", sourceFontSize ?? "" },
+                    { "SourceFontWeight", sourceFontWeight ?? "" },
+                    { "LineColor", lineColor ?? "" }
+                }
             };
         }
 
         public void Restore(Dictionary<string, string> extraProperties)
         {
+            var fontWeightConverter = new FontWeightConverter();
             if (_stackPanel?.Tag is not Dictionary<string, object> tag)
                 return;
 
@@ -348,6 +400,17 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
 
                 if (extraProperties.TryGetValue("LabelColor", out var labelColor))
                     label.Foreground = ShapeStyleRestorer.ConvertToBrush(labelColor);
+
+                if (extraProperties.TryGetValue("LabelFontSize", out var fontSizeStr) &&
+       double.TryParse(fontSizeStr, System.Globalization.NumberStyles.Any,
+                       System.Globalization.CultureInfo.InvariantCulture, out var fontSize))
+                    label.FontSize = fontSize;
+
+                if (extraProperties.TryGetValue("LabelFontWeight", out var fontWeightStr))
+                {
+                    try { label.FontWeight = (FontWeight)fontWeightConverter.ConvertFromString(fontWeightStr); }
+                    catch { label.FontWeight = FontWeights.Normal; }
+                }
             }
 
             if (tag.TryGetValue("SourceLabel", out var srcObj) && srcObj is TextBox source)
@@ -357,6 +420,17 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
 
                 if (extraProperties.TryGetValue("SourceColor", out var sourceColor))
                     source.Foreground = ShapeStyleRestorer.ConvertToBrush(sourceColor);
+
+                if (extraProperties.TryGetValue("SourceFontSize", out var fontSizeStr) &&
+        double.TryParse(fontSizeStr, System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture, out var fontSize))
+                    source.FontSize = fontSize;
+
+                if (extraProperties.TryGetValue("SourceFontWeight", out var fontWeightStr))
+                {
+                    try { source.FontWeight = (FontWeight)fontWeightConverter.ConvertFromString(fontWeightStr); }
+                    catch { source.FontWeight = FontWeights.Normal; }
+                }
             }
 
             if (extraProperties.TryGetValue("LineColor", out var lineColor))
@@ -367,5 +441,13 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 if (tag.TryGetValue("Arrow", out var arrow) && arrow is Shape a) a.Fill = brush;
             }
         }
+        private bool IsMouseOver(UIElement element, MouseEventArgs e)
+        {
+            var pos = e.GetPosition(element);
+            var rect = new Rect(0, 0, element.RenderSize.Width, element.RenderSize.Height);
+            return rect.Contains(pos);
+        }
     }
+
+
 }

@@ -48,42 +48,42 @@ namespace FooterModule.Views
                 vm.AddTabCommand.Execute();
         }
 
-        private void Tab_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            _dragStartPoint = e.GetPosition(null);
-        }
+        //private void Tab_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        //{
+        //    _dragStartPoint = e.GetPosition(null);
+        //}
 
-        private void Tab_PreviewMouseMove(object sender, MouseEventArgs e)
-        {
-            if (e.LeftButton != MouseButtonState.Pressed)
-                return;
+        //private void Tab_PreviewMouseMove(object sender, MouseEventArgs e)
+        //{
+        //    if (e.LeftButton != MouseButtonState.Pressed)
+        //        return;
 
-            var currentPos = e.GetPosition(null);
-            if (Math.Abs(currentPos.X - _dragStartPoint.X) > SystemParameters.MinimumHorizontalDragDistance ||
-                Math.Abs(currentPos.Y - _dragStartPoint.Y) > SystemParameters.MinimumVerticalDragDistance)
-            {
-                if (sender is FrameworkElement element && element.DataContext is FooterTabModel tab)
-                {
-                    DragDrop.DoDragDrop(element, new DataObject("FooterTab", tab), DragDropEffects.Move);
-                }
-            }
-        }
+        //    var currentPos = e.GetPosition(null);
+        //    if (Math.Abs(currentPos.X - _dragStartPoint.X) > SystemParameters.MinimumHorizontalDragDistance ||
+        //        Math.Abs(currentPos.Y - _dragStartPoint.Y) > SystemParameters.MinimumVerticalDragDistance)
+        //    {
+        //        if (sender is FrameworkElement element && element.DataContext is FooterTabModel tab)
+        //        {
+        //            DragDrop.DoDragDrop(element, new DataObject("FooterTab", tab), DragDropEffects.Move);
+        //        }
+        //    }
+        //}
 
-        private void Tab_Drop(object sender, DragEventArgs e)
-        {
-            if (!e.Data.GetDataPresent("FooterTab"))
-                return;
+        //private void Tab_Drop(object sender, DragEventArgs e)
+        //{
+        //    if (!e.Data.GetDataPresent("FooterTab"))
+        //        return;
 
-            var droppedData = e.Data.GetData("FooterTab") as FooterTabModel;
-            var target = ((FrameworkElement)sender).DataContext as FooterTabModel;
+        //    var droppedData = e.Data.GetData("FooterTab") as FooterTabModel;
+        //    var target = ((FrameworkElement)sender).DataContext as FooterTabModel;
 
-            if (droppedData == null || target == null || droppedData == target)
-                return;
+        //    if (droppedData == null || target == null || droppedData == target)
+        //        return;
 
-            if (DataContext is FooterViewModel vm)
-            {
-                vm.ReorderTabs(droppedData, target);
-            }
-        }
+        //    if (DataContext is FooterViewModel vm)
+        //    {
+        //        vm.ReorderTabs(droppedData, target);
+        //    }
+        //}
     }
 }

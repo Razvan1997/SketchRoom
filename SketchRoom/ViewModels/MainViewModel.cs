@@ -24,6 +24,15 @@ namespace SketchRoom.ViewModels
             _regionManager = regionManager;
             eventAggregator.GetEvent<OpenSaveSketchDialogEvent>().Subscribe(OpenSaveSketchDialog);
             eventAggregator.GetEvent<OpenSettingsDialogEvent>().Subscribe(OpenSettingsDialog);
+            eventAggregator.GetEvent<OpenContinueDialogEvent>().Subscribe(() =>
+            {
+                var dialog = new ContinueDialog
+                {
+                    Owner = Application.Current.MainWindow,
+                    ShowCancelButton = true
+                };
+                dialog.ShowDialog();
+            });
             var parameters = new NavigationParameters
                     {
                         { "IsHost", true },
@@ -60,29 +69,39 @@ namespace SketchRoom.ViewModels
         {
             var dialog = new ContinueDialog
             {
-                Owner = Application.Current.MainWindow 
+                Owner = Application.Current.MainWindow,
+                ShowCancelButton = false
             };
 
-            dialog.Show();
+            dialog.ShowDialog();
         }
 
 
         public void ShowRegistration()
         {
-            var dialog = new RegistrationDialog();
-            dialog.Show();
+            var dialog = new RegistrationDialog
+            {
+                Owner = Application.Current.MainWindow
+            };
+            dialog.ShowDialog();
         }
 
         private void OpenSaveSketchDialog()
         {
-            var dialog = new SaveSketchDialog();
-            dialog.Show();
+            var dialog = new SaveSketchDialog
+            {
+                Owner = Application.Current.MainWindow
+            };
+            dialog.ShowDialog();
         }
 
         private void OpenSettingsDialog()
         {
-            var dialog = new SettingsDialog();
-            dialog.Show();
+            var dialog = new SettingsDialog
+            {
+                Owner = Application.Current.MainWindow
+            };
+            dialog.ShowDialog();
         }
     }
 }

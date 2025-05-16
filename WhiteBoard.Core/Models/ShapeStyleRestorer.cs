@@ -1,13 +1,15 @@
-﻿using System.Windows;
+﻿using SketchRoom.Models.Enums;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using WhiteBoard.Core.Services;
 using WhiteBoard.Core.Services.Interfaces;
 
 namespace WhiteBoard.Core.Models
 {
     public static class ShapeStyleRestorer
     {
-        public static void ApplyStyle(BPMNShapeModelWithPosition shape, FrameworkElement element)
+        public static void ApplyStyle(BPMNShapeModelWithPosition shape, FrameworkElement element, IShapeSelectionService shapeSelectionService)
         {
             if (shape.ExtraProperties == null || shape.ExtraProperties.Count == 0)
                 return;
@@ -65,6 +67,15 @@ namespace WhiteBoard.Core.Models
                     FontSize = 14,
                     Text = textValue
                 };
+                
+                textBox.PreviewMouseLeftButtonDown += (s, e) =>
+                {
+                    if (!textBox.IsKeyboardFocusWithin)
+                        textBox.Focus();
+
+                    shapeSelectionService.Select(ShapePart.Text, textBox);
+                    e.Handled = true;
+                };
 
                 if (shape.ExtraProperties.TryGetValue("FontSize", out var fontSizeStr) &&
                     double.TryParse(fontSizeStr, out var fontSize))
@@ -76,6 +87,13 @@ namespace WhiteBoard.Core.Models
                 if (shape.ExtraProperties.TryGetValue("TextWrapping", out var wrapStr) &&
                     Enum.TryParse<TextWrapping>(wrapStr, out var wrap))
                     textBox.TextWrapping = wrap;
+
+                if (shape.ExtraProperties.TryGetValue("FontWeight", out var fwStr))
+                {
+                    var converter = new FontWeightConverter();
+                    if (converter.ConvertFromString(fwStr) is FontWeight fw)
+                        textBox.FontWeight = fw;
+                }
 
                 if (element is ContentControl cc && cc.Content is Grid grid)
                 {

@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using WhiteBoard.Core.Models;
@@ -13,9 +14,11 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
     {
         private readonly bool _withBindings;
         private Grid? _gridPanel;
+        private readonly IShapeSelectionService _selectionService;
         public ConnectorLabelShapeRenderer(bool withBindings = false)
         {
             _withBindings = withBindings;
+            _selectionService = ContainerLocator.Container.Resolve<IShapeSelectionService>();
         }
 
         public UIElement CreatePreview()
@@ -92,7 +95,27 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 Child = grid
             };
         }
+        private bool IsMouseOver(UIElement element, MouseEventArgs e)
+        {
+            var pos = e.GetPosition(element);
+            var rect = new Rect(0, 0, element.RenderSize.Width, element.RenderSize.Height);
+            return rect.Contains(pos);
+        }
+        private void AdjustSizeToContent(TextBox textBox)
+        {
+            var formattedText = new FormattedText(
+                textBox.Text,
+                System.Globalization.CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight,
+                new Typeface(textBox.FontFamily, textBox.FontStyle, textBox.FontWeight, textBox.FontStretch),
+                textBox.FontSize,
+                Brushes.Black,
+                new NumberSubstitution(),
+                1);
 
+            // Adaugă puțin padding ca să nu fie tăiat textul
+            textBox.Height = formattedText.Height + 10;
+        }
         public UIElement Render()
         {
             var preferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
@@ -113,6 +136,18 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 Height = 24,
                 Name = "ConnectorLabelText"
             };
+            labelBox.LayoutUpdated += (s, e) => AdjustSizeToContent(labelBox);
+            labelBox.PreviewMouseLeftButtonDown += (s, e) =>
+            {
+                var pos = e.GetPosition(labelBox);
+
+                if (IsMouseOver(labelBox, e))
+                {
+                    _selectionService.Select(ShapePart.Text, labelBox);
+                    return;
+                }
+            };
+
 
             //labelBox.GotFocus += (s, e) =>
             //{
@@ -225,6 +260,8 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
             string? labelText = null;
             string? labelColor = null;
             string? lineColor = null;
+            string? labelFontSize = null;
+            string? labelFontWeight = null;
 
             if (_gridPanel.Tag is Dictionary<string, object> tag)
             {
@@ -232,6 +269,8 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 {
                     labelText = label.Text;
                     labelColor = (label.Foreground as SolidColorBrush)?.Color.ToString();
+                    labelFontSize = label.FontSize.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    labelFontWeight = label.FontWeight.ToString();
                 }
 
                 if (tag.TryGetValue("LeftLine", out var lineObj) && lineObj is Rectangle line)
@@ -251,11 +290,13 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
                 Category = "Connector",
                 SvgUri = null,
                 ExtraProperties = new Dictionary<string, string>
-        {
-            { "LabelText", labelText ?? "" },
-            { "LabelColor", labelColor ?? "" },
-            { "LineColor", lineColor ?? "" }
-        }
+                {
+                    { "LabelText", labelText ?? "" },
+                    { "LabelColor", labelColor ?? "" },
+                    { "LineColor", lineColor ?? "" },
+                    { "LabelFontSize", labelFontSize ?? "" },
+                    { "LabelFontWeight", labelFontWeight ?? "" }
+                }
             };
         }
 
@@ -271,6 +312,26 @@ namespace WhiteBoardModule.XAML.Shapes.Connectors
 
                 if (extraProperties.TryGetValue("LabelColor", out var labelColor))
                     label.Foreground = ShapeStyleRestorer.ConvertToBrush(labelColor);
+
+                if (extraProperties.TryGetValue("LabelFontSize", out var fontSizeStr) &&
+                double.TryParse(fontSizeStr, System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture, out var fontSize))
+                {
+                    label.FontSize = fontSize;
+                }
+
+                if (extraProperties.TryGetValue("LabelFontWeight", out var fontWeightStr))
+                {
+                    var converter = new FontWeightConverter();
+                    try
+                    {
+                        label.FontWeight = (FontWeight)converter.ConvertFromString(fontWeightStr);
+                    }
+                    catch
+                    {
+                        label.FontWeight = FontWeights.Normal;
+                    }
+                }
             }
 
             if (extraProperties.TryGetValue("LineColor", out var lineColor))

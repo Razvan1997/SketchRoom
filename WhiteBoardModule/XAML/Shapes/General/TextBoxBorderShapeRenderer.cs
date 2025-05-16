@@ -38,21 +38,21 @@ namespace WhiteBoardModule.XAML.Shapes.General
             var textBox = new TextBox
             {
                 Text = "Editable text",
-                Width = 150,
-                Height = 40,
                 Background = Brushes.Transparent,
                 BorderThickness = new Thickness(0),
                 FontSize = 16,
                 HorizontalContentAlignment = HorizontalAlignment.Center,
                 VerticalContentAlignment = VerticalAlignment.Center,
                 TextAlignment = TextAlignment.Center,
-                Foreground = Brushes.Black
+                Foreground = Brushes.Black,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch
             };
 
             var textContainer = new Grid
             {
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                VerticalAlignment = VerticalAlignment.Stretch
             };
             textContainer.Children.Add(textBox);
             border.Child = textContainer;
@@ -180,7 +180,11 @@ namespace WhiteBoardModule.XAML.Shapes.General
             { "Background", (_border.Background as SolidColorBrush)?.Color.ToString() ?? "#FFFFFFFF" },
             { "BorderBrush", (_border.BorderBrush as SolidColorBrush)?.Color.ToString() ?? "#FF000000" },
             { "Foreground", (_textBox.Foreground as SolidColorBrush)?.Color.ToString() ?? "#FF000000" },
-            { "TextShape", _textBox.Text ?? "" }
+            { "TextShape", _textBox.Text ?? "" },
+            { "FontSize", _textBox.FontSize.ToString(System.Globalization.CultureInfo.InvariantCulture) },
+            { "FontWeight", _textBox.FontWeight.ToString() },
+            { "FontStyle", _textBox.FontStyle.ToString() },
+            { "TextWrapping", _textBox.TextWrapping.ToString() }
         }
             };
         }
@@ -190,27 +194,62 @@ namespace WhiteBoardModule.XAML.Shapes.General
             if (_border == null || _textBox == null)
                 return;
 
+            var brushConverter = new BrushConverter();
+            var fontWeightConverter = new FontWeightConverter();
+
             if (extraProperties.TryGetValue("Background", out var bgColor))
             {
-                try { _border.Background = (Brush)new BrushConverter().ConvertFromString(bgColor); }
+                try { _border.Background = (Brush)brushConverter.ConvertFromString(bgColor); }
                 catch { _border.Background = Brushes.White; }
             }
 
             if (extraProperties.TryGetValue("BorderBrush", out var strokeColor))
             {
-                try { _border.BorderBrush = (Brush)new BrushConverter().ConvertFromString(strokeColor); }
+                try { _border.BorderBrush = (Brush)brushConverter.ConvertFromString(strokeColor); }
                 catch { _border.BorderBrush = Brushes.Black; }
             }
 
             if (extraProperties.TryGetValue("Foreground", out var fgColor))
             {
-                try { _textBox.Foreground = (Brush)new BrushConverter().ConvertFromString(fgColor); }
+                try { _textBox.Foreground = (Brush)brushConverter.ConvertFromString(fgColor); }
                 catch { _textBox.Foreground = Brushes.Black; }
             }
 
             if (extraProperties.TryGetValue("TextShape", out var text))
             {
                 _textBox.Text = text;
+            }
+
+            if (extraProperties.TryGetValue("FontSize", out var fontSizeStr) &&
+                double.TryParse(fontSizeStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var fontSize))
+            {
+                _textBox.FontSize = fontSize;
+            }
+
+            if (extraProperties.TryGetValue("FontWeight", out var fontWeightStr))
+            {
+                try { _textBox.FontWeight = (FontWeight)fontWeightConverter.ConvertFromString(fontWeightStr); }
+                catch { _textBox.FontWeight = FontWeights.Normal; }
+            }
+
+            if (extraProperties.TryGetValue("FontStyle", out var fontStyleStr))
+            {
+                var styleConverter = new FontStyleConverter();
+                try
+                {
+                    var style = (FontStyle)styleConverter.ConvertFromString(fontStyleStr);
+                    _textBox.FontStyle = style;
+                }
+                catch
+                {
+                    _textBox.FontStyle = FontStyles.Normal;
+                }
+            }
+
+            if (extraProperties.TryGetValue("TextWrapping", out var wrapStr) &&
+                Enum.TryParse(wrapStr, out TextWrapping wrapping))
+            {
+                _textBox.TextWrapping = wrapping;
             }
         }
     }

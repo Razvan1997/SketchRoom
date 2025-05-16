@@ -117,7 +117,7 @@ namespace SketchRoom.Toolkit.Wpf.Controls
 
             var selecteToolService = ContainerLocator.Container.Resolve<SelectedToolService>();
             _dropService = new DropService(DrawingCanvas, _factory, _toolManager, _connectorTool!, connectorCurvedTool, _nodes, selecteToolService, undoRedoService,
-                _drawingPreferencesService, zOrderService, shapeRenderFactory);
+                _drawingPreferencesService, zOrderService, shapeRenderFactory, _shapeSelectionService);
 
             this.KeyDown += WhiteBoardControl_KeyDown;
             this.Focusable = true;

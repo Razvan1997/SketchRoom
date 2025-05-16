@@ -15,24 +15,29 @@ namespace SketchRoom.Windows
 
         public static async void Show()
         {
-            //if (_window != null)
-            //    return;
+            if (_window != null)
+                return;
 
-            //_window = new OverlayLoadingWindow
-            //{
-            //    Owner = Application.Current.MainWindow,
-            //    WindowStartupLocation = WindowStartupLocation.Manual,
-            //    Left = Application.Current.MainWindow.Left,
-            //    Top = Application.Current.MainWindow.Top,
-            //    Width = Application.Current.MainWindow.ActualWidth,
-            //    Height = Application.Current.MainWindow.ActualHeight
-            //};
+            _window = new OverlayLoadingWindow
+            {
+                WindowStartupLocation = WindowStartupLocation.Manual,
+                WindowStyle = WindowStyle.None,
+                ResizeMode = ResizeMode.NoResize,
+                AllowsTransparency = true,
+                ShowInTaskbar = false,
+                Topmost = true
+            };
 
-            //_window.Show();
+            // Așează fereastra pe întreg ecranul principal
+            _window.Left = 0;
+            _window.Top = 0;
+            _window.Width = SystemParameters.PrimaryScreenWidth;
+            _window.Height = SystemParameters.PrimaryScreenHeight;
 
-            //// 🔁 Așteaptă ca spinnerul să se redibuiască complet
-            //await Application.Current.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
-            //await Task.Delay(100);
+            _window.Show();
+
+            await Application.Current.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            await Task.Delay(100);
         }
 
         public static void Hide()
