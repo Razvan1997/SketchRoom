@@ -484,38 +484,38 @@ namespace SketchRoom.Toolkit.Wpf.Services
         {
             if (owner is WhiteBoardControl whiteBoard)
             {
-                var copyItem = new MenuItem
-                {
-                    Header = "Copy"
-                };
-                copyItem.Click += (s, e) =>
-                {
-                    // Copiază elementele selectate (logica o implementezi în WhiteBoardControl)
-                    whiteBoard.CopySelectedElements();
-                };
-                menu.Items.Add(copyItem);
+                //var copyItem = new MenuItem
+                //{
+                //    Header = "Copy"
+                //};
+                //copyItem.Click += (s, e) =>
+                //{
+                //    // Copiază elementele selectate (logica o implementezi în WhiteBoardControl)
+                //    whiteBoard.CopySelectedElements();
+                //};
+                //menu.Items.Add(copyItem);
 
-                var pasteItem = new MenuItem
-                {
-                    Header = "Paste"
-                };
-                pasteItem.Click += (s, e) =>
-                {
-                    // Lipește elementele copiate
-                    whiteBoard.PasteElements();
-                };
-                menu.Items.Add(pasteItem);
+                //var pasteItem = new MenuItem
+                //{
+                //    Header = "Paste"
+                //};
+                //pasteItem.Click += (s, e) =>
+                //{
+                //    // Lipește elementele copiate
+                //    whiteBoard.PasteElements();
+                //};
+                //menu.Items.Add(pasteItem);
 
-                var deleteItem = new MenuItem
-                {
-                    Header = "Delete"
-                };
-                deleteItem.Click += (s, e) =>
-                {
-                    // Șterge selecția curentă
-                    whiteBoard.DeleteSelectedElements();
-                };
-                menu.Items.Add(deleteItem);
+                //var deleteItem = new MenuItem
+                //{
+                //    Header = "Delete"
+                //};
+                //deleteItem.Click += (s, e) =>
+                //{
+                //    // Șterge selecția curentă
+                //    whiteBoard.DeleteSelectedElements();
+                //};
+                //menu.Items.Add(deleteItem);
 
                 var addImageItem = new MenuItem
                 {

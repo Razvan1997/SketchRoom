@@ -256,17 +256,34 @@ namespace WhiteBoard.Core.Models
 
         public void RecalculateGeometry()
         {
-            if (From?.Visual is not FrameworkElement fromFe || To?.Visual is not FrameworkElement toFe)
+            // ✅ Caz special: conexiune către altă conexiune (linie către linie)
+            if (ConnectedToConnection != null && ConnectionIntersectionPoint.HasValue && From?.Visual is FrameworkElement fromFe)
+            {
+                var fromCurrent = GetCanvasPoint(fromFe, FromOffset); // ✅ Punct actualizat relativ la formă
+                var toPoint = ConnectionIntersectionPoint.Value;
+
+                SetCustomPath(new[] { fromCurrent, toPoint }, addArrow: false);
+                _path.Data = _geometry;
+
+                if (ConnectionDot != null)
+                {
+                    Canvas.SetLeft(ConnectionDot, toPoint.X - ConnectionDot.Width / 2);
+                    Canvas.SetTop(ConnectionDot, toPoint.Y - ConnectionDot.Height / 2);
+                }
+
+                return;
+            }
+
+            // 🔁 Caz standard: conexiune între 2 forme (From și To)
+            if (From?.Visual is not FrameworkElement fromFeStandard || To?.Visual is not FrameworkElement toFeStandard)
                 return;
 
             if (OriginalBezierSegments.Count == 0)
             {
                 if (OriginalPathPoints.Count < 2) return;
 
-                var fromCurrent = new Point(Canvas.GetLeft(fromFe), Canvas.GetTop(fromFe)) +
-                                  (Vector)(FromOffset ?? new Point(fromFe.ActualWidth / 2, fromFe.ActualHeight / 2));
-                var toCurrent = new Point(Canvas.GetLeft(toFe), Canvas.GetTop(toFe)) +
-                                (Vector)(ToOffset ?? new Point(toFe.ActualWidth / 2, toFe.ActualHeight / 2));
+                var fromCurrent = GetCanvasPoint(fromFeStandard, FromOffset);
+                var toCurrent = GetCanvasPoint(toFeStandard, ToOffset);
 
                 var fromOriginal = OriginalPathPoints.First();
                 var toOriginal = OriginalPathPoints.Last();
@@ -287,16 +304,16 @@ namespace WhiteBoard.Core.Models
                 }
 
                 SetCustomPath(movedPoints, addArrow: true);
-                _path.Data = _geometry; // 💡 important pentru vizual
+                _path.Data = _geometry;
                 return;
             }
 
+            // 🔁 Caz Bezier
             if (OriginalBezierSegments.Count > 0 && OriginalPathPoints.Count > 0)
             {
-                var fromCurr = GetCanvasPoint(fromFe, FromOffset);
-                var toCurr = GetCanvasPoint(toFe, ToOffset);
+                var fromCurr = GetCanvasPoint(fromFeStandard, FromOffset);
+                var toCurr = GetCanvasPoint(toFeStandard, ToOffset);
 
-                // Calculează delta dintre pozițiile curente și cele originale
                 var deltaFrom = fromCurr - OriginalPathPoints.First();
                 var deltaTo = toCurr - OriginalPathPoints.Last();
 
@@ -306,7 +323,6 @@ namespace WhiteBoard.Core.Models
                 for (int i = 0; i < OriginalBezierSegments.Count; i++)
                 {
                     var bezier = OriginalBezierSegments[i];
-                    // Pentru primul control point: aplicăm deltaFrom
                     var p1 = bezier.Point1 + deltaFrom;
                     var p2 = bezier.Point2 + deltaTo;
                     var p3 = bezier.Point3 + deltaTo;
@@ -315,7 +331,6 @@ namespace WhiteBoard.Core.Models
                     currentPoint = p3;
                 }
 
-                // Verifică dacă aveam un punct final în plus (linia după bezier)
                 if (OriginalPathPoints.Count > OriginalBezierSegments.Count + 1)
                 {
                     var lastOriginal = OriginalPathPoints.Last();
@@ -327,11 +342,8 @@ namespace WhiteBoard.Core.Models
                 _geometry.Figures.Add(figure);
                 _path.Data = _geometry;
 
-                // reconstrucția săgeții
                 if (figure.Segments.LastOrDefault() is LineSegment lastLine)
-                {
                     SetArrowFromTo(currentPoint, lastLine.Point);
-                }
                 else
                 {
                     var lastBezier = OriginalBezierSegments.Last();

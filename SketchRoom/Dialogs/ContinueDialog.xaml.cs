@@ -280,6 +280,46 @@ namespace SketchRoom.Dialogs
         {
             this.Close();
         }
+
+        private void DeleteSketch_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem &&
+                menuItem.DataContext is StackPreviewItem item)
+            {
+                var dialog = new ConfirmationDialog(
+                    "Delete Sketch",
+                    $"Are you sure you want to delete sketch \"{item.TabName}\"?\nThis action cannot be undone.");
+
+                bool? result = dialog.ShowDialog();
+
+                if (result != true || !dialog.IsConfirmed)
+                    return;
+
+                try
+                {
+                    var folderPath = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                        "SketchRoom", "SavedTabs", item.FolderName);
+
+                    if (Directory.Exists(folderPath))
+                        Directory.Delete(folderPath, recursive: true);
+
+                    _allTabs.Remove(item);
+                    PreviewStack.ItemsSource = null;
+                    PreviewStack.ItemsSource = _allTabs;
+
+                    if (_allTabs.Count == 0)
+                    {
+                        WelcomePanel.Visibility = Visibility.Visible;
+                        SketchListPanel.Visibility = Visibility.Collapsed;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to delete sketch: {ex.Message}");
+                }
+            }
+        }
     }
 
 

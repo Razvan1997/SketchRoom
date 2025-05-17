@@ -160,8 +160,11 @@ namespace WhiteBoard.Core.Tools
                     var fromFe = conn.From?.Visual as FrameworkElement;
                     var toFe = conn.To?.Visual as FrameworkElement;
 
-                    if ((fromFe != null && movedElements.Contains(fromFe)) ||
-                        (toFe != null && movedElements.Contains(toFe)))
+                    var isFromMoved = fromFe != null && movedElements.Contains(fromFe);
+                    var isToMoved = toFe != null && movedElements.Contains(toFe);
+                    var isConnectedToConnection = conn.ConnectedToConnection != null && conn.ConnectionIntersectionPoint.HasValue;
+
+                    if (isFromMoved || isToMoved || isConnectedToConnection)
                     {
                         conn.RecalculateGeometry();
                     }

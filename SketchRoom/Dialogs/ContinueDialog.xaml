@@ -22,6 +22,7 @@
         BorderBrush="#444"
         BorderThickness="1"
         CornerRadius="10">
+
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
@@ -112,6 +113,11 @@
                                         BorderThickness="1"
                                         CornerRadius="6"
                                         MouseLeftButtonUp="Preview_Click">
+                                        <Border.ContextMenu>
+                                            <ContextMenu Style="{StaticResource DarkContextMenuStyle}">
+                                                <MenuItem Click="DeleteSketch_Click" Header="Delete sketch" />
+                                            </ContextMenu>
+                                        </Border.ContextMenu>
                                         <Border.Effect>
                                             <DropShadowEffect
                                                 BlurRadius="6"

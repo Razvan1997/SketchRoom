@@ -12,14 +12,13 @@
     AllowsTransparency="True"
     Background="Transparent"
     ResizeMode="NoResize"
-    Topmost="True"
     WindowStartupLocation="CenterScreen"
     WindowState="Maximized"
     WindowStyle="None"
     mc:Ignorable="d">
     <Grid>
         <!--  Fundalul negru semi-transparent  -->
-        <Rectangle Fill="Black" Opacity="0.5" />
+        <Rectangle Fill="Transparent" Opacity="0.5" />
 
         <!--  Dialogul propriu-zis  -->
         <Border

@@ -150,8 +150,18 @@ namespace WhiteBoard.Core.Tools
                     ConnectionIntersectionPoint = snapped,
                     CreatedAt = DateTime.Now
                 };
+
+                // ✅ SETEAZĂ offsetul corect ca să nu sară linia în centru
+                if (_fromNode.Visual is FrameworkElement fromFe)
+                {
+                    var fromLeft = Canvas.GetLeft(fromFe);
+                    var fromTop = Canvas.GetTop(fromFe);
+                    var firstPoint = _pathPoints.First();
+                    connection.FromOffset = new Point(firstPoint.X - fromLeft, firstPoint.Y - fromTop);
+                }
+
                 connection.SetStroke(_drawingPreferences.SelectedColor);
-                // Adaugă bulina
+
                 var dot = CreateConnectionDot(snapped);
                 _canvas.Children.Add(dot);
                 connection.ConnectionDot = dot;

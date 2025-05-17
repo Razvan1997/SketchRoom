@@ -71,14 +71,9 @@ namespace SketchRoom.ViewModels
             var ext = SelectedFormatType.ToLower();
             var now = DateTime.Now;
             var folderName = $"sketch_{now:yyyyMMdd_HHmmss}";
-            var parentDirectory = Path.GetDirectoryName(DestinationPath);
-            if (string.IsNullOrWhiteSpace(parentDirectory))
-            {
-                MessageBox.Show("Invalid destination path.");
-                return;
-            }
 
-            var exportFolder = Path.Combine(parentDirectory, folderName);
+            // ✅ Folosește direct folderul selectat de utilizator
+            var exportFolder = Path.Combine(DestinationPath, folderName);
             Directory.CreateDirectory(exportFolder);
 
             var tabService = ContainerLocator.Container.Resolve<IWhiteBoardTabService>();
@@ -95,9 +90,10 @@ namespace SketchRoom.ViewModels
 
                 whiteboard.SaveToFile(fullPath, SelectedFormatType);
 
-                // Salvează și în ghost preview (dacă setat)
+                // ✅ Ghost preview (creează folderul dacă lipsește)
                 if (!string.IsNullOrWhiteSpace(settings.GhostPreviewPath))
                 {
+                    Directory.CreateDirectory(settings.GhostPreviewPath); // prevenim crash
                     var ghostName = $"ghost_{tab.Name}_{now:yyyyMMdd_HHmmss}.{ext}";
                     var ghostPath = Path.Combine(settings.GhostPreviewPath, ghostName);
                     whiteboard.SaveToFile(ghostPath, SelectedFormatType);
@@ -105,7 +101,6 @@ namespace SketchRoom.ViewModels
             }
 
             MessageBox.Show("All tabs saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-
             CloseWindow();
         }
 
@@ -129,23 +124,18 @@ namespace SketchRoom.ViewModels
 
         private void OnBrowsePath()
         {
-            if (string.IsNullOrWhiteSpace(SelectedFormatType))
+            var dialog = new Ookii.Dialogs.Wpf.VistaFolderBrowserDialog
             {
-                MessageBox.Show("Please select a format first.");
-                return;
-            }
-
-            var dialog = new SaveFileDialog
-            {
-                Title = "Choose where to save your sketch",
-                Filter = $"{SelectedFormatType} file|*.{SelectedFormatType.ToLower()}|All files|*.*",
-                DefaultExt = SelectedFormatType.ToLower(),
-                FileName = "sketch"
+                Description = "Select folder to save sketches",
+                UseDescriptionForTitle = true,
+                ShowNewFolderButton = true
             };
 
-            if (dialog.ShowDialog() == true)
+            bool? result = dialog.ShowDialog();
+
+            if (result == true)
             {
-                DestinationPath = dialog.FileName;
+                DestinationPath = dialog.SelectedPath;
             }
         }
     }
