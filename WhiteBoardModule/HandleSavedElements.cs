@@ -34,6 +34,7 @@ namespace WhiteBoardModule
 
                 if (visual != null)
                 {
+                    tempElementMap[visual] = shape.Id.ToString();
                     dropService.PlaceElementOnCanvas(visual, new Point(shape.Left, shape.Top));
                     dropService.RegisterNodeWhenReadyRestore(visual, shape.Id.ToString(), nodeMap);
                     dropService.SetupConnectorButton(visual);

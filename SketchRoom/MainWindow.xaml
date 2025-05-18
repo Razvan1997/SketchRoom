@@ -11,6 +11,7 @@
     Width="800"
     Height="450"
     prism:ViewModelLocator.AutoWireViewModel="True"
+    ShowInTaskbar="True"
     Topmost="True"
     WindowStartupLocation="CenterScreen"
     WindowState="Maximized"

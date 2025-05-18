@@ -100,6 +100,11 @@ namespace WhiteBoard.Core.Models
                     grid.Children.Add(textBox);
                 }
             }
+            if (shape.ExtraProperties.TryGetValue("ZIndex", out var zStr) &&
+                    int.TryParse(zStr, out var zIndex))
+            {
+                Panel.SetZIndex(element, zIndex);
+            }
 
             if (element is IShapeAddedXaml shapeAdded)
             {

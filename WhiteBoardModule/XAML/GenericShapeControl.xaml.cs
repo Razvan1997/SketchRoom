@@ -675,7 +675,9 @@ namespace WhiteBoardModule.XAML
                     model.ExtraProperties["TextWrapping"] = textBox.TextWrapping.ToString();
                 }
             }
+            int zIndex = Panel.GetZIndex(this);
             model.ExtraProperties ??= new Dictionary<string, string>();
+            model.ExtraProperties["ZIndex"] = zIndex.ToString();
             model.ExtraProperties["RotationAngle"] = model.RotationAngle.ToString(CultureInfo.InvariantCulture);
             model.Id = Guid.TryParse(ShapeMetadata.GetShapeId(this), out var parsed)
                     ? parsed
