@@ -6,6 +6,7 @@ using System.Configuration;
 using System.Data;
 using System.IO;
 using System.Windows;
+using System.Windows.Threading;
 using WhiteBoard.Core.Services.Interfaces;
 
 namespace SketchRoom
@@ -24,8 +25,8 @@ namespace SketchRoom
             if (string.IsNullOrWhiteSpace(settings.GhostPreviewPath))
             {
                 settings.GhostPreviewPath = GetDefaultGhostPreviewPath();
-                settings.Hotkey1 = "TAB";
-                settings.Hotkey2 = "S";
+                settings.Hotkey1 = "CTRL";
+                settings.Hotkey2 = "D";
 
                 SettingsStorage.Save(settings);
             }

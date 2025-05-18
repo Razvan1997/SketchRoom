@@ -29,7 +29,8 @@ namespace SketchRoom.ViewModels
                 var dialog = new ContinueDialog
                 {
                     Owner = Application.Current.MainWindow,
-                    ShowCancelButton = true
+                    ShowCancelButton = true,
+                    ShowWCancelButton = true,
                 };
                 dialog.ShowDialog();
             });
@@ -58,11 +59,11 @@ namespace SketchRoom.ViewModels
         {
             ShowContinueDialog();
 
-            var user = SecureStorage.LoadUser();
-            if (user == null)
-            {
-                ShowRegistration();
-            }
+            //var user = SecureStorage.LoadUser();
+            //if (user == null)
+            //{
+            //    ShowRegistration();
+            //}
         }
 
         private void ShowContinueDialog()

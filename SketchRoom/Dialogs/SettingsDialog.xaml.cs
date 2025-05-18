@@ -32,7 +32,7 @@ namespace SketchRoom.Dialogs
 
             Hotkey1 = "CTRL"; // impus, nu din fișier
             Hotkey2 = string.IsNullOrWhiteSpace(settings.Hotkey2)
-                ? "S"
+                ? "D"
                 : settings.Hotkey2;
 
             txtPath.Text = GhostPreviewPath;

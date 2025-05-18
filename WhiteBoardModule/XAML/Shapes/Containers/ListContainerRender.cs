@@ -255,6 +255,7 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 extraProps["Title"] = titleBox.Text;
                 if (titleBox.Foreground is SolidColorBrush fg)
                     extraProps["TitleForeground"] = fg.Color.ToString();
+                extraProps["TitleFontWeight"] = titleBox.FontWeight.ToString();
             }
 
             // Items
@@ -269,7 +270,7 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                         extraProps[$"Item{index}"] = textBox.Text;
                         if (textBox.Foreground is SolidColorBrush fg)
                             extraProps[$"Item{index}Foreground"] = fg.Color.ToString();
-
+                        extraProps[$"Item{index}FontWeight"] = textBox.FontWeight.ToString();
                         index++;
                     }
                 }
@@ -305,6 +306,17 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 {
                     titleBox.Foreground = new SolidColorBrush(fgColor);
                 }
+                if (extraProperties.TryGetValue("TitleFontWeight", out var fwStr))
+                {
+                    try
+                    {
+                        titleBox.FontWeight = (FontWeight)new FontWeightConverter().ConvertFromString(fwStr)!;
+                    }
+                    catch
+                    {
+                        titleBox.FontWeight = FontWeights.Normal;
+                    }
+                }
             }
 
             // Items
@@ -325,6 +337,17 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                             ColorConverter.ConvertFromString(itemFgStr) is Color itemFgColor)
                         {
                             textBox.Foreground = new SolidColorBrush(itemFgColor);
+                        }
+                        if (extraProperties.TryGetValue($"Item{i}FontWeight", out var fwStr))
+                        {
+                            try
+                            {
+                                textBox.FontWeight = (FontWeight)new FontWeightConverter().ConvertFromString(fwStr)!;
+                            }
+                            catch
+                            {
+                                textBox.FontWeight = FontWeights.Normal;
+                            }
                         }
                     }
 

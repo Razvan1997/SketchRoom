@@ -2,24 +2,26 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows10.0.26100.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+	  <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\256.ico" />
     <None Remove="Resources\DarkCursor.cur" />
     <None Remove="Resources\Icon.ico" />
     <None Remove="Resources\intro.mp4" />
+    <None Remove="Resources\splash.png" />
   </ItemGroup>
-
+	
   <ItemGroup>
     <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
     <PackageReference Include="Prism.DryIoc" Version="9.0.537" />
-    <PackageReference Include="Prism.Wpf" Version="9.0.537" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\DrawingStateService\DrawingStateService.csproj" />
     <ProjectReference Include="..\FooterModule\FooterModule.csproj" />
@@ -35,12 +37,25 @@
     <ProjectReference Include="..\WhiteBoardModule\WhiteBoardModule.csproj" />
   </ItemGroup>
 
+	<PropertyGroup>
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+	</PropertyGroup>
+	
   <ItemGroup>
+    <Resource Include="Resources\256.ico" />
     <Resource Include="Resources\DarkCursor.cur" />
     <Resource Include="Resources\Icon.ico" />
-    <Content Include="Resources\intro.mp4">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
+	
+  <ItemGroup>
+    <SplashScreen Include="Resources\splash.png" />
+  </ItemGroup>
+	<PropertyGroup>
+		<ApplicationIcon>Resources\256.ico</ApplicationIcon>
+	</PropertyGroup>
+	<PropertyGroup>
+		<EnableWindowsFormsHighDpiAutoResizing>true</EnableWindowsFormsHighDpiAutoResizing>
+		<EnablePerMonitorHighDpi>true</EnablePerMonitorHighDpi>
+	</PropertyGroup>
 
 </Project>

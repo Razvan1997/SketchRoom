@@ -30,6 +30,7 @@ namespace SketchRoom.Dialogs
         private int _currentIndex = 0;
         private bool _hasSketches = false;
         public bool ShowCancelButton { get; set; }
+        public bool ShowWCancelButton { get; set; }
         public ContinueDialog()
         {
             InitializeComponent();
@@ -38,6 +39,10 @@ namespace SketchRoom.Dialogs
             Loaded += (_, _) =>
             {
                 CancelButton.Visibility = ShowCancelButton
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+
+                WCancelBtn.Visibility = ShowWCancelButton
                     ? Visibility.Visible
                     : Visibility.Collapsed;
             };
@@ -278,6 +283,7 @@ namespace SketchRoom.Dialogs
 
         private void Close_Click(object sender, RoutedEventArgs e)
         {
+            this.DialogResult = false;
             this.Close();
         }
 

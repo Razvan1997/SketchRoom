@@ -60,13 +60,14 @@
         </Grid.RowDefinitions>
 
         <!--  Search  -->
-        <Grid
+        <!--<Grid
             Height="30"
             Margin="0,0,0,10"
             Background="#404040"
             ClipToBounds="True">
 
-            <TextBox
+        -->
+        <!--<TextBox
                 Padding="8,4,30,4"
                 VerticalContentAlignment="Center"
                 Background="Transparent"
@@ -74,9 +75,10 @@
                 BorderThickness="1"
                 FontSize="14"
                 Foreground="White"
-                Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />-->
 
-            <!--  Icon de căutare în partea dreaptă  -->
+        <!--  Icon de căutare în partea dreaptă  -->
+        <!--
             <svgc:SvgViewbox
                 Width="16"
                 Height="16"
@@ -84,7 +86,7 @@
                 HorizontalAlignment="Right"
                 VerticalAlignment="Center"
                 Source="pack://application:,,,/SketchRoom.Toolkit.Wpf;component/Resources/search.svg" />
-        </Grid>
+        </Grid>-->
 
         <ScrollViewer
             Grid.Row="1"

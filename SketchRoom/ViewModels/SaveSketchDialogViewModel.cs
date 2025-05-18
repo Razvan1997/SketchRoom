@@ -25,7 +25,6 @@ namespace SketchRoom.ViewModels
                 "JPEG",
                 "BMP",
                 "TIFF",
-                "PDF"
             };
 
             var settings = SettingsStorage.Load();

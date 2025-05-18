@@ -77,7 +77,7 @@ namespace WhiteBoard.Core.Services
                             if (_selectedToolService.CurrentTool == WhiteBoardTool.Cursor)
                                 _toolManager.SetNone();
                             if (_selectedToolService.CurrentTool == WhiteBoardTool.CurvedArrow)
-                                _toolManager.SetActive("ConnectorCurved");
+                                _toolManager.SetNone();
                             return;
 
                         case "Connector":

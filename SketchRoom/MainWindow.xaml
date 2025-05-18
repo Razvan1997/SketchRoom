@@ -11,6 +11,7 @@
     Width="800"
     Height="450"
     prism:ViewModelLocator.AutoWireViewModel="True"
+    Topmost="True"
     WindowStartupLocation="CenterScreen"
     WindowState="Maximized"
     WindowStyle="None"
@@ -77,6 +78,6 @@
             </Border>
         </Grid>
 
-        
+
     </Grid>
 </Window>

@@ -9,6 +9,7 @@
     AllowsTransparency="True"
     Background="#FF1E1E1E"
     ResizeMode="NoResize"
+    Topmost="True"
     WindowStartupLocation="CenterScreen"
     WindowStyle="None">
 
@@ -65,6 +66,14 @@
                         Click="Create_Click"
                         Content="Create"
                         Style="{StaticResource DarkFlatButtonStyle}" />
+
+                    <Button
+                        x:Name="WCancelBtn"
+                        Width="100"
+                        Height="30"
+                        Click="Cancel_Click"
+                        Content="Cancel"
+                        Style="{StaticResource DarkFlatButtonStyle}" />
                 </StackPanel>
             </StackPanel>
 
@@ -85,14 +94,14 @@
                             FontSize="28"
                             FontWeight="Bold"
                             Foreground="White"
-                            Text="Hi, John" />
+                            Text="Welcome back!" />
 
                         <TextBlock
                             Margin="0,6,0,20"
                             HorizontalAlignment="Center"
                             FontSize="18"
                             Foreground="LightGray"
-                            Text="Continue where you left off?" />
+                            Text="Let's pick up where you left off." />
 
                         <!--  Previews  -->
                         <ItemsControl x:Name="PreviewStack">

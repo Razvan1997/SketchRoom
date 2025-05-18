@@ -151,6 +151,8 @@ namespace WhiteBoard.Core.Services
                 {
                     _selected.Add(element);
                     _selectionMarkers[element] = marker;
+                    Panel.SetZIndex(marker, Panel.GetZIndex(element) + 1);
+
                     canvas.Children.Add(marker);
 
                     var animation = new DoubleAnimation

@@ -276,6 +276,7 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
 
                         if (border.Background is SolidColorBrush bg)
                             extra[$"{prefix}Background"] = bg.Color.ToString();
+                        extra[$"{prefix}FontWeight"] = tb.FontWeight.ToString();
                     }
                     else if (col == 2 && row >= 0 && row <= 2)
                     {
@@ -332,6 +333,17 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                     if (extraProperties.TryGetValue($"{prefix}Background", out var bg) &&
                         ColorConverter.ConvertFromString(bg) is Color bgColor)
                         child.Background = new SolidColorBrush(bgColor);
+                    if (extraProperties.TryGetValue($"{prefix}FontWeight", out var fwStr))
+                    {
+                        try
+                        {
+                            tb.FontWeight = (FontWeight)new FontWeightConverter().ConvertFromString(fwStr)!;
+                        }
+                        catch
+                        {
+                            tb.FontWeight = FontWeights.Normal;
+                        }
+                    }
                 }
                 else if (col == 2 && row >= 0 && row <= 2)
                 {

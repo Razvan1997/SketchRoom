@@ -321,6 +321,12 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                     TextBlock txt => txt.Text,
                     _ => string.Empty
                 };
+                string fontWeight = border.Child switch
+                {
+                    TextBox tb => tb.FontWeight.ToString(),
+                    TextBlock txt => txt.FontWeight.ToString(),
+                    _ => FontWeights.Normal.ToString()
+                };
 
                 // Culoare (Background)
                 string color = (border.Background as SolidColorBrush)?.Color.ToString() ?? "#FFFFFFFF";
@@ -335,6 +341,7 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 extraProps[$"Line{lineIndex}"] = text;
                 extraProps[$"Line{lineIndex}_Color"] = color;
                 extraProps[$"Line{lineIndex}_Height"] = height.ToString(CultureInfo.InvariantCulture);
+                extraProps[$"Line{lineIndex}_FontWeight"] = fontWeight;
 
                 lineIndex++;
             }
@@ -371,14 +378,15 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                     ? parsedH
                     : 50;
 
-                AddRestoredLine(text, color, height);
+                string? fontWeight = extraProperties.TryGetValue($"Line{lineIndex}_FontWeight", out var fw) ? fw : null;
+                AddRestoredLine(text, color, height, fontWeight);
                 lineIndex++;
             }
 
             UpdateCornerRadius();
         }
 
-        private void AddRestoredLine(string text, string color, double height)
+        private void AddRestoredLine(string text, string color, double height, string fontWeight)
         {
             if (_outerGrid == null)
                 return;
@@ -410,7 +418,17 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                 FontSize = 14,
                 Tag = "interactive"
             };
-
+            if (!string.IsNullOrWhiteSpace(fontWeight))
+            {
+                try
+                {
+                    textBox.FontWeight = (FontWeight)new FontWeightConverter().ConvertFromString(fontWeight)!;
+                }
+                catch
+                {
+                    textBox.FontWeight = FontWeights.Normal;
+                }
+            }
             textBox.PreviewMouseLeftButtonDown += (s, e) =>
             {
                 if (!textBox.IsKeyboardFocusWithin)

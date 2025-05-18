@@ -191,7 +191,7 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
             var position = new Point(Canvas.GetLeft(fe), Canvas.GetTop(fe));
             var size = new Size(fe.Width, fe.Height);
 
-            string? labelText = null, borderColor = null, background = null, foregroundText = null, fontSizeText = null;
+            string? labelText = null, borderColor = null, background = null, foregroundText = null, fontSizeText = null, fontWeightText = null;
 
             if (_renderedGrid?.Tag is Dictionary<string, object> tag)
             {
@@ -200,6 +200,7 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                     labelText = label.Text;
                     foregroundText = (label.Foreground as SolidColorBrush)?.Color.ToString();
                     fontSizeText = label.FontSize.ToString();
+                    fontWeightText = label.FontWeight.ToString();
                 }
 
                 if (tag.TryGetValue("ContainerBorder", out var borderObj) && borderObj is Border border)
@@ -227,6 +228,7 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                     { "BackgroundColor", background ?? "" },
                     { "ForegroundText", foregroundText ?? "" },
                     { "FontSizeText", fontSizeText ?? "" },
+                    { "FontWeight", fontWeightText ?? "" },
                 }
             };
         }
@@ -244,6 +246,8 @@ namespace WhiteBoardModule.XAML.Shapes.Containers
                     label.Foreground = ShapeStyleRestorer.ConvertToBrush(foreground);
                 if (extraProperties.TryGetValue("FontSizeText", out var fontSize))
                     label.FontSize = Convert.ToDouble(fontSize);
+                if (extraProperties.TryGetValue("FontWeight", out var fontWeightText))
+                    label.FontWeight = (FontWeight)new FontWeightConverter().ConvertFromString(fontWeightText)!;
             }
 
             if (tag.TryGetValue("ContainerBorder", out var borderObj) && borderObj is Border border)

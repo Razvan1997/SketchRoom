@@ -97,7 +97,13 @@ namespace WhiteBoard.Core.Tools
                     _isDrawing = false;
                     return;
                 }
-                _isDrawing = false;
+
+                // ✨ Dacă nu avem un toNode valid (e null sau e același ca de unde am plecat), ștergem
+                if (_tempPath != null)
+                    _canvas.Children.Remove(_tempPath);
+
+                ResetState();
+                _toolManager.SetNone();
                 return;
             }
         }
@@ -139,6 +145,16 @@ namespace WhiteBoard.Core.Tools
                         _startDirection,
                         endDirection
                     );
+
+                    if (resultGeometry.LastLineStart == resultGeometry.LastLineEnd)
+                    {
+                        if (_tempPath != null)
+                            _canvas.Children.Remove(_tempPath);
+
+                        ResetState();
+                        _toolManager.SetNone();
+                        return;
+                    }
 
                     // ⚠️ Calculează offset-urile față de forma de plecare / sosire
                     var fromOffset = _startPoint.Value - new Point(Canvas.GetLeft(fromElement), Canvas.GetTop(fromElement));
