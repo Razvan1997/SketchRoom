@@ -182,6 +182,7 @@ namespace FooterModule.ViewModels
                     {
                         tab = AddTabFromModel(model);
                         addedTabs.Add(tab);
+                        SelectTab(tab);
                     }, DispatcherPriority.Background);
 
                     await Application.Current.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.ApplicationIdle);

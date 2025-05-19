@@ -42,7 +42,6 @@ namespace WhiteBoardModule
                 }
             }
 
-            // Așteaptă să fie toate Loaded
             int remaining = visuals.Count;
 
             if (remaining == 0)
@@ -53,13 +52,7 @@ namespace WhiteBoardModule
 
             foreach (var v in visuals)
             {
-                if (v.IsLoaded)
-                {
-                    remaining--;
-                    continue;
-                }
-
-                v.Loaded += (_, _) =>
+                void TryRegister()
                 {
                     if (dropService._nodeMap.TryGetValue(v, out var node) && tempElementMap.TryGetValue(v, out var id))
                     {
@@ -69,13 +62,22 @@ namespace WhiteBoardModule
                     remaining--;
                     if (remaining == 0)
                         onAllLoaded(nodeMap);
-                };
-            }
+                }
 
-            // Dacă toate erau deja loaded
-            if (remaining == 0)
-            {
-                onAllLoaded(nodeMap);
+                if (v.IsLoaded)
+                {
+                    TryRegister();
+                }
+                else
+                {
+                    v.Loaded += OnLoaded;
+
+                    void OnLoaded(object sender, RoutedEventArgs e)
+                    {
+                        v.Loaded -= OnLoaded;
+                        TryRegister();
+                    }
+                }
             }
         }
 
