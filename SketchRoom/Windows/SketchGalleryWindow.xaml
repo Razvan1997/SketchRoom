@@ -18,7 +18,16 @@
     <Grid>
         <!--  Fundal negru transparent  -->
         <Rectangle Fill="Black" Opacity="0.5" />
-
+        <TextBlock
+            Margin="0,30,0,0"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Top"
+            FontSize="32"
+            FontWeight="Bold"
+            Foreground="White"
+            Text="Tap Esc to go back"
+            TextAlignment="Center"
+            TextWrapping="Wrap" />
         <!--  Poze orizontale  -->
         <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
             <StackPanel
