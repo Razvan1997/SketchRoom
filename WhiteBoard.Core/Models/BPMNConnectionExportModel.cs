@@ -20,6 +20,10 @@ namespace WhiteBoard.Core.Models
         public List<BezierSegmentData>? BezierSegments { get; set; }
         public string? StartDirection { get; set; }
         public string? EndDirection { get; set; }
+        public List<ConnectionTextAnnotationExportModel> TextAnnotations { get; set; } = new();
+        public string? ConnectedToConnectionId { get; set; }
+        public Point? ConnectionIntersectionPoint { get; set; }
+        public string? ShapeId { get; set; }
     }
 
     public class BezierSegmentData
@@ -27,5 +31,15 @@ namespace WhiteBoard.Core.Models
         public Point Point1 { get; set; } // control1
         public Point Point2 { get; set; } // control2
         public Point Point3 { get; set; } // end
+    }
+
+    public class ConnectionTextAnnotationExportModel
+    {
+        public string Text { get; set; } 
+        public Point Position { get; set; }
+        public double Rotation { get; set; }
+        public double FontSize { get; set; }
+        public string FontWeight { get; set; }
+        public string ForegroundHex { get; set; }
     }
 }

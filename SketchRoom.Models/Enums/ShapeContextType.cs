@@ -17,6 +17,7 @@ namespace SketchRoom.Models.Enums
         TextArea,
         ConnectorDouble,
         ConnectorSimpleLabel,
-        DescriptionShapeConnector
+        DescriptionShapeConnector,
+        BpmnConnection
     }
 }

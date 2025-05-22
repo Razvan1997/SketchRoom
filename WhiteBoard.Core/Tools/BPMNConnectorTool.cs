@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SketchRoom.Models.Enums;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
@@ -39,9 +40,9 @@ namespace WhiteBoard.Core.Tools
 
         private bool _isDrawing = false;
         public bool IsDrawing => _isDrawing;
-
+        private readonly IContextMenuService _contextMenuService;
         public BpmnConnectorTool(Canvas canvas, List<BPMNConnection> connections, Dictionary<FrameworkElement, BPMNNode> nodes, UIElement focusTarget,
-            IToolManager toolManager, ISnapService snapService, UndoRedoService undoRedoService, IDrawingPreferencesService drawingPreferencesService)
+            IToolManager toolManager, ISnapService snapService, UndoRedoService undoRedoService, IDrawingPreferencesService drawingPreferencesService, IContextMenuService contextMenuService)
         {
             _canvas = canvas;
             _connections = connections;
@@ -51,6 +52,7 @@ namespace WhiteBoard.Core.Tools
             _snapService = snapService;
             _undoRedoService = undoRedoService;
             _drawingPreferences = drawingPreferencesService;
+            _contextMenuService = contextMenuService;
         }
 
         public void OnMouseDown(Point pos, MouseButtonEventArgs e)
@@ -144,6 +146,13 @@ namespace WhiteBoard.Core.Tools
 
             if (_fromNode != null)
             {
+                if (toConnection.Visual is FrameworkElement toFe)
+                {
+                    var existingId = ShapeMetadata.GetShapeId(toFe);
+                    if (string.IsNullOrEmpty(existingId))
+                        ShapeMetadata.SetShapeId(toFe, Guid.NewGuid().ToString());
+                }
+
                 var connection = new BPMNConnection(_fromNode, null, _pathPoints, addArrow: false)
                 {
                     ConnectedToConnection = toConnection,
@@ -151,7 +160,12 @@ namespace WhiteBoard.Core.Tools
                     CreatedAt = DateTime.Now
                 };
 
-                // ✅ SETEAZĂ offsetul corect ca să nu sară linia în centru
+                if (connection.Visual is FrameworkElement feS)
+                {
+                    if (string.IsNullOrEmpty(ShapeMetadata.GetShapeId(feS)))
+                        ShapeMetadata.SetShapeId(feS, Guid.NewGuid().ToString());
+                }
+
                 if (_fromNode.Visual is FrameworkElement fromFe)
                 {
                     var fromLeft = Canvas.GetLeft(fromFe);
@@ -174,7 +188,29 @@ namespace WhiteBoard.Core.Tools
 
                 _connections.Add(connection);
                 if (connection.Visual is FrameworkElement fe)
+                {
                     fe.Tag = "Connector";
+                    fe.ContextMenuOpening += (s, e) => e.Handled = false;
+                }
+
+                connection.MouseRightClicked += (s, e) =>
+                {
+                    if (connection.Visual is FrameworkElement fe)
+                    {
+                        var clickPos = Mouse.GetPosition(_canvas);
+                        var contextInfo = new ConnectionContextMenuInfo(connection, clickPos);
+
+                        fe.ContextMenu = _contextMenuService.CreateContextMenu(
+                            ShapeContextType.BpmnConnection,
+                            contextInfo
+                        );
+
+                        fe.ContextMenu.PlacementTarget = fe;
+                        fe.ContextMenu.Placement = PlacementMode.MousePoint;
+                        fe.ContextMenu.IsOpen = true;
+                    }
+                };
+
                 _canvas.Children.Add(connection.Visual);
             }
 
@@ -283,7 +319,10 @@ namespace WhiteBoard.Core.Tools
                     ToOffset = toOffset,
                     CreatedAt = DateTime.Now
                 };
-
+                if (connection.Visual is FrameworkElement connVisual)
+                {
+                    ShapeMetadata.SetShapeId(connVisual, Guid.NewGuid().ToString());
+                }
                 connection.SetStroke(_drawingPreferences.SelectedColor);
                 if (toConnection != null)
                 {
@@ -298,8 +337,34 @@ namespace WhiteBoard.Core.Tools
                 };
 
                 _connections.Add(connection);
+
                 if (connection.Visual is FrameworkElement fe)
+                {
                     fe.Tag = "Connector";
+                    var clickPos = Mouse.GetPosition(_canvas);
+                    var contextInfo = new ConnectionContextMenuInfo(connection, clickPos);
+                    fe.ContextMenu = _contextMenuService.CreateContextMenu(
+                        ShapeContextType.BpmnConnection,contextInfo);
+                    fe.ContextMenuOpening += (s, e) => e.Handled = false;
+                }
+
+                connection.MouseRightClicked += (s, e) =>
+                {
+                    if (connection.Visual is FrameworkElement fe)
+                    {
+                        var clickPos = Mouse.GetPosition(_canvas); 
+                        var contextInfo = new ConnectionContextMenuInfo(connection, clickPos);
+
+                        fe.ContextMenu = _contextMenuService.CreateContextMenu(
+                            ShapeContextType.BpmnConnection,
+                            contextInfo
+                        );
+
+                        fe.ContextMenu.PlacementTarget = fe;
+                        fe.ContextMenu.Placement = PlacementMode.MousePoint;
+                        fe.ContextMenu.IsOpen = true;
+                    }
+                };
                 _canvas.Children.Add(connection.Visual);
             }
 
@@ -474,6 +539,18 @@ namespace WhiteBoard.Core.Tools
         public void OnMouseDown(Point position)
         {
             throw new NotImplementedException();
+        }
+    }
+
+    public class ConnectionContextMenuInfo
+    {
+        public BPMNConnection Connection { get; set; }
+        public Point ClickPosition { get; set; }
+
+        public ConnectionContextMenuInfo(BPMNConnection connection, Point clickPosition)
+        {
+            Connection = connection;
+            ClickPosition = clickPosition;
         }
     }
 }

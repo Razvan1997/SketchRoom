@@ -13,6 +13,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using WhiteBoard.Core.Services;
 using WhiteBoard.Core.UndoRedo;
+using SketchRoom.Models.Enums;
 
 namespace WhiteBoard.Core.Tools
 {
@@ -23,6 +24,7 @@ namespace WhiteBoard.Core.Tools
         private readonly Dictionary<FrameworkElement, BPMNNode> _nodes;
         private readonly ISnapService _snapService;
         private readonly IToolManager _toolManager;
+        private readonly IContextMenuService _contextMenuService;
         private readonly UndoRedoService _undoRedoService;
 
         private BPMNNode? _fromNode;
@@ -32,7 +34,9 @@ namespace WhiteBoard.Core.Tools
         private string? _startDirection;
         private readonly IDrawingPreferencesService _drawingPreferences;
         public bool IsDrawing => _isDrawing;
+        private readonly BpmnConnectorTool _bpmnConnectorTool;
         public string Name => "ConnectorCurved";
+
 
         public BpmnConnectorCurvedTool(
             Canvas canvas,
@@ -42,7 +46,9 @@ namespace WhiteBoard.Core.Tools
             IToolManager toolManager,
             ISnapService snapService,
             UndoRedoService undoRedoService,
-            IDrawingPreferencesService drawingPreferences)
+            IDrawingPreferencesService drawingPreferences,
+            BpmnConnectorTool bpmnConnectorTool,
+            IContextMenuService contextMenuService)
         {
             _canvas = canvas;
             _connections = connections;
@@ -51,6 +57,8 @@ namespace WhiteBoard.Core.Tools
             _toolManager = toolManager;
             _undoRedoService = undoRedoService;
             _drawingPreferences = drawingPreferences;
+            _bpmnConnectorTool = bpmnConnectorTool;
+            _contextMenuService = contextMenuService;
         }
         private BPMNConnection? GetConnectionAt(Point pos, double threshold = 8)
         {
@@ -62,6 +70,7 @@ namespace WhiteBoard.Core.Tools
             }
             return null;
         }
+
         public void OnMouseDown(Point pos, MouseButtonEventArgs e)
         {
             if (GetConnectionAt(pos) != null)
@@ -167,6 +176,28 @@ namespace WhiteBoard.Core.Tools
                         EndDirection = endDirection,
                         FromOffset = new Point(fromOffset.X, fromOffset.Y),
                         ToOffset = new Point(toOffset.X, toOffset.Y)
+                    };
+                    connection.Clicked += (s, e) =>
+                    {
+                        bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+                        _bpmnConnectorTool.OnConnectionClicked((BPMNConnection)s, ctrl);
+                    };
+                    connection.MouseRightClicked += (s, e) =>
+                    {
+                        if (connection.Visual is FrameworkElement fe)
+                        {
+                            var clickPos = Mouse.GetPosition(_canvas);
+                            var contextInfo = new ConnectionContextMenuInfo(connection, clickPos);
+
+                            fe.ContextMenu = _contextMenuService.CreateContextMenu(
+                                ShapeContextType.BpmnConnection,
+                                contextInfo
+                            );
+
+                            fe.ContextMenu.PlacementTarget = fe;
+                            fe.ContextMenu.Placement = PlacementMode.MousePoint;
+                            fe.ContextMenu.IsOpen = true;
+                        }
                     };
 
                     connection.SetStroke(_tempPath.Stroke);

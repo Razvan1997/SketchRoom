@@ -44,6 +44,7 @@ namespace WhiteBoard.Core.Models
         private Brush _originalStroke = Brushes.Black;
 
         public event EventHandler? Clicked;
+        public event EventHandler? MouseRightClicked;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public PathGeometry Geometry => _geometry;
 
@@ -53,7 +54,7 @@ namespace WhiteBoard.Core.Models
 
         public string? StartDirection { get; set; }
         public string? EndDirection { get; set; }
-
+        public List<ConnectionTextAnnotation> TextAnnotations { get; set; } = new();
         public BPMNConnection(BPMNNode? from, BPMNNode? to)
         {
             From = from;
@@ -74,6 +75,12 @@ namespace WhiteBoard.Core.Models
             _path.MouseLeftButtonDown += (s, e) =>
             {
                 Clicked?.Invoke(this, EventArgs.Empty);
+                e.Handled = true;
+            };
+
+            _path.MouseRightButtonDown += (s, e) =>
+            {
+                MouseRightClicked?.Invoke(this, EventArgs.Empty);
                 e.Handled = true;
             };
 
@@ -219,9 +226,31 @@ namespace WhiteBoard.Core.Models
                 BezierSegments = new List<BezierSegmentData>(),
                 FromOffset = this.FromOffset,
                 ToOffset = this.ToOffset,
-
                 StartDirection = this.StartDirection,
-                EndDirection = this.EndDirection
+                EndDirection = this.EndDirection,
+                TextAnnotations = this.TextAnnotations
+                    .Select(a =>
+                    {
+                        var tb = a.TextBoxRef;
+                        return new ConnectionTextAnnotationExportModel
+                        {
+                            Text = tb?.Text ?? a.Text,
+                            Position = a.Position,
+                            Rotation = a.Rotation,
+                            FontSize = tb?.FontSize ?? a.FontSize,
+                            FontWeight = tb?.FontWeight.ToString() ?? a.FontWeight.ToString(),
+                            ForegroundHex = (tb?.Foreground as SolidColorBrush)?.Color.ToString() ?? a.ForegroundHex
+                        };
+                    }).ToList(),
+
+                ConnectedToConnectionId = this.ConnectedToConnection?.Visual is FrameworkElement feTarget
+                                          ? ShapeMetadata.GetShapeId(feTarget)
+                                          : null,
+                ConnectionIntersectionPoint = this.ConnectionIntersectionPoint,
+
+                ShapeId = this.Visual is FrameworkElement fe
+                            ? ShapeMetadata.GetShapeId(fe)
+                            : null
             };
 
             foreach (var figure in this.Geometry.Figures)
@@ -259,10 +288,24 @@ namespace WhiteBoard.Core.Models
             // ✅ Caz special: conexiune către altă conexiune (linie către linie)
             if (ConnectedToConnection != null && ConnectionIntersectionPoint.HasValue && From?.Visual is FrameworkElement fromFe)
             {
-                var fromCurrent = GetCanvasPoint(fromFe, FromOffset); // ✅ Punct actualizat relativ la formă
+                var fromCurrent = GetCanvasPoint(fromFe, FromOffset); // punct nou relativ la formă
+                var fromOriginal = OriginalPathPoints.First();
+                var deltaFrom = fromCurrent - fromOriginal;
                 var toPoint = ConnectionIntersectionPoint.Value;
 
-                SetCustomPath(new[] { fromCurrent, toPoint }, addArrow: false);
+                var newPoints = new List<Point>();
+
+                for (int i = 0; i < OriginalPathPoints.Count; i++)
+                {
+                    if (i == 0)
+                        newPoints.Add(OriginalPathPoints[i] + deltaFrom); // doar primul punct se mută
+                    else
+                        newPoints.Add(OriginalPathPoints[i]); // restul rămân (până la capăt, unde punem toPoint)
+                }
+
+                newPoints[^1] = toPoint; // setăm punctul final corect
+
+                SetCustomPath(newPoints, addArrow: false);
                 _path.Data = _geometry;
 
                 if (ConnectionDot != null)
@@ -358,6 +401,4 @@ namespace WhiteBoard.Core.Models
                    (Vector)(offset ?? new Point(fe.ActualWidth / 2, fe.ActualHeight / 2));
         }
     }
-
-
 }

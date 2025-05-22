@@ -1,16 +1,22 @@
-﻿using SketchRoom.Toolkit.Wpf.Controls;
+﻿using SketchRoom.Models.Enums;
+using SketchRoom.Toolkit.Wpf.Controls;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
+using System.Windows.Shapes;
 using WhiteBoard.Core.Helpers;
 using WhiteBoard.Core.Models;
+using WhiteBoard.Core.Services;
 using WhiteBoard.Core.Services.Interfaces;
+using WhiteBoard.Core.Tools;
 
 namespace WhiteBoardModule
 {
@@ -88,6 +94,11 @@ namespace WhiteBoardModule
         {
             var canvas = whiteboard.DrawingCanvasPublic;
             var drawingPreferences = ContainerLocator.Container.Resolve<IDrawingPreferencesService>();
+            var contextMenuService = ContainerLocator.Container.Resolve<IContextMenuService>();
+            var selectionService = ContainerLocator.Container.Resolve<IShapeSelectionService>();
+
+            var connectionMap = new Dictionary<string, BPMNConnection>();
+
 
             foreach (var connModel in connections)
             {
@@ -145,7 +156,8 @@ namespace WhiteBoardModule
                 else
                 {
                     // Linie dreaptă
-                    connection = new BPMNConnection(from, to, connModel.PathPoints)
+                    bool addArrow = string.IsNullOrEmpty(connModel.ConnectedToConnectionId);
+                    connection = new BPMNConnection(from, to, connModel.PathPoints, addArrow)
                     {
                         CreatedAt = connModel.CreatedAt,
                         FromOffset = connModel.FromOffset,
@@ -168,16 +180,98 @@ namespace WhiteBoardModule
                 }
 
                 if (connection.Visual is FrameworkElement fe)
+                {
                     fe.Tag = "Connector";
-
+                    fe.ContextMenuOpening += (s, e) => e.Handled = false;
+                }
                 connection.Clicked += (s, e) =>
                 {
                     bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
                     whiteboard.BpmnConnectorToolPublic?.OnConnectionClicked((BPMNConnection)s, ctrl);
                 };
+                connection.MouseRightClicked += (s, e) =>
+                {
+                    if (connection.Visual is FrameworkElement fe)
+                    {
+                        var clickPos = Mouse.GetPosition(canvas); 
+                        var contextInfo = new ConnectionContextMenuInfo(connection, clickPos);
 
+                        fe.ContextMenu = contextMenuService.CreateContextMenu(
+                            ShapeContextType.BpmnConnection,
+                            contextInfo
+                        );
+
+                        fe.ContextMenu.PlacementTarget = fe;
+                        fe.ContextMenu.Placement = PlacementMode.MousePoint;
+                        fe.ContextMenu.IsOpen = true;
+                    }
+                };
                 whiteboard._connections.Add(connection);
                 canvas.Children.Add(connection.Visual);
+
+                if (connection.Visual is FrameworkElement connVisual)
+                {
+                    var id = connModel.ShapeId;
+
+                    if (string.IsNullOrEmpty(id))
+                        id = Guid.NewGuid().ToString();
+
+                    ShapeMetadata.SetShapeId(connVisual, id);
+                    connectionMap[id] = connection;
+                }
+
+                if (connModel.TextAnnotations != null)
+                {
+                    foreach (var annotation in connModel.TextAnnotations)
+                    {
+                        HelpersCore.AddTextAlignedToConnection(
+                            connection,
+                            annotation.Position,
+                            +1,
+                            selectionService,
+                            annotation 
+                        );
+                    }
+                }
+            }
+
+            foreach (var connModel in connections)
+            {
+                if (!string.IsNullOrEmpty(connModel.ConnectedToConnectionId) &&
+                    connModel.ConnectionIntersectionPoint.HasValue)
+                {
+                    // 🧩 găsește conexiunea target
+                    if (!connectionMap.TryGetValue(connModel.ConnectedToConnectionId, out var targetConnection))
+                        continue;
+
+                    // 🔎 găsește conexiunea curentă (tot din connectionMap)
+                    var currentConnection = connectionMap.Values
+                        .FirstOrDefault(c => c.CreatedAt == connModel.CreatedAt);
+
+                    if (currentConnection == null)
+                        continue;
+
+                    // 🔗 setează conexiunea și punctul de intersecție
+                    currentConnection.ConnectedToConnection = targetConnection;
+                    currentConnection.ConnectionIntersectionPoint = connModel.ConnectionIntersectionPoint;
+
+                    // ⚪ DOT vizual
+                    var dot = new Ellipse
+                    {
+                        Width = 10,
+                        Height = 10,
+                        Fill = new SolidColorBrush(Color.FromRgb(173, 216, 230)),
+                        Stroke = new SolidColorBrush(Color.FromRgb(0, 51, 102)),
+                        StrokeThickness = 1.5,
+                        IsHitTestVisible = false
+                    };
+
+                    var dotPos = connModel.ConnectionIntersectionPoint.Value;
+                    Canvas.SetLeft(dot, dotPos.X - dot.Width / 2);
+                    Canvas.SetTop(dot, dotPos.Y - dot.Height / 2);
+                    canvas.Children.Add(dot);
+                    currentConnection.ConnectionDot = dot;
+                }
             }
         }
     }

@@ -87,13 +87,14 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             freeDrawTool.PointDrawn += point => LivePointDrawn?.Invoke(point);
             freeDrawTool.PointerMoved += point => MouseMoved?.Invoke(point);
 
-            _connectorTool = new BpmnConnectorTool(DrawingCanvas, _connections, _nodes, this, _toolManager, _snapService, undoRedoService, _drawingPreferencesService);
+            _connectorTool = new BpmnConnectorTool(DrawingCanvas, _connections, _nodes, this, _toolManager, _snapService, undoRedoService, _drawingPreferencesService, _contextMenuService);
+            var connectorCurvedTool = new BpmnConnectorCurvedTool(DrawingCanvas, _connections, _nodes, this, _toolManager, _snapService, undoRedoService, _drawingPreferencesService, _connectorTool, _contextMenuService);
+
             _selectionService = new SelectionService(_connectorTool);
 
             var eraserTool = new EraserTool(drawingService, DrawingCanvas);
             var bpmnTool = new BpmnTool(DrawingCanvas, _snapService, SnapGridCanvas, _toolManager, undoRedoService, _selectionService);
 
-            var connectorCurvedTool = new BpmnConnectorCurvedTool(DrawingCanvas, _connections, _nodes, this, _toolManager, _snapService, undoRedoService, _drawingPreferencesService);
 
             var rotateTool = new RotateTool(DrawingCanvas);
             _selectionService.SelectionChanged += OnSelectionChanged;

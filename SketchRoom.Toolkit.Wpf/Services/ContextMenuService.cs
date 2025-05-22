@@ -3,7 +3,10 @@ using SketchRoom.Toolkit.Wpf.Controls;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using WhiteBoard.Core.Helpers;
+using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services.Interfaces;
+using WhiteBoard.Core.Tools;
 
 namespace SketchRoom.Toolkit.Wpf.Services
 {
@@ -50,9 +53,33 @@ namespace SketchRoom.Toolkit.Wpf.Services
                 case ShapeContextType.DescriptionShapeConnector:
                     AddConnectorDoubleItems(contextMenu, owner);
                     break;
+                case ShapeContextType.BpmnConnection:
+                    CreateConnectionContextMenu(contextMenu, owner);
+                    break;
             }
 
             return contextMenu;
+        }
+
+        private ContextMenu CreateConnectionContextMenu(ContextMenu menu, object owner)
+        {
+            var selectionService = ContainerLocator.Container.Resolve<IShapeSelectionService>();
+
+            if (owner is ConnectionContextMenuInfo info)
+            {
+                var connection = info.Connection;
+                var pos = info.ClickPosition;
+
+                // BELOW
+                var addTextBelow = new MenuItem { Header = "Add text for connection" };
+                addTextBelow.Click += (s, e) =>
+                {
+                    HelpersCore.AddTextAlignedToConnection(connection, pos, offsetDirection: 1, selectionService); 
+                };
+                menu.Items.Add(addTextBelow);
+            }
+
+            return menu;
         }
 
         private void AddConnectorDoubleItems(ContextMenu menu, object owner)
