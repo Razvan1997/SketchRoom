@@ -86,7 +86,9 @@ public static class ElementMapper
 
         var strokeHex  = shape.StrokeHex ?? shape.ExtraProperties?.GetValueOrDefault("Stroke") ?? "#000000";
         var fillHex    = shape.BackgroundHex ?? shape.ExtraProperties?.GetValueOrDefault("Fill");
-        var textContent = shape.Text ?? shape.ExtraProperties?.GetValueOrDefault("TextShape");
+        var textContent = shape.Text
+                          ?? shape.ExtraProperties?.GetValueOrDefault("Text")
+                          ?? shape.ExtraProperties?.GetValueOrDefault("TextShape");
 
         var dto = new ElementDto
         {
@@ -107,9 +109,11 @@ public static class ElementMapper
         if (shape.SvgUri is not null && type == ElementType.Rectangle)
             dto.Text = $"bpmn:svguri={shape.SvgUri}";
 
-        // Preserve Image base64 if stored in extra properties.
+        // Preserve Image base64 if stored in extra properties; otherwise encode the
+        // local SvgUri file so the bitmap travels to peers that lack the source path.
         if (type == ElementType.Image)
-            dto.ImageBase64 = shape.ExtraProperties?.GetValueOrDefault("ImageBase64");
+            dto.ImageBase64 = shape.ExtraProperties?.GetValueOrDefault("ImageBase64")
+                              ?? TryEncodeImageFile(shape.SvgUri);
 
         return dto;
     }
@@ -141,10 +145,18 @@ public static class ElementMapper
         };
 
         if (shapeType == ShapeType.ShapeText && dto.Text is not null)
+        {
             shape.Text = dto.Text;
+            // ShapeStyleRestorer reads the text body from ExtraProperties["Text"].
+            shape.ExtraProperties["Text"] = dto.Text;
+        }
 
         if (shapeType == ShapeType.Image && dto.ImageBase64 is not null)
+        {
             shape.ExtraProperties["ImageBase64"] = dto.ImageBase64;
+            // Materialize a local file so the existing SvgUri-based image render works.
+            shape.SvgUri = TryMaterializeImageFile(dto.ImageBase64) ?? shape.SvgUri;
+        }
 
         // Recover SvgUri hint for Task 7.
         if (shapeType == ShapeType.Rectangle && dto.Text?.StartsWith("bpmn:svguri=") == true)
@@ -284,6 +296,40 @@ public static class ElementMapper
 
     private static string? TryGetHex(Brush? brush)
         => (brush as SolidColorBrush)?.Color.ToString();
+
+    // Encodes a local image file as "ext:base64" so peers can reconstruct it. Best-effort.
+    private static string? TryEncodeImageFile(Uri? svgUri)
+    {
+        try
+        {
+            if (svgUri is null || !svgUri.IsFile) return null;
+            var path = svgUri.LocalPath;
+            if (!File.Exists(path)) return null;
+            var ext = Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
+            if (string.IsNullOrEmpty(ext)) ext = "png";
+            return $"{ext}:{Convert.ToBase64String(File.ReadAllBytes(path))}";
+        }
+        catch { return null; }
+    }
+
+    // Writes an "ext:base64" payload to a temp file and returns its file Uri. Best-effort.
+    public static Uri? TryMaterializeImageFile(string? encoded)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(encoded)) return null;
+            var sep = encoded.IndexOf(':');
+            var ext = sep > 0 ? encoded[..sep] : "png";
+            var b64 = sep > 0 ? encoded[(sep + 1)..] : encoded;
+            var bytes = Convert.FromBase64String(b64);
+            var dir = Path.Combine(Path.GetTempPath(), "SketchRoomRemoteImages");
+            Directory.CreateDirectory(dir);
+            var file = Path.Combine(dir, $"{Guid.NewGuid():N}.{ext}");
+            File.WriteAllBytes(file, bytes);
+            return new Uri(file);
+        }
+        catch { return null; }
+    }
 
     private static string SafeNormalizeHex(string hex)
     {

@@ -38,6 +38,9 @@ namespace WhiteBoard.Core.Tools
         public IReadOnlyList<BPMNConnection> SelectedConnections => _selectedConnections;
         public string Name => "Connector";
 
+        public event Action<BPMNConnection>? ConnectionCreated;
+        public event Action<Guid>? ConnectionDeleted;
+
         private bool _isDrawing = false;
         public bool IsDrawing => _isDrawing;
         private readonly IContextMenuService _contextMenuService;
@@ -212,6 +215,7 @@ namespace WhiteBoard.Core.Tools
                 };
 
                 _canvas.Children.Add(connection.Visual);
+                ConnectionCreated?.Invoke(connection);
             }
 
             _pathPoints.Clear();
@@ -366,6 +370,7 @@ namespace WhiteBoard.Core.Tools
                     }
                 };
                 _canvas.Children.Add(connection.Visual);
+                ConnectionCreated?.Invoke(connection);
             }
 
             _pathPoints.Clear();
@@ -450,6 +455,10 @@ namespace WhiteBoard.Core.Tools
 
             foreach (var conn in ordered)
             {
+                if (conn.Visual is FrameworkElement connFe &&
+                    Guid.TryParse(ShapeMetadata.GetShapeId(connFe), out var connId))
+                    ConnectionDeleted?.Invoke(connId);
+
                 _canvas.Children.Remove(conn.Visual);
 
                 if (conn.ConnectionDot != null)

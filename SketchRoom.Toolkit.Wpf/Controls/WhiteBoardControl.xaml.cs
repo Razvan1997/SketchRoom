@@ -8,6 +8,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using WhiteBoard.Core;
 using WhiteBoard.Core.Tools;
+using WhiteBoard.Core.Helpers;
 using WhiteBoard.Core.Services.Interfaces;
 using WhiteBoard.Core.Colaboration.Interfaces;
 using SharpVectors.Converters;
@@ -45,6 +46,12 @@ namespace SketchRoom.Toolkit.Wpf.Controls
         public event Action<List<Point>>? LineDrawn;
         public event Action<Point>? LivePointDrawn;
         public event Action<Point>? MouseMoved;
+
+        // Local non-freehand edits, forwarded to the collaboration layer (Task 7 gap).
+        public event Action<FrameworkElement>? ElementAddedLocal;
+        public event Action<FrameworkElement>? ElementMovedLocal;
+        public event Action<Guid>? ElementRemovedLocal;
+        public event Action<BPMNConnection>? ConnectorAddedLocal;
         private readonly IContextMenuService _contextMenuService;
         private readonly IBpmnShapeFactory _factory;
         private readonly WhiteBoard.Core.Services.Interfaces.ISelectionService _selectionService;
@@ -120,6 +127,12 @@ namespace SketchRoom.Toolkit.Wpf.Controls
             _dropService = new DropService(DrawingCanvas, _factory, _toolManager, _connectorTool!, connectorCurvedTool, _nodes, selecteToolService, undoRedoService,
                 _drawingPreferencesService, zOrderService, shapeRenderFactory, _shapeSelectionService);
 
+            _dropService.ElementPlaced += fe => ElementAddedLocal?.Invoke(fe);
+            _dropService.ElementEdited += fe => ElementMovedLocal?.Invoke(fe);
+            bpmnTool.ShapeMoved += fe => ElementMovedLocal?.Invoke(fe);
+            _connectorTool.ConnectionCreated += c => ConnectorAddedLocal?.Invoke(c);
+            _connectorTool.ConnectionDeleted += id => ElementRemovedLocal?.Invoke(id);
+
             this.KeyDown += WhiteBoardControl_KeyDown;
             this.Focusable = true;
             this.Focus();
@@ -149,12 +162,16 @@ namespace SketchRoom.Toolkit.Wpf.Controls
                 _connectorTool?.DeleteSelectedConnections();
                 foreach (var el in _selectionService.SelectedElements.ToList())
                 {
+                    if (Guid.TryParse(ShapeMetadata.GetShapeId(el), out var removedId))
+                        ElementRemovedLocal?.Invoke(removedId);
                     DrawingCanvas.Children.Remove(el);
                 }
                 _selectionService.ClearSelection(DrawingCanvas);
 
                 if (_toolManager.ActiveTool is BpmnTool bpmnTool && bpmnTool.SelectedShape is FrameworkElement fe)
                 {
+                    if (Guid.TryParse(ShapeMetadata.GetShapeId(fe), out var removedShapeId))
+                        ElementRemovedLocal?.Invoke(removedShapeId);
                     DrawingCanvas.Children.Remove(fe);
                     bpmnTool.DeselectCurrent();
                 }

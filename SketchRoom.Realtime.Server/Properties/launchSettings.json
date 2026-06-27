@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "SketchRoom.Realtime.Server": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:51276;http://localhost:51277"
+    }
+  }
+}

@@ -34,6 +34,9 @@ namespace WhiteBoard.Core.Services
         private readonly IShapeRendererFactory _rendererFactory;
         private readonly IShapeSelectionService _shapeSelectionService;
 
+        public event Action<FrameworkElement>? ElementPlaced;
+        public event Action<FrameworkElement>? ElementEdited;
+
         public DropService(
             Canvas drawingCanvas,
             IBpmnShapeFactory factory,
@@ -91,13 +94,16 @@ namespace WhiteBoard.Core.Services
            
             if (visualElement != null && shape.Type == ShapeType.ShapeText)
             {
-                visualElement.Loaded += (_, _) =>
+                var textHost = visualElement;
+                textHost.Loaded += (_, _) =>
                 {
-                    if (visualElement is DependencyObject root)
+                    if (textHost is DependencyObject root)
                     {
                         var textBox = FindFirstTextBox(root);
                         textBox?.Focus();
                         textBox?.SelectAll();
+                        if (textBox != null)
+                            textBox.LostFocus += (_, _) => ElementEdited?.Invoke(textHost);
                     }
                 };
             }
@@ -251,6 +257,8 @@ namespace WhiteBoard.Core.Services
 
             var command = new AddShapeCommand(_drawingCanvas, element);
             _undoRedoService.ExecuteCommand(command);
+
+            ElementPlaced?.Invoke(element);
         }
 
         public void RegisterNodeWhenReady(FrameworkElement element)

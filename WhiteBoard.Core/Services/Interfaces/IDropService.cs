@@ -12,6 +12,12 @@ namespace WhiteBoard.Core.Services.Interfaces
 {
     public interface IDropService
     {
+        // Raised after a shape/text/image element is placed on the canvas (local or restore).
+        event Action<FrameworkElement>? ElementPlaced;
+
+        // Raised after a locally-created element's content changes (e.g. text edited).
+        event Action<FrameworkElement>? ElementEdited;
+
         Dictionary<FrameworkElement, BPMNNode> _nodeMap { get; }
         FrameworkElement? HandleDrop(BPMNShapeModel shape, Point dropPos);
         void RegisterNodeWhenReady(FrameworkElement element);

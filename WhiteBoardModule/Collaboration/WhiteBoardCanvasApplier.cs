@@ -7,6 +7,7 @@ using System.Windows.Media.Imaging;
 using SketchRoom.Realtime.Contracts;
 using SketchRoom.Toolkit.Wpf.Controls;
 using WhiteBoard.Core.Collaboration;
+using WhiteBoard.Core.Helpers;
 using WhiteBoard.Core.Models;
 using WhiteBoard.Core.Services.Interfaces;
 
@@ -56,6 +57,25 @@ public sealed class WhiteBoardCanvasApplier : IRemoteCanvasApplier
         {
             _drawing.RemoveStroke(stroke);
             _remoteStrokes.Remove(id);
+            return;
+        }
+
+        var idStr = id.ToString();
+        var canvas = _wb.DrawingCanvasPublic;
+
+        var shapeVisual = canvas.Children.OfType<FrameworkElement>()
+            .FirstOrDefault(fe => string.Equals(ShapeMetadata.GetShapeId(fe), idStr, StringComparison.OrdinalIgnoreCase));
+        if (shapeVisual != null)
+            canvas.Children.Remove(shapeVisual);
+
+        var conn = _wb._connections.FirstOrDefault(c =>
+            c.Visual is FrameworkElement cfe &&
+            string.Equals(ShapeMetadata.GetShapeId(cfe), idStr, StringComparison.OrdinalIgnoreCase));
+        if (conn != null)
+        {
+            if (conn.Visual is FrameworkElement cv) canvas.Children.Remove(cv);
+            if (conn.ConnectionDot != null) canvas.Children.Remove(conn.ConnectionDot);
+            _wb._connections.Remove(conn);
         }
     }
 

@@ -39,6 +39,7 @@ namespace WhiteBoard.Core.Tools
         public IInteractiveShape? SelectedShape => _selectedShape;
 
         public event Action<IInteractiveShape?>? ShapeSelected;
+        public event Action<FrameworkElement>? ShapeMoved;
         private readonly UndoRedoService _undoRedoService;
         private readonly Services.Interfaces.ISelectionService _selectionService;
 
@@ -185,6 +186,10 @@ namespace WhiteBoard.Core.Tools
                     var initialPos = _lastMousePos - _dragOffset;
                     var moveCommand = new MoveShapeCommand(fe, initialPos, finalPos);
                     _undoRedoService.ExecuteCommand(moveCommand);
+
+                    ShapeMoved?.Invoke(fe);
+                    foreach (var moved in _selectionInitialOffsets.Keys.OfType<FrameworkElement>())
+                        ShapeMoved?.Invoke(moved);
                 }
 
                 if (fe is IShapeAddedXaml shape)
