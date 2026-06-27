@@ -92,4 +92,37 @@ public class RoomManagerTests
         m.SetLock(code, true);
         Assert.True(m.IsLocked(code));
     }
+
+    [Fact]
+    public void FindConnectionId_returns_connection_then_null_after_leave()
+    {
+        var m = new RoomManager();
+        var (code, _) = m.CreateRoom("host", "H", null);
+        m.TryJoin(code, "c2", "Second", null, out _, out var u2);
+        Assert.Equal("c2", m.FindConnectionId(code, u2));
+        m.Leave("c2");
+        Assert.Null(m.FindConnectionId(code, u2));
+    }
+
+    [Fact]
+    public void NonHost_leaving_keeps_room_and_host()
+    {
+        var m = new RoomManager();
+        var (code, _) = m.CreateRoom("host", "H", null);
+        m.TryJoin(code, "c2", "Second", null, out _, out _);
+        var res = m.Leave("c2");
+        Assert.False(res.RoomRemoved);
+        Assert.Null(res.NewHostUserId);
+        Assert.True(m.IsHost(code, "host"));
+    }
+
+    [Fact]
+    public void SetLock_can_unlock()
+    {
+        var m = new RoomManager();
+        var (code, _) = m.CreateRoom("host", "H", null);
+        m.SetLock(code, true);
+        m.SetLock(code, false);
+        Assert.False(m.IsLocked(code));
+    }
 }

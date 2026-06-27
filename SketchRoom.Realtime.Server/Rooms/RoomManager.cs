@@ -61,12 +61,12 @@ public sealed class RoomManager
         }
     }
 
-    public RoomStateDto? GetState(string code) => _rooms.TryGetValue(code, out var r) ? r.ToState() : null;
-    public List<ElementDto> GetSnapshot(string code) => _rooms.TryGetValue(code, out var r) ? r.Elements.Values.OrderBy(e => e.ZOrder).ToList() : new();
-    public bool IsHost(string code, string connectionId) => _rooms.TryGetValue(code, out var r) && r.Members.Any(x => x.ConnectionId == connectionId && x.IsHost);
-    public bool IsLocked(string code) => _rooms.TryGetValue(code, out var r) && r.IsLocked;
-    public void SetLock(string code, bool locked) { if (_rooms.TryGetValue(code, out var r)) r.IsLocked = locked; }
-    public string? FindConnectionId(string code, string userId) => _rooms.TryGetValue(code, out var r) ? r.Members.FirstOrDefault(x => x.UserId == userId)?.ConnectionId : null;
+    public RoomStateDto? GetState(string code) { lock (_gate) return _rooms.TryGetValue(code, out var r) ? r.ToState() : null; }
+    public List<ElementDto> GetSnapshot(string code) { lock (_gate) return _rooms.TryGetValue(code, out var r) ? r.Elements.Values.OrderBy(e => e.ZOrder).ToList() : new(); }
+    public bool IsHost(string code, string connectionId) { lock (_gate) return _rooms.TryGetValue(code, out var r) && r.Members.Any(x => x.ConnectionId == connectionId && x.IsHost); }
+    public bool IsLocked(string code) { lock (_gate) return _rooms.TryGetValue(code, out var r) && r.IsLocked; }
+    public void SetLock(string code, bool locked) { lock (_gate) { if (_rooms.TryGetValue(code, out var r)) r.IsLocked = locked; } }
+    public string? FindConnectionId(string code, string userId) { lock (_gate) return _rooms.TryGetValue(code, out var r) ? r.Members.FirstOrDefault(x => x.UserId == userId)?.ConnectionId : null; }
 
     public void ApplyAdd(string code, ElementDto e) { if (_rooms.TryGetValue(code, out var r)) lock (_gate) r.Elements[e.Id] = e; }
     public void ApplyUpdate(string code, ElementDto e) => ApplyAdd(code, e);
