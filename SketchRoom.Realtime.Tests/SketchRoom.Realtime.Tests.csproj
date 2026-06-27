@@ -15,5 +15,6 @@
   <ItemGroup>
     <ProjectReference Include="..\SketchRoom.Realtime.Server\SketchRoom.Realtime.Server.csproj" />
     <ProjectReference Include="..\SketchRoom.Realtime.Contracts\SketchRoom.Realtime.Contracts.csproj" />
+    <ProjectReference Include="..\SketchRoom.Realtime.Client\SketchRoom.Realtime.Client.csproj" />
   </ItemGroup>
 </Project>
