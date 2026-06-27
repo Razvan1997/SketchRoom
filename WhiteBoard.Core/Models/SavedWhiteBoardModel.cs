@@ -20,6 +20,7 @@ namespace WhiteBoard.Core.Models
 
     public class FreeDrawStrokeExportModel
     {
+        public Guid Id { get; set; } = Guid.NewGuid();
         public List<Point> Points { get; set; } = new();
         public string? StrokeColorHex { get; set; }
         public double StrokeThickness { get; set; }
