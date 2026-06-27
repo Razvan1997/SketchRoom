@@ -98,6 +98,7 @@ public static class ElementMapper
             Height = shape.Height,
             StrokeColor = SafeNormalizeHex(strokeHex),
             FillColor = fillHex is null ? null : SafeNormalizeHex(fillHex),
+            // BPMNShapeModelWithPosition has no stroke-thickness field; 2.0 is a best-effort default.
             Thickness = 2.0,
             Text = type == ElementType.Text ? textContent : null
         };
@@ -177,6 +178,7 @@ public static class ElementMapper
                          .Select(p => ElementMapperCore.ToPointDto(p.X, p.Y))
                          .ToList(),
             StrokeColor = SafeNormalizeHex(strokeHex),
+            // BPMNConnectionExportModel has no stroke-thickness field; 2.0 is a best-effort default.
             Thickness = 2.0
         };
     }
@@ -239,6 +241,12 @@ public static class ElementMapper
     /// <summary>
     /// Dispatches to the appropriate overload.  Freehand strokes and connections
     /// require a stable <paramref name="id"/> from a caller-maintained registry.
+    /// <para>
+    /// <see cref="ImageElement"/> is handled by encoding its bitmap inline via
+    /// <see cref="EncodeBitmapToPngBase64"/>; this must run on the WPF UI thread.
+    /// For hot paths, prefer calling <c>ToDto(image, cachedBase64, id)</c> directly
+    /// to avoid repeated encoding.
+    /// </para>
     /// </summary>
     public static ElementDto? TryToDto(object element, Guid id = default)
     {
@@ -249,6 +257,7 @@ public static class ElementMapper
             FreeDrawStroke stroke          => ToDto(stroke, id),
             BPMNShapeModelWithPosition s   => ToDto(s),
             BPMNConnectionExportModel conn => ToDto(conn, id),
+            ImageElement img               => ToDto(img, EncodeBitmapToPngBase64(img.Image), id),
             _ => null
         };
     }
