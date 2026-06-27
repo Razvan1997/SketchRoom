@@ -11,5 +11,6 @@ namespace SketchRoom.Models
         public string GhostPreviewPath { get; set; } = "";
         public string Hotkey1 { get; set; } = "TAB";
         public string Hotkey2 { get; set; } = "S";
+        public string CentralServerUrl { get; set; } = "http://localhost:5000";
     }
 }

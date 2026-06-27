@@ -31,8 +31,6 @@ namespace LobbyHostingModule.ViewModels
         private string _lanAddress = string.Empty;
         private string _statusMessage = string.Empty;
 
-        // Task 10 seam: central (Online) server URL. Replace this default with a value
-        // sourced from app settings/config once Task 10 finalizes configuration.
         private string _centralServerUrl = CollaborationSession.DefaultLocalUrl;
 
         public bool IsOnlineMode
@@ -54,7 +52,15 @@ namespace LobbyHostingModule.ViewModels
         public string CentralServerUrl
         {
             get => _centralServerUrl;
-            set => SetProperty(ref _centralServerUrl, value);
+            set
+            {
+                if (SetProperty(ref _centralServerUrl, value))
+                {
+                    var s = SettingsStorage.Load();
+                    s.CentralServerUrl = value;
+                    SettingsStorage.Save(s);
+                }
+            }
         }
 
         public bool IsBusy
@@ -113,6 +119,8 @@ namespace LobbyHostingModule.ViewModels
             _regionManager = regionManager;
             _session = session;
             _server = server;
+
+            _centralServerUrl = SettingsStorage.Load().CentralServerUrl;
 
             CreateRoomCommand = new DelegateCommand(async () => await OnCreateRoomAsync(), () => !IsBusy && !IsHosting)
                 .ObservesProperty(() => IsBusy).ObservesProperty(() => IsHosting);

@@ -42,13 +42,20 @@ namespace ParticipationModule.ViewModels
             set => SetProperty(ref _sessionCode, value);
         }
 
-        // Host server address; defaults to localhost for same-machine testing.
-        // Set to the host LAN address (e.g. http://192.168.1.10:5000) to join over LAN.
-        // For Online rooms use the central server URL (Task 10 finalizes config).
+        // For Online rooms: central server URL loaded from settings.
+        // For LAN rooms: type the host LAN address (e.g. http://192.168.1.10:5000).
         public string ServerUrl
         {
             get => _serverUrl;
-            set => SetProperty(ref _serverUrl, value);
+            set
+            {
+                if (SetProperty(ref _serverUrl, value))
+                {
+                    var s = SettingsStorage.Load();
+                    s.CentralServerUrl = value;
+                    SettingsStorage.Save(s);
+                }
+            }
         }
 
         public ICommand StartParticipationCommand { get; }
@@ -57,6 +64,8 @@ namespace ParticipationModule.ViewModels
         {
             _regionManager = regionManager;
             _session = session;
+
+            _serverUrl = SettingsStorage.Load().CentralServerUrl;
 
             var user = SecureStorage.LoadUser();
             if (user != null)
