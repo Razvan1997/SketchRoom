@@ -34,10 +34,40 @@
                 Background="#2e2e2e"
                 BorderBrush="#1f1f1f"
                 BorderThickness="1">
-                <controls:ShapesControl
-                    x:Name="ShapesControl"
-                    ItemsSource="{Binding GroupedFilteredShapes}"
-                    SearchText="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                        <Button
+                            Margin="0,0,0,6"
+                            Padding="8,6"
+                            Background="Green"
+                            BorderThickness="0"
+                            Command="{Binding CreateSketchRoomCommand}"
+                            Content="Create room"
+                            Cursor="Hand"
+                            FontWeight="Bold"
+                            Foreground="White" />
+                        <Button
+                            Padding="8,6"
+                            Background="#37474f"
+                            BorderThickness="0"
+                            Command="{Binding ParticipateSketchRoomCommand}"
+                            Content="Join room"
+                            Cursor="Hand"
+                            FontWeight="Bold"
+                            Foreground="White" />
+                    </StackPanel>
+
+                    <controls:ShapesControl
+                        x:Name="ShapesControl"
+                        Grid.Row="1"
+                        ItemsSource="{Binding GroupedFilteredShapes}"
+                        SearchText="{Binding SearchQuery, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </Grid>
             </Border>
         </Grid>
     </Grid>

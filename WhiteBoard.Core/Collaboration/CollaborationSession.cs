@@ -91,6 +91,17 @@ public sealed class CollaborationSession
         return res;
     }
 
+    // ── Host moderation (no-op unless hosting an active room) ─────────────────────
+
+    public Task ClearBoardAsync()
+        => IsActive && IsHost ? _client.ClearBoardAsync(RoomCode) : Task.CompletedTask;
+
+    public Task SetLockAsync(bool locked)
+        => IsActive && IsHost ? _client.SetLockAsync(RoomCode, locked) : Task.CompletedTask;
+
+    public Task KickUserAsync(string userId)
+        => IsActive && IsHost ? _client.KickUserAsync(RoomCode, userId) : Task.CompletedTask;
+
     public async Task LeaveAsync()
     {
         if (!IsActive) return;

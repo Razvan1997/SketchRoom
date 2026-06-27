@@ -24,28 +24,28 @@ namespace UsersInteractionsModule.ViewModels
         public ObservableCollection<ShapeCategoryGroup> GroupedFilteredShapes { get; } = new();
 
         private readonly IRegionManager _regionManager;
-        //public ICommand CreateSketchRoomCommand { get; }
-        //public ICommand ParticipateSketchRoomCommand { get; }
+        public ICommand CreateSketchRoomCommand { get; }
+        public ICommand ParticipateSketchRoomCommand { get; }
 
         public UsersInteractionsViewModel(IRegionManager regionManager)
         {
-            //CreateSketchRoomCommand = new DelegateCommand(OnCreateSketchRoom);
-            //ParticipateSketchRoomCommand = new DelegateCommand(OnParticipateToSketchRoom);
             _regionManager = regionManager;
+            CreateSketchRoomCommand = new DelegateCommand(OnCreateSketchRoom);
+            ParticipateSketchRoomCommand = new DelegateCommand(OnParticipateToSketchRoom);
 
             LoadShapes();
             FilterShapes();
         }
 
-        //private void OnCreateSketchRoom()
-        //{
-        //    _regionManager.RequestNavigate("ContentRegion", "LobbyView");
-        //}
+        private void OnCreateSketchRoom()
+        {
+            _regionManager.RequestNavigate("ContentRegion", "LobbyView");
+        }
 
-        //private void OnParticipateToSketchRoom()
-        //{
-        //    _regionManager.RequestNavigate("ContentRegion", "ParticipationView");
-        //}
+        private void OnParticipateToSketchRoom()
+        {
+            _regionManager.RequestNavigate("ContentRegion", "ParticipationView");
+        }
 
         public void OnShapeDragStarted(object shape)
         {
