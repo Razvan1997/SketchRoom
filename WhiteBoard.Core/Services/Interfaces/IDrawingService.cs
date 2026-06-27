@@ -30,7 +30,7 @@ namespace WhiteBoard.Core.Services.Interfaces
 
         // Colaborare live
         void BeginExternalStroke();
-        void AddExternalStroke(IEnumerable<Point> points, Brush color, double thickness);
+        FreeDrawStroke AddExternalStroke(IEnumerable<Point> points, Brush color, double thickness);
         void PreviewExternalPoint(Point point, Brush color);
         FreeDrawStroke? GetExternalPreviewStroke();
 

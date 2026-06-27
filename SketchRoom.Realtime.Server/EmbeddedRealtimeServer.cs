@@ -18,7 +18,7 @@ public sealed class EmbeddedRealtimeServer
         builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
         // Override any appsettings Kestrel:Endpoints that would supersede UseUrls:
         builder.Configuration["Kestrel:Endpoints:Http:Url"] = $"http://0.0.0.0:{port}";
-        builder.Services.AddSignalR().AddMessagePackProtocol();
+        builder.Services.AddSignalR(o => o.MaximumReceiveMessageSize = 8 * 1024 * 1024).AddMessagePackProtocol();
         builder.Services.AddSingleton<RoomManager>();
         _app = builder.Build();
         _app.MapHub<WhiteboardHub>("/whiteboardhub");

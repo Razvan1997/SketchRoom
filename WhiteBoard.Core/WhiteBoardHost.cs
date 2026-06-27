@@ -48,8 +48,13 @@ namespace WhiteBoard.Core
 
         public void AddRemoteLine(IEnumerable<Point> points, Brush color, double thickness)
         {
-            DrawingService.AddExternalStroke(points, color, thickness);
-            RedrawAll(DrawingService.GetElements());
+            var stroke = DrawingService.AddExternalStroke(points, color, thickness);
+
+            var preview = DrawingService.GetExternalPreviewStroke();
+            if (preview != null && CanvasRenderer.HasVisual(_canvas, preview.Visual))
+                _canvas.Children.Remove(preview.Visual);
+
+            CanvasRenderer.RenderElement(_canvas, stroke);
         }
 
         public void AddRemoteLivePoint(Point point, Brush color)

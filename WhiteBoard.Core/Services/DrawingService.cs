@@ -157,7 +157,7 @@ namespace WhiteBoard.Core.Services
             };
         }
 
-        public void AddExternalStroke(IEnumerable<Point> points, Brush color, double thickness)
+        public FreeDrawStroke AddExternalStroke(IEnumerable<Point> points, Brush color, double thickness)
         {
             var stroke = new FreeDrawStroke
             {
@@ -169,6 +169,7 @@ namespace WhiteBoard.Core.Services
                 stroke.AddPoint(p);
 
             _strokes.Add(stroke);
+            return stroke;
         }
 
         public void PreviewExternalPoint(Point point, Brush color)

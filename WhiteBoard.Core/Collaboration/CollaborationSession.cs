@@ -59,7 +59,12 @@ public sealed class CollaborationSession
         _client.LivePointed    += p   => RunOnUi(() => ApplyGuarded(() => _applier?.ApplyLivePoint(p)));
         _client.CursorMoved    += c   => RunOnUi(() => ApplyGuarded(() => _applier?.MoveCursor(c.UserId, c.X, c.Y, null)));
 
-        _client.RoomStateChanged += s => { State = s; RunOnUi(() => StateChanged?.Invoke(s)); };
+        _client.RoomStateChanged += s =>
+        {
+            State = s;
+            IsHost = s.Participants.FirstOrDefault(p => p.UserId == UserId)?.IsHost ?? IsHost;
+            RunOnUi(() => StateChanged?.Invoke(s));
+        };
         _client.UserJoined       += _ => { };
         _client.UserLeft         += _ => { };
         _client.Kicked           += () => RunOnUi(async () => { await LeaveAsync(); KickedFromRoom?.Invoke(); });
