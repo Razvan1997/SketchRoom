@@ -13,6 +13,7 @@ public sealed class EmbeddedRealtimeServer
 
     public async Task<string> StartAsync(int port = 5000)
     {
+        if (_app != null) throw new InvalidOperationException("Server already started. Call StopAsync first.");
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
         // Override any appsettings Kestrel:Endpoints that would supersede UseUrls:
@@ -25,7 +26,15 @@ public sealed class EmbeddedRealtimeServer
         return $"http://{GetLanIpv4()}:{port}";
     }
 
-    public async Task StopAsync() { if (_app != null) { await _app.StopAsync(); await _app.DisposeAsync(); _app = null; } }
+    public async Task StopAsync()
+    {
+        if (_app != null)
+        {
+            await _app.StopAsync();
+            await _app.DisposeAsync();
+            _app = null;
+        }
+    }
 
     public static string GetLanIpv4()
     {
