@@ -125,4 +125,40 @@ public class RoomManagerTests
         m.SetLock(code, false);
         Assert.False(m.IsLocked(code));
     }
+
+    // ── GetUserId ─────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void GetUserId_returns_userId_for_host_connection()
+    {
+        var m = new RoomManager();
+        var (_, userId) = m.CreateRoom("conn-host", "Ana", null);
+        Assert.Equal(userId, m.GetUserId("conn-host"));
+    }
+
+    [Fact]
+    public void GetUserId_returns_userId_for_joined_guest()
+    {
+        var m = new RoomManager();
+        var (code, _) = m.CreateRoom("conn-host", "Ana", null);
+        m.TryJoin(code, "conn-guest", "Bob", null, out _, out var guestId);
+        Assert.Equal(guestId, m.GetUserId("conn-guest"));
+    }
+
+    [Fact]
+    public void GetUserId_returns_null_after_leave()
+    {
+        var m = new RoomManager();
+        var (code, _) = m.CreateRoom("conn-host", "Ana", null);
+        m.TryJoin(code, "conn-guest", "Bob", null, out _, out _);
+        m.Leave("conn-guest");
+        Assert.Null(m.GetUserId("conn-guest"));
+    }
+
+    [Fact]
+    public void GetUserId_returns_null_for_unknown_connection()
+    {
+        var m = new RoomManager();
+        Assert.Null(m.GetUserId("not-a-connection"));
+    }
 }

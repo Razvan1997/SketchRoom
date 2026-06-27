@@ -32,11 +32,18 @@ public sealed class CollaborationSession
     private DateTime _lastCursorSentUtc = DateTime.MinValue;
     private static readonly TimeSpan CursorInterval = TimeSpan.FromMilliseconds(50);
 
+    private string _displayName = string.Empty;
+    private string? _avatar;
+
     public bool IsActive { get; private set; }
     public bool IsHost { get; private set; }
     public string RoomCode { get; private set; } = string.Empty;
     public string UserId { get; private set; } = string.Empty;
     public RoomStateDto? State { get; private set; }
+
+    // True when the room is locked and the local user is not the host.
+    // The UI can bind to StateChanged to refresh this.
+    public bool IsLockedForMe => IsActive && !IsHost && (State?.IsLocked ?? false);
 
     public event Action<RoomStateDto>? StateChanged;
     public event Action? KickedFromRoom;
@@ -56,12 +63,15 @@ public sealed class CollaborationSession
         _client.UserJoined       += _ => { };
         _client.UserLeft         += _ => { };
         _client.Kicked           += () => RunOnUi(async () => { await LeaveAsync(); KickedFromRoom?.Invoke(); });
+        _client.Reconnected      += OnReconnectedAsync;
     }
 
     // ── Lifecycle ──────────────────────────────────────────────────────────────
 
     public async Task<JoinResultDto> StartHostAsync(string baseUrl, string displayName, string? avatar)
     {
+        _displayName = displayName;
+        _avatar = avatar;
         await _client.ConnectAsync(string.IsNullOrWhiteSpace(baseUrl) ? DefaultLocalUrl : baseUrl);
         var res = await _client.CreateRoomAsync(displayName, avatar);
         if (res.Success)
@@ -77,6 +87,8 @@ public sealed class CollaborationSession
 
     public async Task<JoinResultDto> StartJoinAsync(string baseUrl, string code, string displayName, string? avatar)
     {
+        _displayName = displayName;
+        _avatar = avatar;
         await _client.ConnectAsync(string.IsNullOrWhiteSpace(baseUrl) ? DefaultLocalUrl : baseUrl);
         var res = await _client.JoinRoomAsync(code, displayName, avatar);
         if (res.Success)
@@ -152,7 +164,7 @@ public sealed class CollaborationSession
 
     private void OnLocalStrokeStarted(FreeDrawStroke stroke)
     {
-        if (!IsActive || _applyingRemote) return;
+        if (!IsActive || _applyingRemote || IsLockedForMe) return;
         lock (_gate) _localStrokeIds[stroke] = Guid.NewGuid();
     }
 
@@ -216,20 +228,44 @@ public sealed class CollaborationSession
     // Wired in once the canvas tools raise creation events (see Task 7 report).
     public void SendElementAdded(ElementDto dto)
     {
-        if (!IsActive || _applyingRemote) return;
+        if (!IsActive || _applyingRemote || IsLockedForMe) return;
         FireAndForget(_client.AddElementAsync(RoomCode, dto));
     }
 
     public void SendElementUpdated(ElementDto dto)
     {
-        if (!IsActive || _applyingRemote) return;
+        if (!IsActive || _applyingRemote || IsLockedForMe) return;
         FireAndForget(_client.UpdateElementAsync(RoomCode, dto));
     }
 
     public void SendElementRemoved(Guid id)
     {
-        if (!IsActive || _applyingRemote) return;
+        if (!IsActive || _applyingRemote || IsLockedForMe) return;
         FireAndForget(_client.RemoveElementAsync(RoomCode, id));
+    }
+
+    // ── Reconnect reconciliation ─────────────────────────────────────────────────
+
+    private async Task OnReconnectedAsync()
+    {
+        if (!IsActive || string.IsNullOrEmpty(RoomCode)) return;
+        try
+        {
+            var res = await _client.JoinRoomAsync(RoomCode, _displayName, _avatar);
+            if (!res.Success) return;
+            UserId = res.UserId;
+            State = res.State;
+            IsHost = res.State?.Participants.FirstOrDefault(p => p.UserId == UserId)?.IsHost ?? false;
+            var snap = res.Snapshot ?? new List<ElementDto>();
+            RunOnUi(() => ApplyGuarded(() =>
+            {
+                _applier?.Clear();
+                _applier?.ApplySnapshot(snap);
+            }));
+            if (res.State != null)
+                RunOnUi(() => StateChanged?.Invoke(res.State));
+        }
+        catch { /* best-effort: room may no longer exist after reconnect */ }
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────────

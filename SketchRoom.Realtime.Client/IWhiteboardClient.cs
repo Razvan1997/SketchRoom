@@ -14,6 +14,7 @@ public interface IWhiteboardClient
     event Action<string>? UserLeft;
     event Action<RoomStateDto>? RoomStateChanged;
     event Action? Kicked;
+    event Func<Task>? Reconnected;
 
     Task ConnectAsync(string baseUrl);
     Task<JoinResultDto> CreateRoomAsync(string displayName, string? avatar);

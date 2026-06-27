@@ -61,6 +61,19 @@ public sealed class RoomManager
         }
     }
 
+    public string? GetUserId(string connectionId)
+    {
+        lock (_gate)
+        {
+            foreach (var room in _rooms.Values)
+            {
+                var m = room.Members.FirstOrDefault(x => x.ConnectionId == connectionId);
+                if (m != null) return m.UserId;
+            }
+            return null;
+        }
+    }
+
     public RoomStateDto? GetState(string code) { lock (_gate) return _rooms.TryGetValue(code, out var r) ? r.ToState() : null; }
     public List<ElementDto> GetSnapshot(string code) { lock (_gate) return _rooms.TryGetValue(code, out var r) ? r.Elements.Values.OrderBy(e => e.ZOrder).ToList() : new(); }
     public bool IsHost(string code, string connectionId) { lock (_gate) return _rooms.TryGetValue(code, out var r) && r.Members.Any(x => x.ConnectionId == connectionId && x.IsHost); }

@@ -60,7 +60,7 @@ public sealed class WhiteboardHub : Hub
         => await Clients.OthersInGroup(code).SendAsync(ClientMethods.LivePointed, p);
 
     public async Task MoveCursor(string code, double x, double y)
-        => await Clients.OthersInGroup(code).SendAsync(ClientMethods.CursorMoved, new CursorDto { UserId = CurrentUserId(code), X = x, Y = y });
+        => await Clients.OthersInGroup(code).SendAsync(ClientMethods.CursorMoved, new CursorDto { UserId = _rooms.GetUserId(Context.ConnectionId) ?? "", X = x, Y = y });
 
     public async Task SetLock(string code, bool locked)
     {
@@ -95,7 +95,4 @@ public sealed class WhiteboardHub : Hub
         await Clients.Group(res.RoomCode).SendAsync(ClientMethods.RoomStateChanged, state);
     }
 
-    // NOTE (Task 9 hardens this via a connectionId→userId lookup added to RoomManager; for now MoveCursor userId is approximate and only cosmetic)
-    private string CurrentUserId(string code) =>
-        _rooms.GetState(code)?.Participants.FirstOrDefault()?.UserId ?? "";
 }

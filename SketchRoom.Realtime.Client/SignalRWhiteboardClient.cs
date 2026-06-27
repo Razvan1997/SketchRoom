@@ -18,6 +18,7 @@ public sealed class SignalRWhiteboardClient : IWhiteboardClient
     public event Action<string>? UserLeft;
     public event Action<RoomStateDto>? RoomStateChanged;
     public event Action? Kicked;
+    public event Func<Task>? Reconnected;
 
     public async Task ConnectAsync(string baseUrl)
     {
@@ -38,6 +39,7 @@ public sealed class SignalRWhiteboardClient : IWhiteboardClient
         _conn.On<string>(ClientMethods.UserLeft, u => UserLeft?.Invoke(u));
         _conn.On<RoomStateDto>(ClientMethods.RoomStateChanged, s => RoomStateChanged?.Invoke(s));
         _conn.On(ClientMethods.Kicked, () => Kicked?.Invoke());
+        _conn.Reconnected += _ => Reconnected?.Invoke() ?? Task.CompletedTask;
         await _conn.StartAsync();
     }
 
