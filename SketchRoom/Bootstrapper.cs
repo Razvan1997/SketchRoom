@@ -9,8 +9,9 @@ using SketchRoom.ViewModels;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
-using WhiteBoard.Core.Colaboration.Interfaces;
-using WhiteBoard.Core.Colaboration.Services;
+using SketchRoom.Realtime.Client;
+using SketchRoom.Realtime.Server;
+using WhiteBoard.Core.Collaboration;
 using WhiteBoard.Core.Factory.Interfaces;
 using WhiteBoard.Core.Services;
 using WhiteBoard.Core.Services.Interfaces;
@@ -38,18 +39,17 @@ namespace SketchRoom
             ViewModelLocationProvider.Register<RegistrationDialog, RegistrationDialogViewModel>();
             ViewModelLocationProvider.Register<SaveSketchDialog, SaveSketchDialogViewModel>();
 
-            containerRegistry.RegisterSingleton<WhiteboardHubClient>();
+            containerRegistry.RegisterSingleton<IWhiteboardClient, SignalRWhiteboardClient>();
+            containerRegistry.RegisterSingleton<CollaborationSession>();
+            containerRegistry.RegisterSingleton<EmbeddedRealtimeServer>();
 
             //containerRegistry.RegisterSingleton<IToolManager, ToolManager>();
             containerRegistry.RegisterSingleton<IDrawingService, WhiteBoard.Core.Services.DrawingService>();
             containerRegistry.RegisterSingleton<ICanvasRenderer, CanvasRenderer>();
             containerRegistry.RegisterSingleton<ICommandManager, WhiteBoard.Core.Services.CommandManager>();
             containerRegistry.RegisterSingleton<ISnapService, SnapService>();
-            containerRegistry.RegisterSingleton<ICollaborationService, CollaborationService>();
-            containerRegistry.RegisterSingleton<ICommandManager, WhiteBoard.Core.Services.CommandManager>();
             containerRegistry.RegisterSingleton<IZoomPanService, ZoomPanService>();
 
-            containerRegistry.RegisterSingleton<ICollaborationService, CollaborationService>();
             containerRegistry.RegisterSingleton<SelectedToolService>();
             containerRegistry.RegisterSingleton<IBpmnShapeFactory, BpmnShapeFactory>();
             containerRegistry.RegisterSingleton<IDrawingPreferencesService, DrawingPreferencesService>();

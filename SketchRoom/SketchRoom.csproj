@@ -35,6 +35,8 @@
     <ProjectReference Include="..\WalkthroughDemo\WalkthroughDemo.csproj" />
     <ProjectReference Include="..\WhiteBoard.Core\WhiteBoard.Core.csproj" />
     <ProjectReference Include="..\WhiteBoardModule\WhiteBoardModule.csproj" />
+    <ProjectReference Include="..\SketchRoom.Realtime.Client\SketchRoom.Realtime.Client.csproj" />
+    <ProjectReference Include="..\SketchRoom.Realtime.Server\SketchRoom.Realtime.Server.csproj" />
   </ItemGroup>
 
 	<PropertyGroup>

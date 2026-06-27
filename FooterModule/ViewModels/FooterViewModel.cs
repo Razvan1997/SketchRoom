@@ -106,17 +106,12 @@ namespace FooterModule.ViewModels
                 {
                     wbView.WhiteboardHostControl.Content = control;
 
-                    if (control is IWhiteBoardAdapter adapter &&
+                    if (control is WhiteBoardControl whiteboard &&
                         wbView.DataContext is WhiteBoardViewModel vm)
                     {
-                        vm.SetControlAdapter(adapter);
-
-                        if (control is WhiteBoardControl whiteboard)
-                        {
-                            whiteboard.LineDrawn += vm.OnLineDrawn;
-                            whiteboard.LivePointDrawn += vm.OnDrawPointLive;
-                            whiteboard.MouseMoved += vm.OnMouseMoved;
-                        }
+                        var drawingService = _tabService.GetDrawingService(tab.Id);
+                        if (drawingService != null)
+                            vm.AttachWhiteboard(whiteboard, drawingService);
                     }
                 }
             }

@@ -1,24 +1,23 @@
-﻿using SketchRoom.Database;
+using SketchRoom.Database;
 using SketchRoom.Models;
-using SketchRoom.Services;
+using SketchRoom.Realtime.Contracts;
+using SketchRoom.Realtime.Server;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Input;
+using WhiteBoard.Core.Collaboration;
 
 namespace LobbyHostingModule.ViewModels
 {
     public class LobbyViewModel : BindableBase
     {
         private readonly IRegionManager _regionManager;
-        private readonly WhiteboardHubClient _hubClient;
+        private readonly CollaborationSession _session;
+        private readonly EmbeddedRealtimeServer _server;
         private bool _isStartLobbyEnabled = true;
         private bool _isStartSessionEnabled = true;
-        private string _sessionCode;
+        private string _sessionCode = string.Empty;
+
         public bool IsStartLobbyEnabled
         {
             get => _isStartLobbyEnabled;
@@ -36,96 +35,72 @@ namespace LobbyHostingModule.ViewModels
             get => _sessionCode;
             set => SetProperty(ref _sessionCode, value);
         }
+
         public ObservableCollection<Participant> ConnectedParticipants { get; } = new();
         public ICommand StartLobbyCommand { get; }
         public ICommand StartSessionCommand { get; }
 
-        public LobbyViewModel(IRegionManager regionManager,  WhiteboardHubClient hubClient)
+        public LobbyViewModel(IRegionManager regionManager, CollaborationSession session, EmbeddedRealtimeServer server)
         {
             _regionManager = regionManager;
-            _hubClient = hubClient;
+            _session = session;
+            _server = server;
 
-            StartLobbyCommand = new DelegateCommand(OnStartLobby, CanStartLobby)
+            StartLobbyCommand = new DelegateCommand(OnStartLobby, () => IsStartLobbyEnabled)
                                 .ObservesProperty(() => IsStartLobbyEnabled);
 
-            StartSessionCommand = new DelegateCommand(OnStartSession, CanStartSession)
+            StartSessionCommand = new DelegateCommand(OnStartSession, () => IsStartSessionEnabled)
                                 .ObservesProperty(() => IsStartSessionEnabled);
+
+            _session.StateChanged += OnRoomStateChanged;
         }
 
-        private bool CanStartSession()
+        private void OnRoomStateChanged(RoomStateDto state)
         {
-            return IsStartSessionEnabled;
-        }
-
-        private async void OnStartSession()
-        {
-            try
+            ConnectedParticipants.Clear();
+            foreach (var p in state.Participants)
             {
-                var result = await _hubClient.StartRoomAsync(SessionCode);
-
-                if (result.Success)
+                ConnectedParticipants.Add(new Participant
                 {
-                    //foreach (var participant in result.Participants)
-                    //{
-                    //    ConnectedParticipants.Add(participant);
-                    //}
-
-                    //StatusMessage = $"✅ Room started with {result.Participants.Count} participant(s)";
-
-
-                    var parameters = new NavigationParameters
-                    {
-                        { "IsHost", true },
-                        { "IsParticipant", false },
-                        { "SessionCode", SessionCode }
-                    };
-
-                    _regionManager.RequestNavigate("ContentRegion", "WhiteBoardView", parameters);
-                }
-                else
-                {
-                    //StatusMessage = "❌ Failed to start room";
-                }
-            }
-            catch (Exception ex)
-            {
-                //StatusMessage = $"❌ Error: {ex.Message}";
+                    ConnectionId = p.UserId,
+                    FirstName = p.DisplayName,
+                    ImageBase64 = p.AvatarBase64
+                });
             }
         }
 
         private async void OnStartLobby()
         {
             IsStartLobbyEnabled = false;
-
             try
             {
                 var user = SecureStorage.LoadUser();
+                await _server.StartAsync();
 
-                if(user != null)
-                {
-                    await _hubClient.ConnectAsync();
-                    SessionCode = await _hubClient.CreateSessionAsync(user.ImageBase64);
+                var name = user != null ? $"{user.FirstName} {user.LastName}".Trim() : "Host";
+                var result = await _session.StartHostAsync(CollaborationSession.DefaultLocalUrl, name, user?.ImageBase64);
 
-                    _hubClient.OnClientJoined(participant =>
-                    {
-                        Application.Current.Dispatcher.Invoke(() =>
-                        {
-                            ConnectedParticipants.Add(participant);
-                        });
-                    });
-                }
+                SessionCode = result.Success ? _session.RoomCode : $"Error: {result.Error}";
             }
             catch (Exception ex)
             {
-                SessionCode = $"❌ Error: {ex.Message}";
+                SessionCode = $"Error: {ex.Message}";
             }
-
             IsStartLobbyEnabled = true;
         }
 
-        private bool CanStartLobby()
+        private void OnStartSession()
         {
-            return IsStartLobbyEnabled;
+            if (!_session.IsActive) return;
+
+            var parameters = new NavigationParameters
+            {
+                { "IsHost", true },
+                { "IsParticipant", false },
+                { "SessionCode", _session.RoomCode }
+            };
+
+            _regionManager.RequestNavigate("ContentRegion", "WhiteBoardView", parameters);
         }
     }
 }

@@ -21,6 +21,8 @@
     <ProjectReference Include="..\SketchRoom.Database\SketchRoom.Database.csproj" />
     <ProjectReference Include="..\SketchRoom.Services\SketchRoom.Services.csproj" />
     <ProjectReference Include="..\SketchRoom.Toolkit.Wpf\SketchRoom.Toolkit.Wpf.csproj" />
+    <ProjectReference Include="..\WhiteBoard.Core\WhiteBoard.Core.csproj" />
+    <ProjectReference Include="..\SketchRoom.Realtime.Server\SketchRoom.Realtime.Server.csproj" />
   </ItemGroup>
 
 </Project>

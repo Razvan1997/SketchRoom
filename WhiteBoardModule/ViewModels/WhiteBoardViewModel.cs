@@ -1,13 +1,7 @@
-﻿using SketchRoom.Models.DTO;
-using SketchRoom.Services;
 using SketchRoom.Toolkit.Wpf.Controls;
-using System.IO;
-using System.Windows;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using WhiteBoard.Core.Colaboration.Interfaces;
+using WhiteBoard.Core.Collaboration;
 using WhiteBoard.Core.Services.Interfaces;
+using WhiteBoardModule.Collaboration;
 using WhiteBoardModule.Events;
 
 namespace WhiteBoardModule.ViewModels
@@ -15,8 +9,7 @@ namespace WhiteBoardModule.ViewModels
     public class WhiteBoardViewModel : BindableBase, INavigationAware
     {
         private readonly IEventAggregator _eventAggregator;
-        private readonly ICollaborationService _collaborationService;
-        private IWhiteBoardAdapter? _whiteboardAdapter;
+        private readonly CollaborationSession _session;
 
         public bool IsHost { get; private set; }
         public bool IsParticipant { get; private set; }
@@ -24,36 +17,19 @@ namespace WhiteBoardModule.ViewModels
 
         public WhiteBoardViewModel(IEventAggregator eventAggregator)
         {
-            _collaborationService = ContainerLocator.Container.Resolve<ICollaborationService>();
             _eventAggregator = eventAggregator;
+            _session = ContainerLocator.Container.Resolve<CollaborationSession>();
         }
 
-        public void SetControlAdapter(IWhiteBoardAdapter adapter)
+        // Wires the active tab's canvas into the collaboration session: builds the
+        // remote applier and routes local cursor moves to the hub.
+        public void AttachWhiteboard(WhiteBoardControl control, IDrawingService drawingService)
         {
-            _whiteboardAdapter = adapter;
-            _collaborationService.AttachWhiteboard(adapter);
-        }
+            var shapeFactory = ContainerLocator.Container.Resolve<IGenericShapeFactory>();
+            var applier = new WhiteBoardCanvasApplier(control, drawingService, shapeFactory);
+            _session.AttachCanvas(applier, drawingService);
 
-        public async void OnLineDrawn(List<Point> points)
-        {
-            if (!IsHost || string.IsNullOrEmpty(SessionCode)) return;
-
-            var drawingService = ContainerLocator.Container.Resolve<DrawingStateService.DrawingStateService>();
-            string colorString = (drawingService.SelectedColor as SolidColorBrush)?.Color.ToString() ?? "#000000";
-
-            await _collaborationService.SendLineAsync(points, colorString, 2);
-        }
-
-        public void OnDrawPointLive(Point point)
-        {
-            if (!IsHost || string.IsNullOrEmpty(SessionCode)) return;
-            _ = _collaborationService.SendLivePointAsync(point);
-        }
-
-        public void OnMouseMoved(Point pos)
-        {
-            if (!IsHost || string.IsNullOrEmpty(SessionCode)) return;
-            _ = _collaborationService.SendCursorPositionAsync(pos);
+            control.MouseMoved += p => _session.ReportLocalCursor(p.X, p.Y);
         }
 
         public void OnNavigatedTo(NavigationContext navigationContext)
@@ -61,8 +37,6 @@ namespace WhiteBoardModule.ViewModels
             IsHost = navigationContext.Parameters.GetValue<bool>("IsHost");
             IsParticipant = navigationContext.Parameters.GetValue<bool>("IsParticipant");
             SessionCode = navigationContext.Parameters.GetValue<string>("SessionCode");
-
-            _collaborationService.Initialize(SessionCode, IsHost, IsParticipant);
 
             _eventAggregator.GetEvent<SessionContextEvent>().Publish(new SessionContext
             {
@@ -74,5 +48,4 @@ namespace WhiteBoardModule.ViewModels
         public bool IsNavigationTarget(NavigationContext navigationContext) => true;
         public void OnNavigatedFrom(NavigationContext navigationContext) { }
     }
-
 }

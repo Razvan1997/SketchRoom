@@ -12,6 +12,15 @@ namespace WhiteBoard.Core.Services.Interfaces
 {
     public interface IDrawingService
     {
+        // Local-edit notifications consumed by the collaboration layer.
+        // Fire only for local user actions; remote-applied strokes use the
+        // AddExternalStroke/RestoreStroke paths which never raise them.
+        event Action<FreeDrawStroke>? StrokeStarted;
+        event Action<FreeDrawStroke, Point>? StrokePointAdded;
+        event Action<FreeDrawStroke>? StrokeFinished;
+        event Action<FreeDrawStroke>? StrokeRemoved;
+        event Action? BoardCleared;
+
         FreeDrawStroke StartStroke(Point startPoint, Brush color, double thickness);
         void AddPointToStroke(FreeDrawStroke stroke, Point point);
         void FinishStroke(FreeDrawStroke stroke);

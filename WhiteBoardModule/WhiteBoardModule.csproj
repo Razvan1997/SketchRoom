@@ -41,6 +41,7 @@
     <ProjectReference Include="..\SketchRoom.Toolkit.Wpf\SketchRoom.Toolkit.Wpf.csproj" />
     <ProjectReference Include="..\WalkthroughDemo\WalkthroughDemo.csproj" />
     <ProjectReference Include="..\WhiteBoard.Core\WhiteBoard.Core.csproj" />
+    <ProjectReference Include="..\SketchRoom.Realtime.Contracts\SketchRoom.Realtime.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

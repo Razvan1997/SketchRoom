@@ -20,6 +20,12 @@ namespace WhiteBoard.Core.Services
 
         public IReadOnlyList<FreeDrawStroke> RecentStrokes => _strokes.AsReadOnly();
 
+        public event Action<FreeDrawStroke>? StrokeStarted;
+        public event Action<FreeDrawStroke, Point>? StrokePointAdded;
+        public event Action<FreeDrawStroke>? StrokeFinished;
+        public event Action<FreeDrawStroke>? StrokeRemoved;
+        public event Action? BoardCleared;
+
         public void SetCanvas(Canvas canvas) => _canvas = canvas;
 
         public FreeDrawStroke StartStroke(Point startPoint, Brush color, double thickness)
@@ -31,17 +37,19 @@ namespace WhiteBoard.Core.Services
             };
             stroke.AddPoint(startPoint);
             _strokes.Add(stroke);
+            StrokeStarted?.Invoke(stroke);
             return stroke;
         }
 
         public void AddPointToStroke(FreeDrawStroke stroke, Point point)
         {
             stroke.AddPoint(point);
+            StrokePointAdded?.Invoke(stroke, point);
         }
 
         public void FinishStroke(FreeDrawStroke stroke)
         {
-            // Future logic: undo/redo etc.
+            StrokeFinished?.Invoke(stroke);
         }
 
         public void RemoveStroke(FreeDrawStroke stroke)
@@ -49,6 +57,7 @@ namespace WhiteBoard.Core.Services
             _strokes.Remove(stroke);
             if (_canvas != null)
                 _canvas.Children.Remove(stroke.Visual);
+            StrokeRemoved?.Invoke(stroke);
         }
 
         public void Clear()
@@ -57,6 +66,7 @@ namespace WhiteBoard.Core.Services
                 _canvas?.Children.Remove(stroke.Visual);
 
             _strokes.Clear();
+            BoardCleared?.Invoke();
         }
 
         public void ErasePointsNear(Point center, double radius)

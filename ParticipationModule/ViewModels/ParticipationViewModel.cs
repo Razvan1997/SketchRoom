@@ -1,54 +1,56 @@
-﻿using Prism.Navigation.Regions;
+using Prism.Navigation.Regions;
 using SketchRoom.Database;
-using SketchRoom.Models.DTO;
-using SketchRoom.Services;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Input;
+using WhiteBoard.Core.Collaboration;
 
 namespace ParticipationModule.ViewModels
 {
     public class ParticipationViewModel : BindableBase
     {
         private readonly IRegionManager _regionManager;
-        private readonly WhiteboardHubClient _hubClient;
-        private string _sessionCode;
-        private string _statusMessage;
+        private readonly CollaborationSession _session;
+        private string _sessionCode = string.Empty;
+        private string _statusMessage = string.Empty;
+        private string _serverUrl = CollaborationSession.DefaultLocalUrl;
         private bool _isStartParticipationEnabled = true;
+
         public bool IsStartParticipationEnabled
         {
             get => _isStartParticipationEnabled;
             set => SetProperty(ref _isStartParticipationEnabled, value);
         }
+
         public string StatusMessage
         {
             get => _statusMessage;
             set => SetProperty(ref _statusMessage, value);
         }
+
         public string SessionCode
         {
             get => _sessionCode;
             set => SetProperty(ref _sessionCode, value);
         }
 
-        public ICommand StartParticipationCommand { get; }
-        public ParticipationViewModel(IRegionManager regionManager, WhiteboardHubClient hubClient)
+        // Host server address; defaults to localhost for same-machine testing.
+        // Set to the host LAN IP (e.g. http://192.168.1.10:5000) to join over LAN.
+        public string ServerUrl
         {
-            _regionManager = regionManager;
-            _hubClient = hubClient;
-
-            StartParticipationCommand = new DelegateCommand(async () => await JoinSessionAsync(), CanStartParticipation)
-                                .ObservesProperty(() => IsStartParticipationEnabled);
+            get => _serverUrl;
+            set => SetProperty(ref _serverUrl, value);
         }
 
-        private bool CanStartParticipation()
+        public ICommand StartParticipationCommand { get; }
+
+        public ParticipationViewModel(IRegionManager regionManager, CollaborationSession session)
         {
-            return IsStartParticipationEnabled;
+            _regionManager = regionManager;
+            _session = session;
+
+            StartParticipationCommand = new DelegateCommand(async () => await JoinSessionAsync(), () => IsStartParticipationEnabled)
+                                .ObservesProperty(() => IsStartParticipationEnabled);
         }
 
         private async Task JoinSessionAsync()
@@ -56,56 +58,32 @@ namespace ParticipationModule.ViewModels
             try
             {
                 var user = SecureStorage.LoadUser();
+                var name = user != null ? $"{user.FirstName} {user.LastName}".Trim() : "Guest";
 
-                if (user != null)
+                var result = await _session.StartJoinAsync(ServerUrl, SessionCode, name, user?.ImageBase64);
+
+                if (result.Success)
                 {
-                    var participant = new JoinSessionDto
-                    {
-                        FirstName = user.FirstName,
-                        LastName = user.LastName,
-                        ImageBase64 = user.ImageBase64
-                    };
+                    StatusMessage = $"Connected to session {SessionCode}.";
 
-                    await _hubClient.ConnectAsync();
-
-                    RegisterRoomStartedHandlerOnce();
-
-                    bool success = await _hubClient.JoinSessionAsync(SessionCode, participant);
-
-                    StatusMessage = success
-                        ? $"Connected to session {SessionCode}. Waiting for host to start..."
-                        : $"Session {SessionCode} not found.";
-                }
-            }
-            catch (Exception ex)
-            {
-                StatusMessage = $"❌ Error: {ex.Message}";
-            }
-        }
-
-        private bool _roomStartedHandlerRegistered = false;
-        private void RegisterRoomStartedHandlerOnce()
-        {
-            if (_roomStartedHandlerRegistered)
-                return;
-
-            _hubClient.OnRoomStarted(() =>
-            {
-                StatusMessage = "✅ Session has started!";
-                Application.Current.Dispatcher.Invoke(() =>
-                {
                     var parameters = new NavigationParameters
                     {
                         { "IsHost", false },
                         { "IsParticipant", true },
-                        { "SessionCode", SessionCode }
+                        { "SessionCode", _session.RoomCode }
                     };
 
                     _regionManager.RequestNavigate("ContentRegion", "WhiteBoardView", parameters);
-                });
-            });
-
-            _roomStartedHandlerRegistered = true;
+                }
+                else
+                {
+                    StatusMessage = result.Error ?? $"Session {SessionCode} not found.";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error: {ex.Message}";
+            }
         }
     }
 }

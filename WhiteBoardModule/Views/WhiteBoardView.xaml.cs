@@ -18,22 +18,9 @@ namespace WhiteBoardModule.Views
         {
             InitializeComponent();
 
-            this.Loaded += WhiteBoardView_Loaded;
-            _leftToolsTransform = new TranslateTransform { X = 0 }; // pleacă din afara ecranului
+            _leftToolsTransform = new TranslateTransform { X = 0 };
             LeftToolsView.RenderTransform = _leftToolsTransform;
             LeftToolsView.Visibility = Visibility.Collapsed;
-        }
-
-        private void WhiteBoardView_Loaded(object sender, RoutedEventArgs e)
-        {
-            //if (DataContext is not WhiteBoardViewModel vm)
-            //    return;
-
-            //vm.SetControlAdapter(Whiteboard);
-
-            //Whiteboard.LineDrawn += vm.OnLineDrawn;
-            //Whiteboard.MouseMoved += vm.OnMouseMoved;
-            //Whiteboard.LivePointDrawn += vm.OnDrawPointLive;
         }
 
         private void CollapseSvg_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
