@@ -22,6 +22,7 @@ public sealed class SignalRWhiteboardClient : IWhiteboardClient
     public async Task ConnectAsync(string baseUrl)
     {
         if (_conn is { State: HubConnectionState.Connected }) return;
+        if (_conn != null) { await _conn.DisposeAsync(); _conn = null; }
         _conn = new HubConnectionBuilder()
             .WithUrl($"{baseUrl.TrimEnd('/')}/whiteboardhub")
             .AddMessagePackProtocol()
@@ -51,5 +52,5 @@ public sealed class SignalRWhiteboardClient : IWhiteboardClient
     public Task MoveCursorAsync(string c, double x, double y) => Req.InvokeAsync(HubMethods.MoveCursor, c, x, y);
     public Task SetLockAsync(string c, bool l) => Req.InvokeAsync(HubMethods.SetLock, c, l);
     public Task KickUserAsync(string c, string u) => Req.InvokeAsync(HubMethods.KickUser, c, u);
-    public async Task DisposeAsync() { if (_conn != null) await _conn.DisposeAsync(); }
+    public async Task DisposeAsync() { if (_conn != null) { await _conn.DisposeAsync(); _conn = null; } }
 }
